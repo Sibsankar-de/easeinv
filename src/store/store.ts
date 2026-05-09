@@ -7,6 +7,7 @@ import currentStoreReducer from "./features/currentStoreSlice";
 import invoiceReducer from "./features/invoiceSlice";
 import customerReducer from "./features/customerSlice";
 import globalErrorReducer from "./features/globalErrorSlice";
+import analyticsReducer from "./features/analyticsSlice";
 
 export function makeStore() {
   return configureStore({
@@ -16,6 +17,7 @@ export function makeStore() {
       store: storeReducer,
       currentStore: currentStoreReducer,
       invoice: invoiceReducer,
+      analytics: analyticsReducer,
       customers: customerReducer,
       globalError: globalErrorReducer,
     },

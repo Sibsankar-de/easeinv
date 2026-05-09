@@ -1,6 +1,12 @@
 "use client";
 
-import { Settings, HelpCircle, Search, Bell } from "lucide-react";
+import {
+  Settings,
+  Search,
+  Bell,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { NavMenuType } from "@/types/NavMenuTypes";
 import { SideNavMenu, NavMenuItem } from "./SideNavMenu";
 import { useSelector } from "react-redux";
@@ -10,6 +16,9 @@ import { ProfileDropdown } from "./ProfileDropdown";
 import { useState } from "react";
 import { SettingsNavDropdown } from "./SettingsNavDropdown";
 import { AppLogoFull } from "../ui/AppLogo";
+import { useRouter } from "next/navigation";
+import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
 
 const settingsItem: NavMenuType = {
   id: "settings",
@@ -45,19 +54,39 @@ export function Sidebar() {
 export function HeaderNavbar() {
   const { data: user } = useSelector(selectUserSate);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const router = useRouter();
 
   return (
     <header className="bg-white border-b border-gray-200 px-8 py-2 sticky top-0 z-50 h-fit">
       <div className="flex items-center justify-between">
         <AppLogoFull size={120} />
 
-        <div className="flex-1 max-w-xl">
-          <div className="relative">
+        <div className="flex-1 max-w-2xl flex items-center gap-4 ml-12">
+          <div className="flex items-center gap-1">
+            <Button
+              onClick={() => router.back()}
+              variant="outline"
+              className="p-2"
+              title="Go back"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <Button
+              onClick={() => router.forward()}
+              variant="outline"
+              className="p-2"
+              title="Go forward"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </div>
+
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
+            <Input
               type="text"
               placeholder="Search invoices, products, customers..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="pl-10"
             />
           </div>
         </div>

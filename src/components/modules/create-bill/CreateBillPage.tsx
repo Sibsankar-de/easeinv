@@ -123,10 +123,6 @@ export const CreateBillPage = () => {
 
   const isSaving = createStatus === "loading";
 
-  if (status === "loading") {
-    return <FormSkeleton rows={6} />;
-  }
-
   // keyboard events
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -149,7 +145,11 @@ export const CreateBillPage = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  });
+  }, [isInvoiceSaved, handleInvoiceSave, handleReset]);
+
+  if (status === "loading") {
+    return <FormSkeleton rows={6} />;
+  }
 
   return (
     <>
