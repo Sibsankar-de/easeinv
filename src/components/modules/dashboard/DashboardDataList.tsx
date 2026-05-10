@@ -2,6 +2,7 @@
 
 import { Pagination } from "@/components/ui/Pagination";
 import { ReactNode, useState } from "react";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 export const DataList = ({ children }: { children: ReactNode }) => (
   <div className="divide-y divide-border rounded-lg border border-border overflow-hidden">
@@ -30,9 +31,10 @@ export const PaginatedDataList = <T,>({
 
   if (items.length === 0) {
     return (
-      <div className="flex min-h-40 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 text-center">
-        <p className="text-sm text-muted-foreground">{emptyText}</p>
-      </div>
+      <EmptyState
+        title={emptyText}
+        className="min-h-40 border-dashed bg-muted/30"
+      />
     );
   }
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Button } from "@/components/ui/Button";
 import { PageContainer } from "@/components/sections/PageContainer";
 import React from "react";
-import { ProductForm } from "@/components/modules/products/ProductForm";
+import { ProductForm } from "@/components/modules/inventory/ProductForm";
 
 export const metadata: Metadata = {
   title: "Add Product",

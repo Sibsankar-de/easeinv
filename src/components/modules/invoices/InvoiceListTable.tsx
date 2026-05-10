@@ -16,6 +16,8 @@ import { InvoiceDto } from "@/types/dto/invoiceDto";
 import { pageLimits } from "@/constants/pageLimits";
 import { InvoiceListItem } from "./InvoiceListItem";
 import { TableSkeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { FileText } from "lucide-react";
 
 export const InvoiceListTable = () => {
   const { storeId } = useStoreNavigation();
@@ -98,6 +100,13 @@ export const InvoiceListTable = () => {
                 ))}
               </tbody>
             </table>
+          )}
+          {invoiceFetchStatus !== "loading" && pageData?.docs.length === 0 && (
+            <EmptyState
+              icon={<FileText className="w-8 h-8 text-gray-400" />}
+              title="No invoices found"
+              description="Create your first invoice to start tracking your sales and payments."
+            />
           )}
         </div>
       </div>

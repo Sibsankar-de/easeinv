@@ -18,9 +18,12 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { FormSkeleton } from "@/components/ui/Skeleton";
+import { useNavContext } from "@/contexts/NavContext";
+import { NavActionButton } from "@/components/layout/navbar";
 
 export const InvoiceSettingsComponent = () => {
   const { storeId } = useStoreNavigation();
+  const { setActionButtons } = useNavContext();
 
   const dispatch = useDispatch();
   const {
@@ -124,6 +127,18 @@ export const InvoiceSettingsComponent = () => {
   const isUpdating = settingsUpdateStatus === "loading";
   const isLogoUploading = logoUploadStatus === "loading";
   const isQrUploading = qrUploadStatus === "loading";
+
+  useEffect(() => {
+    setActionButtons(
+      <NavActionButton
+        onClick={handleSaveChanges}
+        disabled={isUpdating}
+        loading={isUpdating}
+      >
+        Save
+      </NavActionButton>,
+    );
+  }, [setActionButtons, isUpdating, formData]);
 
   if (status === "loading") {
     return <FormSkeleton rows={6} />;

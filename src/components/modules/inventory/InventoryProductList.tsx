@@ -18,6 +18,8 @@ import { useStoreNavigation } from "@/hooks/store-navigation";
 import { PageState } from "@/types/PageableType";
 import { pageLimits } from "@/constants/pageLimits";
 import { TableSkeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PackageSearch } from "lucide-react";
 
 const categories: SelectOptionType[] = [
   { value: "All Categories", key: "all" },
@@ -116,14 +118,18 @@ export const InventoryProductList = () => {
                   ))}
                 </tbody>
               </table>
-              {pageData?.docs.length === 0 && (
-                <div className="flex items-center justify-center flex-col gap-3 w-full p-3">
-                  <p>No products found in your inventory!</p>
-                  <Button onClick={() => navigate("/inventory/add-product")}>
-                    <Plus size={17} />
-                    Add new product
-                  </Button>
-                </div>
+              {status !== "loading" && pageData?.docs.length === 0 && (
+                <EmptyState
+                  icon={<PackageSearch className="w-8 h-8 text-gray-400" />}
+                  title="No products found"
+                  description="Your inventory is empty. Start adding products to manage your stock and create invoices."
+                  action={
+                    <Button onClick={() => navigate("/inventory/add-product")}>
+                      <Plus size={17} />
+                      Add new product
+                    </Button>
+                  }
+                />
               )}
             </>
           )}

@@ -4,6 +4,7 @@ import { formatDateStr } from "@/utils/formatDate";
 import { FileText } from "lucide-react";
 import { useState } from "react";
 import { formatCurrency } from "@/utils/dashboard-formatters";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 export const RecentInvoicesList = ({
   invoices,
@@ -21,16 +22,11 @@ export const RecentInvoicesList = ({
 
   if (invoices.length === 0) {
     return (
-      <div className="flex min-h-52 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 px-4 text-center">
-        <div>
-          <p className="text-sm font-medium text-foreground">
-            No recent invoices
-          </p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            New billing activity will appear here.
-          </p>
-        </div>
-      </div>
+      <EmptyState
+        title="No recent invoices"
+        description="New billing activity will appear here."
+        className="min-h-52 border-dashed bg-muted/30"
+      />
     );
   }
 

@@ -149,6 +149,11 @@ export const ProductUnitAddSection = ({
           />
         ))}
       </ConditionalDiv>
+      {!unitList.length && (
+        <p className="text-sm text-gray-500 text-center py-4 bg-gray-50 rounded-lg border border-dashed">
+          No units added yet. Add custom units like "KG", "PCS", etc.
+        </p>
+      )}
     </div>
   );
 };

@@ -40,7 +40,8 @@ export const Input = ({
         placeholder={placeholder || ""}
         value={value}
         className={cn(
-          "w-full pl-3 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200",
+          "w-full pl-3 pr-4 py-2 border border-gray-300 rounded-lg",
+          "focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200",
           isInvalid && "border-red-300 focus:ring-red-200 pr-10",
           isTypePassword && "pr-10",
           icon && "pl-10",

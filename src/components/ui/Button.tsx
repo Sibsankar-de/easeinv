@@ -39,7 +39,7 @@ export const Button = ({
     outline:
       "border border-border bg-background text-foreground hover:bg-accent/50 hover:text-accent-foreground",
     secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-    dark: "bg-black text-white hover:bg-gray-800",
+    dark: "bg-[#353535] text-white hover:bg-gray-800",
     none: "hover:brightness-95",
   };
 

@@ -8,6 +8,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchStoreList, selectStoreState } from "@/store/features/storeSlice";
 import { StoreCard } from "./StoreCard";
 import { StoreCardSkeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Store } from "lucide-react";
 
 export const StoreListSection = () => {
   const dispatch = useDispatch();
@@ -42,6 +44,19 @@ export const StoreListSection = () => {
           : storeList.map((store, index) => (
               <StoreCard store={store} key={index} />
             ))}
+        {storeStatus !== "loading" && storeList.length === 0 && (
+          <EmptyState
+            icon={<Store className="w-8 h-8 text-gray-400" />}
+            title="No stores found"
+            description="You haven't created any stores yet. Create your first store to start managing your business."
+            action={
+              <Button onClick={() => setIsStoreModalOpen(true)}>
+                <Plus size={15} />
+                Create Store
+              </Button>
+            }
+          />
+        )}
       </div>
 
       <StoreCreateModal

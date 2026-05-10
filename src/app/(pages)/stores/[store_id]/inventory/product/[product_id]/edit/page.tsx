@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ProductForm } from "@/components/modules/products/ProductForm";
+import { ProductForm } from "@/components/modules/inventory/ProductForm";
 import { PageContainer } from "@/components/sections/PageContainer";
 import React from "react";
 

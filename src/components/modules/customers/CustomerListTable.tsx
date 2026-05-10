@@ -12,9 +12,10 @@ import {
   fetchCustomerListThunk,
   selectCustomerState,
 } from "@/store/features/customerSlice";
-import { CustomerDto } from "@/types/dto/customerDto";
 import { CustomerItem } from "./CustomerItem";
 import { TableSkeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Users } from "lucide-react";
 
 export const CustomerListTable = () => {
   const { storeId } = useStoreNavigation();
@@ -102,6 +103,13 @@ export const CustomerListTable = () => {
                 ))}
               </tbody>
             </table>
+          )}
+          {status !== "loading" && pageData?.docs.length === 0 && (
+            <EmptyState
+              icon={<Users className="w-8 h-8 text-gray-400" />}
+              title="No customers found"
+              description="Start adding customers to manage their invoices and track their due amounts."
+            />
           )}
         </div>
       </div>

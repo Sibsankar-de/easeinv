@@ -20,9 +20,12 @@ import {
 } from "@/store/features/invoiceSlice";
 import { toast } from "react-toastify";
 import { FormSkeleton } from "@/components/ui/Skeleton";
+import { useNavContext } from "@/contexts/NavContext";
+import { NavActionButton } from "@/components/layout/navbar";
 
 export const CreateBillPage = () => {
   const { storeId } = useStoreNavigation();
+  const { setActionButtons } = useNavContext();
   const dispatch = useDispatch();
   const {
     data: { currentStore, storeSettings },
@@ -95,7 +98,7 @@ export const CreateBillPage = () => {
   useEffect(() => {
     if (isInvoiceSaved) return;
     handleFormChange("invoiceNumber", invoiceNumber);
-  }, [currentStore]);
+  }, [currentStore, invoiceNumber, isInvoiceSaved]);
 
   // handle invoice save
   const handleInvoiceSave = (status: string = "DRAFTED") => {
@@ -122,6 +125,18 @@ export const CreateBillPage = () => {
   };
 
   const isSaving = createStatus === "loading";
+
+  useEffect(() => {
+    setActionButtons(
+      <NavActionButton
+        disabled={isSaving}
+        onClick={() => setOpenPrintModal(true)}
+      >
+        <PrinterCheck size={16} />
+        {isInvoiceSaved ? "Print bill" : "Save & print"}
+      </NavActionButton>,
+    );
+  }, [setActionButtons, isSaving, isInvoiceSaved, formData, storeId]);
 
   // keyboard events
   useEffect(() => {

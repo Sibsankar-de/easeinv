@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Settings,
-  Search,
-  Bell,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Settings, Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { NavMenuType } from "@/types/NavMenuTypes";
 import { SideNavMenu, NavMenuItem } from "./SideNavMenu";
 import { useSelector } from "react-redux";
@@ -16,9 +10,11 @@ import { ProfileDropdown } from "./ProfileDropdown";
 import { useState } from "react";
 import { SettingsNavDropdown } from "./SettingsNavDropdown";
 import { AppLogoFull } from "../ui/AppLogo";
+import { NavbarSearch } from "./NavbarSearch";
 import { useRouter } from "next/navigation";
-import { Button } from "../ui/Button";
-import { Input } from "../ui/Input";
+import { Button, ButtonType } from "../ui/Button";
+import { cn } from "../utils";
+import { useNavContext } from "@/contexts/NavContext";
 
 const settingsItem: NavMenuType = {
   id: "settings",
@@ -55,19 +51,20 @@ export function HeaderNavbar() {
   const { data: user } = useSelector(selectUserSate);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const router = useRouter();
+  const { actionButtons } = useNavContext();
 
   return (
     <header className="bg-white border-b border-gray-200 px-8 py-2 sticky top-0 z-50 h-fit">
       <div className="flex items-center justify-between">
         <AppLogoFull size={120} />
 
-        <div className="flex-1 max-w-2xl flex items-center gap-4 ml-12">
+        <div className="flex-1 max-w-2xl flex items-center gap-2">
           <div className="flex items-center gap-1">
             <Button
               onClick={() => router.back()}
               variant="outline"
               className="p-2"
-              title="Go back"
+              tooltip="Go back"
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
@@ -75,30 +72,32 @@ export function HeaderNavbar() {
               onClick={() => router.forward()}
               variant="outline"
               className="p-2"
-              title="Go forward"
+              tooltip="Go forward"
             >
               <ChevronRight className="w-5 h-5" />
             </Button>
           </div>
 
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Search invoices, products, customers..."
-              className="pl-10"
-            />
-          </div>
+          <NavbarSearch />
+
+          {actionButtons}
         </div>
 
         <div className="flex items-center gap-4 ml-8">
-          <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+          <Button
+            variant="none"
+            className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
             <Bell className="w-5 h-5" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          </Button>
           <div className="border-l border-gray-200 pl-1">
             <div
-              className="flex items-center gap-3 pl-4 hover:bg-gray-100 rounded-xl py-1.5 px-2 cursor-pointer active:bg-gray-300 transition-all duration-200"
+              className={cn(
+                "flex items-center gap-3 pl-4",
+                "hover:bg-gray-100 rounded-xl py-1.5 px-2 cursor-pointer active:bg-gray-300 transition-all duration-200",
+                "select-none",
+              )}
               onClick={() => setIsProfileOpen((p) => !p)}
             >
               <div className="text-right">
@@ -117,3 +116,15 @@ export function HeaderNavbar() {
     </header>
   );
 }
+
+export const NavActionButton = ({ ...props }: ButtonType) => {
+  return (
+    <Button
+      variant="dark"
+      className={cn("text-sm", props.className)}
+      {...props}
+    >
+      {props.children}
+    </Button>
+  );
+};
