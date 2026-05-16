@@ -16,8 +16,10 @@ export const PrivatePageLayout = ({
   }
 
   useEffect(() => {
-    router.push("/auth/login");
-  }, [router]);
+    if (!isAuthChecking && !isAuthenticated) {
+      router.push("/auth/login");
+    }
+  }, [router, isAuthenticated, isAuthChecking]);
 
   return null;
 };

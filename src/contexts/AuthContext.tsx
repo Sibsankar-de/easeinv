@@ -24,8 +24,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  const { status } = useSelector(selectUserSate);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   // fetch current user
   useEffect(() => {
@@ -33,6 +32,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .unwrap()
       .then(() => {
         setIsAuthenticated(true);
+      })
+      .finally(() => {
+        setIsAuthChecking(false);
       });
   }, [dispatch]);
 
@@ -57,8 +59,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const loginWithGoogle = requestHandler(async () => {
     window.location.href = `${window.location.origin}/api/oauth/authenticate/google`;
   });
-
-  const isAuthChecking = status === "loading";
 
   return (
     <AuthContext.Provider

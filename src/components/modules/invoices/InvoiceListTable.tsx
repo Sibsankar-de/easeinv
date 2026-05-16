@@ -22,7 +22,7 @@ import { createColumnHelper, SortingState } from "@tanstack/react-table";
 import { formatDateStr } from "@/utils/formatDate";
 import { InvoiceDueEditModal } from "./InvoiceDueEditModal";
 import { InvoiceViewModal } from "./InvoiceViewModal";
-import { getSearchDebounceTime } from "@/utils/get-debounce";
+import { getTableSearchDebounceTime } from "@/utils/get-debounce";
 
 const filterOptions: SelectOptionType[] = [
   { value: "All", key: "all" },
@@ -33,7 +33,13 @@ const filterOptions: SelectOptionType[] = [
 
 const columnHelper = createColumnHelper<InvoiceDto>();
 
-const InvoiceActions = ({ invoice, page }: { invoice: InvoiceDto; page: number }) => {
+const InvoiceActions = ({
+  invoice,
+  page,
+}: {
+  invoice: InvoiceDto;
+  page: number;
+}) => {
   const [editOpen, setEditOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
 
@@ -88,6 +94,7 @@ export const InvoiceListTable = () => {
     pageSize: pageLimits.INVOICE_LIST,
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const debounceCtx = React.useRef({ lastInputAt: 0, lastValueLength: 0 });
   const [filterStatus, setFilterStatus] = useState("all");
   const [sorting, setSorting] = useState<SortingState>([
@@ -96,15 +103,16 @@ export const InvoiceListTable = () => {
 
   const currentPage = pagination.pageIndex + 1;
 
-  // Debounced search
+  // Debounce effect
   useEffect(() => {
-    const delay = getSearchDebounceTime(searchTerm, debounceCtx.current);
-    const delayDebounceFn = setTimeout(() => {
-      dispatch(clearInvoiceList());
+    const delay = getTableSearchDebounceTime(searchTerm, debounceCtx.current);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+      dispatch(clearInvoiceList());
     }, delay);
 
-    return () => clearTimeout(delayDebounceFn);
+    return () => clearTimeout(timer);
   }, [searchTerm, dispatch]);
 
   useEffect(() => {
@@ -118,7 +126,7 @@ export const InvoiceListTable = () => {
           page: currentPage,
           limit: pagination.pageSize,
           status: filterStatus !== "all" ? filterStatus : undefined,
-          customerPrefix: searchTerm || undefined,
+          customerPrefix: debouncedSearchTerm || undefined,
           sortBy: sortField,
           sortOrder,
         }),
@@ -131,7 +139,7 @@ export const InvoiceListTable = () => {
     pagination.pageSize,
     filterStatus,
     invoiceListData.pages,
-    searchTerm,
+    debouncedSearchTerm,
     sorting,
   ]);
 
@@ -139,7 +147,9 @@ export const InvoiceListTable = () => {
     () => [
       columnHelper.accessor("invoiceNumber", {
         header: "Invoice Number",
-        cell: (info) => <span className="text-indigo-600 font-medium">{info.getValue()}</span>,
+        cell: (info) => (
+          <span className="text-indigo-600 font-medium">{info.getValue()}</span>
+        ),
         meta: { className: "text-left" },
       }),
       columnHelper.accessor("customerDetails.name", {
@@ -158,13 +168,23 @@ export const InvoiceListTable = () => {
       }),
       columnHelper.accessor("total", {
         header: "Total",
-        cell: (info) => <span className="text-gray-900 font-medium">&#8377;{info.getValue()}</span>,
+        cell: (info) => (
+          <span className="text-gray-900 font-medium">
+            &#8377;{info.getValue()}
+          </span>
+        ),
         meta: { className: "text-center" },
       }),
       columnHelper.accessor("dueAmount", {
         header: "Due",
         cell: (info) => (
-          <span className={info.getValue() ? "text-red-400 font-medium" : "text-green-600 font-medium"}>
+          <span
+            className={
+              info.getValue()
+                ? "text-red-400 font-medium"
+                : "text-green-600 font-medium"
+            }
+          >
             &#8377;{info.getValue()}
           </span>
         ),
@@ -180,12 +200,12 @@ export const InvoiceListTable = () => {
         meta: { className: "text-right" },
       }),
     ],
-    [currentPage]
+    [currentPage],
   );
 
   const pageData = useMemo(
     () => invoiceListData.pages[currentPage]?.docs || [],
-    [invoiceListData, currentPage]
+    [invoiceListData, currentPage],
   );
 
   return (
@@ -203,13 +223,13 @@ export const InvoiceListTable = () => {
               className="pl-10"
             />
           </div>
-          <FilterSelector 
-            options={filterOptions} 
+          <FilterSelector
+            options={filterOptions}
             value={filterStatus}
             onChange={(val) => {
               setFilterStatus(val);
+              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
               dispatch(clearInvoiceList());
-              setPagination(prev => ({ ...prev, pageIndex: 0 }));
             }}
           />
         </div>
@@ -227,8 +247,8 @@ export const InvoiceListTable = () => {
           const nextState =
             typeof updater === "function" ? updater(sorting) : updater;
           setSorting(nextState);
-          dispatch(clearInvoiceList());
           setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+          dispatch(clearInvoiceList());
         }}
         emptyState={
           <EmptyState

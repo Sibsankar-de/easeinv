@@ -7,15 +7,15 @@ import { createSlice } from "@reduxjs/toolkit";
 export const fetchCustomerListThunk: any = createApiThunk(
   "/customers/list",
   async (payload: any) => {
-    let url = payload.query 
+    let url = payload.query
       ? `/search/${payload.storeId}/customers?query=${payload.query}&page=${payload.page}&limit=${payload.limit}`
       : `/customers/${payload.storeId}/list?page=${payload.page}&limit=${payload.limit}`;
-    
+
     if (payload.sortBy) url += `&sortBy=${payload.sortBy}`;
     if (payload.sortOrder) url += `&sortOrder=${payload.sortOrder}`;
-    
+
     return await api.get(url);
-  }
+  },
 );
 
 export const customerSearchThunk: any = createApiThunk(

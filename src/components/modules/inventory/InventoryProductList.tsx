@@ -23,7 +23,7 @@ import { formatDateStr } from "@/utils/formatDate";
 import { convertUnit } from "@/utils/conversion";
 import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 import { ProductDeleteModal } from "./ProductDeleteModal";
-import { getSearchDebounceTime } from "@/utils/get-debounce";
+import { getTableSearchDebounceTime } from "@/utils/get-debounce";
 
 const categories: SelectOptionType[] = [
   { value: "All Categories", key: "all" },
@@ -40,15 +40,17 @@ const ProductActions = ({ product }: { product: ProductDto }) => {
   return (
     <div className="flex items-center justify-center gap-2">
       <Button
-        variant="none"
-        className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
+        variant="outline"
+        className="p-2 text-indigo-400"
+        tooltip="Edit product"
         onClick={() => navigate(`/inventory/product/${product?._id}/edit`)}
       >
         <Edit2 className="w-4 h-4" />
       </Button>
       <Button
-        variant="none"
-        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+        variant="outline"
+        className="p-2 text-red-400"
+        tooltip="Delete product"
         onClick={() => setIsDeleteOpen(true)}
       >
         <Trash2 className="w-4 h-4" />
@@ -78,6 +80,7 @@ export const InventoryProductList = () => {
     pageSize: pageLimits.PRODUCT_LIST,
   });
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const debounceCtx = React.useRef({ lastInputAt: 0, lastValueLength: 0 });
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sorting, setSorting] = useState<SortingState>([
@@ -86,15 +89,16 @@ export const InventoryProductList = () => {
 
   const currentPage = pagination.pageIndex + 1;
 
-  // Debounced search
+  // Debounce effect
   useEffect(() => {
-    const delay = getSearchDebounceTime(searchTerm, debounceCtx.current);
-    const delayDebounceFn = setTimeout(() => {
-      dispatch(clearProductList());
+    const delay = getTableSearchDebounceTime(searchTerm, debounceCtx.current);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+      dispatch(clearProductList());
     }, delay);
 
-    return () => clearTimeout(delayDebounceFn);
+    return () => clearTimeout(timer);
   }, [searchTerm, dispatch]);
 
   useEffect(() => {
@@ -107,13 +111,21 @@ export const InventoryProductList = () => {
           storeId,
           page: currentPage,
           limit: pagination.pageSize,
-          query: searchTerm || undefined,
+          query: debouncedSearchTerm || undefined,
           sortBy: sortField,
           sortOrder,
         }),
       );
     }
-  }, [dispatch, storeId, currentPage, pagination.pageSize, productList.pages, searchTerm, sorting]);
+  }, [
+    dispatch,
+    storeId,
+    currentPage,
+    pagination.pageSize,
+    productList.pages,
+    debouncedSearchTerm,
+    sorting,
+  ]);
 
   const columns = useMemo(
     () => [
@@ -128,12 +140,16 @@ export const InventoryProductList = () => {
       }),
       columnHelper.accessor("name", {
         header: "Product Name",
-        cell: (info) => <span className="text-gray-900 font-medium">{info.getValue()}</span>,
+        cell: (info) => (
+          <span className="text-gray-900 font-medium">{info.getValue()}</span>
+        ),
         meta: { className: "text-left" },
       }),
       columnHelper.accessor("sku", {
         header: "SKU",
-        cell: (info) => <span className="text-gray-600">{info.getValue()}</span>,
+        cell: (info) => (
+          <span className="text-gray-600">{info.getValue()}</span>
+        ),
         meta: { className: "text-center" },
       }),
       columnHelper.accessor("createdAt", {
@@ -152,11 +168,15 @@ export const InventoryProductList = () => {
         cell: (info) => (
           <span className="text-gray-900">
             <span>
-              &#8377;{Number(info.row.original.buyingPricePerQuantity?.toFixed(2))}
+              &#8377;
+              {Number(info.row.original.buyingPricePerQuantity?.toFixed(2))}
             </span>{" "}
             <span>/</span>{" "}
             <span>
-              {convertUnit(info.row.original.stockUnit, storeSettings.customUnits)}
+              {convertUnit(
+                info.row.original.stockUnit,
+                storeSettings.customUnits,
+              )}
             </span>
           </span>
         ),
@@ -170,12 +190,12 @@ export const InventoryProductList = () => {
         meta: { className: "text-center" },
       }),
     ],
-    [storeSettings.customUnits]
+    [storeSettings.customUnits],
   );
 
   const pageData = useMemo(
     () => productList.pages?.[currentPage]?.docs || [],
-    [productList, currentPage]
+    [productList, currentPage],
   );
 
   return (
@@ -195,7 +215,11 @@ export const InventoryProductList = () => {
           <Select
             options={categories}
             value={selectedCategory}
-            onChange={(val) => setSelectedCategory(val)}
+            onChange={(val) => {
+              setSelectedCategory(val);
+              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+              dispatch(clearProductList());
+            }}
             placeholder="Select category"
             className="min-w-40"
           />
@@ -214,8 +238,8 @@ export const InventoryProductList = () => {
           const nextState =
             typeof updater === "function" ? updater(sorting) : updater;
           setSorting(nextState);
-          dispatch(clearProductList());
           setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+          dispatch(clearProductList());
         }}
         emptyState={
           <EmptyState

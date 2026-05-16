@@ -16,8 +16,10 @@ export const PreAuthPageLayout = ({
   }
 
   useEffect(() => {
-    router.push("/profile");
-  }, [router]);
+    if (!isAuthChecking && isAuthenticated) {
+      router.push("/profile");
+    }
+  }, [router, isAuthenticated, isAuthChecking]);
 
   return null;
 };

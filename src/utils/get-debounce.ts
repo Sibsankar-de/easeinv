@@ -52,3 +52,47 @@ export function getSearchDebounceTime(
   /* SLOW / DELIBERATE INPUT */
   return 200;
 }
+
+export function getTableSearchDebounceTime(
+  currentValue: string,
+  ctx: DebounceContext,
+): number {
+  const now = performance.now();
+  const lastTime = ctx.lastInputAt ?? now;
+  const delta = now - lastTime;
+
+  const lastLen = ctx.lastValueLength ?? 0;
+  const currentLen = currentValue.length;
+
+  const lenDiff = currentLen - lastLen;
+
+  // Update context
+  ctx.lastInputAt = now;
+  ctx.lastValueLength = currentLen;
+
+  /**
+   * DELETION HANDLING
+   */
+  if (lenDiff < 0) {
+    if (delta < 80) return 300;
+    return 200;
+  }
+
+  /* BARCODE DETECTION */
+  if (lenDiff >= 4 && delta < 40) {
+    return 50;
+  }
+
+  /* FAST TYPING */
+  if (delta < 80) {
+    return 700;
+  }
+
+  /* NORMAL TYPING */
+  if (delta < 150) {
+    return 500;
+  }
+
+  /* SLOW / DELIBERATE INPUT */
+  return 400;
+}

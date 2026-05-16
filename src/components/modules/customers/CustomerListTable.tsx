@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import * as React from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search, Users, Eye, Download } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { useDispatch, useSelector } from "react-redux";
@@ -17,7 +18,7 @@ import { createColumnHelper, SortingState } from "@tanstack/react-table";
 import { CustomerDto } from "@/types/dto/customerDto";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/components/utils";
-import { getSearchDebounceTime } from "@/utils/get-debounce";
+import { getTableSearchDebounceTime } from "@/utils/get-debounce";
 
 const columnHelper = createColumnHelper<CustomerDto>();
 
@@ -34,22 +35,24 @@ export const CustomerListTable = () => {
     pageSize: pageLimits.CUSTOMER_LIST,
   });
   const [searchTerm, setSearchTerm] = useState("");
-  const debounceCtx = useRef({ lastInputAt: 0, lastValueLength: 0 });
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const debounceCtx = React.useRef({ lastInputAt: 0, lastValueLength: 0 });
   const [sorting, setSorting] = useState<SortingState>([
     { id: "createdAt", desc: true },
   ]);
 
   const currentPage = pagination.pageIndex + 1;
 
-  // Debounced search
+  // Debounce effect
   useEffect(() => {
-    const delay = getSearchDebounceTime(searchTerm, debounceCtx.current);
-    const delayDebounceFn = setTimeout(() => {
-      dispatch(clearCustomerListData());
+    const delay = getTableSearchDebounceTime(searchTerm, debounceCtx.current);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+      dispatch(clearCustomerListData());
     }, delay);
 
-    return () => clearTimeout(delayDebounceFn);
+    return () => clearTimeout(timer);
   }, [searchTerm, dispatch]);
 
   useEffect(() => {
@@ -62,7 +65,7 @@ export const CustomerListTable = () => {
           storeId,
           page: currentPage,
           limit: pagination.pageSize,
-          query: searchTerm || undefined,
+          query: debouncedSearchTerm || undefined,
           sortBy: sortField,
           sortOrder,
         }),
@@ -74,7 +77,7 @@ export const CustomerListTable = () => {
     currentPage,
     pagination.pageSize,
     customerListData.pages,
-    searchTerm,
+    debouncedSearchTerm,
     sorting,
   ]);
 
@@ -195,8 +198,8 @@ export const CustomerListTable = () => {
           const nextState =
             typeof updater === "function" ? updater(sorting) : updater;
           setSorting(nextState);
-          dispatch(clearCustomerListData());
           setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+          dispatch(clearCustomerListData());
         }}
         emptyState={
           <EmptyState
