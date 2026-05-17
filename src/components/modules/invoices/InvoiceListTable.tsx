@@ -23,6 +23,7 @@ import { formatDateStr } from "@/utils/formatDate";
 import { InvoiceDueEditModal } from "./InvoiceDueEditModal";
 import { InvoiceViewModal } from "./InvoiceViewModal";
 import { getTableSearchDebounceTime } from "@/utils/get-debounce";
+import { cn } from "@/components/utils";
 
 const filterOptions: SelectOptionType[] = [
   { value: "All", key: "all" },
@@ -81,7 +82,7 @@ const InvoiceActions = ({
   );
 };
 
-export const InvoiceListTable = () => {
+export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
   const { storeId } = useStoreNavigation();
   const dispatch = useDispatch();
   const {
@@ -127,6 +128,7 @@ export const InvoiceListTable = () => {
           limit: pagination.pageSize,
           status: filterStatus !== "all" ? filterStatus : undefined,
           customerPrefix: debouncedSearchTerm || undefined,
+          customerId,
           sortBy: sortField,
           sortOrder,
         }),
@@ -141,6 +143,7 @@ export const InvoiceListTable = () => {
     invoiceListData.pages,
     debouncedSearchTerm,
     sorting,
+    customerId,
   ]);
 
   const columns = useMemo(
@@ -154,7 +157,13 @@ export const InvoiceListTable = () => {
       }),
       columnHelper.accessor("customerDetails.name", {
         header: "Customer",
-        cell: (info) => <span className="text-gray-900">{info.getValue()}</span>,
+        cell: (info) => (
+          <span
+            className={cn(info.getValue() ? "text-gray-900" : "text-gray-400")}
+          >
+            {info.getValue() || "Not provided"}
+          </span>
+        ),
         meta: { className: "text-center" },
       }),
       columnHelper.accessor("issueDate", {
@@ -211,28 +220,26 @@ export const InvoiceListTable = () => {
   return (
     <div>
       {/* Search and Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Search by invoice number or client name..."
-              value={searchTerm}
-              onChange={(val) => setSearchTerm(val)}
-              className="pl-10"
-            />
-          </div>
-          <FilterSelector
-            options={filterOptions}
-            value={filterStatus}
-            onChange={(val) => {
-              setFilterStatus(val);
-              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-              dispatch(clearInvoiceList());
-            }}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Search by invoice number or client name..."
+            value={searchTerm}
+            onChange={(val) => setSearchTerm(val)}
+            className="pl-10"
           />
         </div>
+        <FilterSelector
+          options={filterOptions}
+          value={filterStatus}
+          onChange={(val) => {
+            setFilterStatus(val);
+            setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+            dispatch(clearInvoiceList());
+          }}
+        />
       </div>
 
       <DataTable

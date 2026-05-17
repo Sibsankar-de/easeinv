@@ -37,7 +37,9 @@ export const fetchInvoiceListThunk: any = createApiThunk(
   async (payload: any) => {
     let url = `/invoices/${payload.storeId}/list?page=${payload.page}&limit=${payload.limit}`;
     if (payload.status) url += `&status=${payload.status}`;
-    if (payload.customerPrefix) url += `&customerPrefix=${payload.customerPrefix}`;
+    if (payload.customerPrefix)
+      url += `&customerPrefix=${payload.customerPrefix}`;
+    if (payload.customerId) url += `&customerId=${payload.customerId}`;
     if (payload.sortBy) url += `&sortBy=${payload.sortBy}`;
     if (payload.sortOrder) url += `&sortOrder=${payload.sortOrder}`;
     return await api.get(url);

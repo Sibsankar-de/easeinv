@@ -17,9 +17,11 @@ export default function InvoicesPage() {
         <p className="text-gray-600">View and manage all your invoices</p>
       </div>
 
-      <InvoiceSummarySection />
+      <div className="space-y-6">
+        <InvoiceSummarySection />
 
-      <InvoiceListTable />
+        <InvoiceListTable />
+      </div>
     </PageContainer>
   );
 }

@@ -3,4 +3,6 @@ export type InvoiceSummary = {
   totalRevenue: number;
   totalDue: number;
   totalPaid: number;
+  paidCount: number;
+  dueCount: number;
 };

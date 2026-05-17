@@ -38,7 +38,7 @@ const ProductActions = ({ product }: { product: ProductDto }) => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="flex items-center justify-end gap-2">
       <Button
         variant="outline"
         className="p-2 text-indigo-400"
@@ -187,7 +187,7 @@ export const InventoryProductList = () => {
         header: "Actions",
         enableSorting: false,
         cell: (info) => <ProductActions product={info.row.original} />,
-        meta: { className: "text-center" },
+        meta: { className: "text-right" },
       }),
     ],
     [storeSettings.customUnits],
@@ -200,30 +200,28 @@ export const InventoryProductList = () => {
 
   return (
     <div>
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <div className="flex gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Search products by name or SKU..."
-              value={searchTerm}
-              onChange={(val) => setSearchTerm(val)}
-              className="pl-10"
-            />
-          </div>
-          <Select
-            options={categories}
-            value={selectedCategory}
-            onChange={(val) => {
-              setSelectedCategory(val);
-              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-              dispatch(clearProductList());
-            }}
-            placeholder="Select category"
-            className="min-w-40"
+      <div className="flex gap-4 mb-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Input
+            type="text"
+            placeholder="Search products by name or SKU..."
+            value={searchTerm}
+            onChange={(val) => setSearchTerm(val)}
+            className="pl-10"
           />
         </div>
+        <Select
+          options={categories}
+          value={selectedCategory}
+          onChange={(val) => {
+            setSelectedCategory(val);
+            setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+            dispatch(clearProductList());
+          }}
+          placeholder="Select category"
+          className="min-w-40"
+        />
       </div>
 
       <DataTable

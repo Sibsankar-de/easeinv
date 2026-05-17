@@ -26,6 +26,27 @@ export const customerSearchThunk: any = createApiThunk(
     ),
 );
 
+export const fetchCustomerByIdThunk: any = createApiThunk(
+  "/customers/get",
+  async (payload: any) =>
+    await api.get(`/customers/${payload.storeId}/${payload.customerId}`),
+);
+
+export const deleteCustomerThunk: any = createApiThunk(
+  "/customers/delete",
+  async (payload: any) =>
+    await api.delete(`/customers/${payload.storeId}/${payload.customerId}`),
+);
+
+export const updateCustomerThunk: any = createApiThunk(
+  "/customers/update",
+  async (payload: any) =>
+    await api.patch(
+      `/customers/${payload.storeId}/${payload.customerId}`,
+      payload.data,
+    ),
+);
+
 const initialState = {
   data: {
     customerListData: {
@@ -38,10 +59,14 @@ const initialState = {
       totalDocs: 0,
       totalPages: 0,
     },
+    currentCustomer: null as CustomerDto | null,
   },
   status: "idle",
   createStatus: "idle",
   searchStatus: "idle",
+  fetchStatus: "idle",
+  deleteStatus: "idle",
+  updateStatus: "idle",
   error: null,
 };
 
@@ -55,6 +80,10 @@ const customerSlice = createSlice({
         totalDocs: 0,
         totalPages: 0,
       };
+    },
+    clearCurrentCustomer: (state) => {
+      state.data.currentCustomer = null;
+      state.fetchStatus = "idle";
     },
   },
   extraReducers(builder) {
@@ -86,10 +115,43 @@ const customerSlice = createSlice({
       .addCase(customerSearchThunk.fulfilled, (state, action) => {
         state.searchStatus = "success";
         state.error = null;
+      })
+      .addCase(fetchCustomerByIdThunk.pending, (state, action) =>
+        setState(state, action, "fetchStatus"),
+      )
+      .addCase(fetchCustomerByIdThunk.rejected, (state, action) =>
+        setState(state, action, "fetchStatus"),
+      )
+      .addCase(fetchCustomerByIdThunk.fulfilled, (state, action) => {
+        state.fetchStatus = "success";
+        state.data.currentCustomer = action.payload;
+        state.error = null;
+      })
+      .addCase(deleteCustomerThunk.pending, (state, action) =>
+        setState(state, action, "deleteStatus"),
+      )
+      .addCase(deleteCustomerThunk.rejected, (state, action) =>
+        setState(state, action, "deleteStatus"),
+      )
+      .addCase(deleteCustomerThunk.fulfilled, (state, action) => {
+        state.deleteStatus = "success";
+        state.error = null;
+      })
+      .addCase(updateCustomerThunk.pending, (state, action) =>
+        setState(state, action, "updateStatus"),
+      )
+      .addCase(updateCustomerThunk.rejected, (state, action) =>
+        setState(state, action, "updateStatus"),
+      )
+      .addCase(updateCustomerThunk.fulfilled, (state, action) => {
+        state.updateStatus = "success";
+        state.data.currentCustomer = action.payload;
+        state.error = null;
       });
   },
 });
 
 export const selectCustomerState = (state: any) => state.customers;
-export const { clearCustomerListData } = customerSlice.actions;
+export const { clearCustomerListData, clearCurrentCustomer } =
+  customerSlice.actions;
 export default customerSlice.reducer;

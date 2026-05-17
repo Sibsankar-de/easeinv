@@ -51,6 +51,17 @@ const billItemSchema = new Schema(
   { _id: false },
 );
 
+const invoiceExtraData = new Schema(
+  {
+    customer: {
+      name: String,
+      phoneNumber: String,
+      address: String,
+    },
+  },
+  { _id: false, strict: false },
+);
+
 const invoiceSchema = new Schema(
   {
     creatorId: {
@@ -124,6 +135,7 @@ const invoiceSchema = new Schema(
       enum: invoiceEnums.invoiceStatus,
       default: "DRAFTED",
     },
+    extraData: invoiceExtraData,
   },
   { timestamps: true },
 );

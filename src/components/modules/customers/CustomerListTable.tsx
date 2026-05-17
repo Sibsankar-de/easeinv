@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Users, Eye, Download } from "lucide-react";
+import { Search, Users, Eye, Download, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { Input } from "@/components/ui/Input";
 import { useDispatch, useSelector } from "react-redux";
 import { useStoreNavigation } from "@/hooks/store-navigation";
@@ -19,8 +20,38 @@ import { CustomerDto } from "@/types/dto/customerDto";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/components/utils";
 import { getTableSearchDebounceTime } from "@/utils/get-debounce";
+import { CustomerDeleteModal } from "./CustomerDeleteModal";
 
 const columnHelper = createColumnHelper<CustomerDto>();
+
+const CustomerActions = ({ customer }: { customer: CustomerDto }) => {
+  const { navigate } = useStoreNavigation();
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+  return (
+    <div className="flex items-center justify-end gap-2">
+      <Button
+        variant="outline"
+        className="p-2"
+        onClick={() => navigate(`/customers/${customer._id}`)}
+      >
+        <Eye className="w-4 h-4" />
+      </Button>
+      <Button
+        variant="outline"
+        className="p-2 text-red-600"
+        onClick={() => setIsDeleteOpen(true)}
+      >
+        <Trash2 className="w-4 h-4" />
+      </Button>
+      <CustomerDeleteModal
+        openState={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
+        customer={customer}
+      />
+    </div>
+  );
+};
 
 export const CustomerListTable = () => {
   const { storeId } = useStoreNavigation();
@@ -143,22 +174,7 @@ export const CustomerListTable = () => {
         id: "actions",
         header: "Actions",
         enableSorting: false,
-        cell: () => (
-          <div className="flex items-center justify-end gap-2">
-            <Button
-              variant="none"
-              className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50"
-            >
-              <Eye className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="none"
-              className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50"
-            >
-              <Download className="w-4 h-4" />
-            </Button>
-          </div>
-        ),
+        cell: (info) => <CustomerActions customer={info.row.original} />,
         meta: { className: "text-right" },
       }),
     ],
@@ -173,17 +189,15 @@ export const CustomerListTable = () => {
   return (
     <div>
       {/* Search and Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Search by name or phone number..."
-            value={searchTerm}
-            onChange={(val) => setSearchTerm(val)}
-            className="pl-10"
-          />
-        </div>
+      <div className="flex-1 relative mb-4">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <Input
+          type="text"
+          placeholder="Search by name or phone number..."
+          value={searchTerm}
+          onChange={(val) => setSearchTerm(val)}
+          className="pl-10"
+        />
       </div>
 
       <DataTable

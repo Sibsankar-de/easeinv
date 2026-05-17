@@ -6,4 +6,5 @@ export type CustomerDto = {
   address?: string;
   totalDue?: number;
   totalInvoices?: number;
+  dueCount?: number;
 };

@@ -132,3 +132,126 @@ export const searchCustomers = asyncHandler(
     );
   },
 );
+
+export const getCustomerById = asyncHandler(
+  async (
+    req: NextRequest,
+    context: MiddlewareContext | undefined,
+    params: Record<string, any> | undefined,
+  ) => {
+    const { storeId, customerId } = await params!;
+
+    if (!customerId)
+      throw new ApiError(StatusCodes.BAD_REQUEST, "customerId is required");
+
+    const pipeline = [
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(customerId),
+          storeId: new mongoose.Types.ObjectId(storeId),
+        },
+      },
+      {
+        $lookup: {
+          from: "invoices",
+          localField: "_id",
+          foreignField: "customerId",
+          as: "invoices",
+        },
+      },
+      {
+        $addFields: {
+          totalInvoices: { $size: "$invoices" },
+          dueCount: {
+            $size: {
+              $filter: {
+                input: "$invoices",
+                as: "inv",
+                cond: { $gt: ["$$inv.dueAmount", 0] },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          invoices: 0,
+        },
+      },
+    ];
+
+    const customerData = await Customer.aggregate(pipeline);
+
+    if (!customerData || customerData.length === 0) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Customer not found");
+    }
+
+    return NextResponse.json(
+      new ApiResponse(
+        StatusCodes.OK,
+        customerData[0],
+        "Customer details fetched",
+      ),
+    );
+  },
+);
+
+export const removeCustomerById = asyncHandler(
+  async (
+    req: NextRequest,
+    context: MiddlewareContext | undefined,
+    params: Record<string, any> | undefined,
+  ) => {
+    const { storeId, customerId } = await params!;
+
+    if (!customerId)
+      throw new ApiError(StatusCodes.BAD_REQUEST, "customerId is required");
+
+    const deleted = await Customer.findOneAndDelete({
+      _id: customerId,
+      storeId,
+    });
+
+    if (!deleted) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Customer not found");
+    }
+
+    return NextResponse.json(
+      new ApiResponse(StatusCodes.OK, null, "Customer deleted successfully"),
+    );
+  },
+);
+
+export const updateCustomerById = asyncHandler(
+  async (
+    req: NextRequest,
+    context: MiddlewareContext | undefined,
+    params: Record<string, any> | undefined,
+  ) => {
+    const { storeId, customerId } = await params!;
+    const body = await req.json();
+
+    if (!customerId)
+      throw new ApiError(StatusCodes.BAD_REQUEST, "customerId is required");
+
+    const { name, phoneNumber, email, address } = body;
+
+    const updatedCustomer = await Customer.findOneAndUpdate(
+      { _id: customerId, storeId },
+      { $set: { name, phoneNumber, email, address } },
+      { new: true },
+    );
+
+    if (!updatedCustomer) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Customer not found");
+    }
+
+    return NextResponse.json(
+      new ApiResponse(
+        StatusCodes.OK,
+        updatedCustomer,
+        "Customer updated successfully",
+      ),
+    );
+  },
+);

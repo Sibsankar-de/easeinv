@@ -85,6 +85,13 @@ export const createInvoice = asyncHandler(
       storeId,
       customerId,
       ...billData,
+      extraData: {
+        customer: {
+          name: customerDetails.name,
+          phoneNumber: customerDetails.phoneNumber,
+          address: customerDetails.address,
+        },
+      },
     });
 
     // update
@@ -185,6 +192,7 @@ export const searchInvoice = asyncHandler(
     const limit = parseInt(searchParams.get("limit") || "10");
     const status = searchParams.get("status");
     const customerPrefix = searchParams.get("customerPrefix");
+    const customerId = searchParams.get("customerId");
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortOrder = searchParams.get("sortOrder") === "asc" ? 1 : -1;
 
@@ -194,6 +202,10 @@ export const searchInvoice = asyncHandler(
 
     if (status) {
       match.status = status;
+    }
+
+    if (customerId) {
+      match.customerId = new mongoose.Types.ObjectId(customerId);
     }
 
     const pipeline: any[] = [
@@ -210,6 +222,13 @@ export const searchInvoice = asyncHandler(
         $unwind: {
           path: "$customerDetails",
           preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          customerDetails: {
+            $ifNull: ["$customerDetails", "$extraData.customer"],
+          },
         },
       },
     ];
@@ -254,6 +273,12 @@ export const getInvoiceSummary = asyncHandler(
           totalRevenue: { $sum: "$total" },
           totalDue: { $sum: "$dueAmount" },
           totalPaid: { $sum: "$paidAmount" },
+          paidCount: {
+            $sum: { $cond: [{ $eq: ["$dueAmount", 0] }, 1, 0] },
+          },
+          dueCount: {
+            $sum: { $cond: [{ $gt: ["$dueAmount", 0] }, 1, 0] },
+          },
         },
       },
     ]);
@@ -263,7 +288,14 @@ export const getInvoiceSummary = asyncHandler(
     const summary =
       summaryAgg.length > 0
         ? summaryAgg[0]
-        : { totalInvoices: 0, totalRevenue: 0, totalDue: 0, totalPaid: 0 };
+        : {
+            totalInvoices: 0,
+            totalRevenue: 0,
+            totalDue: 0,
+            totalPaid: 0,
+            paidCount: 0,
+            dueCount: 0,
+          };
 
     return NextResponse.json(new ApiResponse(200, summary, "Summary fetched."));
   },
