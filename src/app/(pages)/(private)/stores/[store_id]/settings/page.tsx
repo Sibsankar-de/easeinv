@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import { InventorySettingsComponent } from "@/components/modules/settings/InventorySettingsComponent";
-import { InvoiceSettingsComponent } from "@/components/modules/settings/InvoiceSettingsComponent";
-import { StoreInfoComponent } from "@/components/modules/settings/StoreInfoComponent";
-import { PageContainer } from "@/components/ui/PageContainer";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Store Settings",
@@ -10,22 +7,11 @@ export const metadata: Metadata = {
     "Manage store information, invoice preferences, and inventory-related settings for your business.",
 };
 
-export default function page() {
-  return (
-    <PageContainer>
-      <div className="mb-8">
-        <h1 className="text-gray-900 mb-2">Store Settings</h1>
-        <p className="text-gray-600">
-          Manage your business information, invoice settings, and preferences
-        </p>
-      </div>
-      <div className="space-y-8">
-        <StoreInfoComponent />
-
-        <InvoiceSettingsComponent />
-
-        <InventorySettingsComponent />
-      </div>
-    </PageContainer>
-  );
+export default async function page({
+  params,
+}: {
+  params: Record<string, any>;
+}) {
+  const { store_id } = await params;
+  redirect(`/stores/${store_id}/settings/general`);
 }

@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { Store } from "../models/store.model";
 import { ApiError } from "../utils/error-handler";
 import { StatusCodes } from "http-status-codes";
+import { StoreUser } from "../models/storeUser.model";
 
 export const verifyStoreAccess = async (
   req: NextRequest,
@@ -15,16 +16,18 @@ export const verifyStoreAccess = async (
 
   const store = await Store.findById(storeId);
   if (!store) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Store not found.");
+    throw new ApiError(StatusCodes.NOT_FOUND, "Store not found.");
   }
 
-  const accessor = store.accessList.find(
-    (e) =>
-      e.userId.toString() === userId?.toString() &&
-      allowed_roles.includes(e.role),
-  );
+  const storeUser = await StoreUser.findOne({ storeId, userId });
+  if (!storeUser) {
+    throw new ApiError(StatusCodes.FORBIDDEN, "User not linked with store.");
+  }
 
-  if (!accessor) throw new ApiError(StatusCodes.FORBIDDEN, "Access denied");
+  const hasAccess = allowed_roles.includes(storeUser.role);
+
+  if (!hasAccess)
+    throw new ApiError(StatusCodes.FORBIDDEN, "User has no access.");
 
   return { ...context, store };
 };

@@ -5,25 +5,8 @@ import mongoose, {
   InferSchemaType,
   PaginateModel,
 } from "mongoose";
-import { storeEnums } from "../enums/store.enum";
 import mongoosePaginate from "mongoose-paginate-v2";
 import aggregatePaginate from "mongoose-aggregate-paginate-v2";
-
-const accessListUserSchema = new Schema(
-  {
-    userId: {
-      type: mongoose.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    role: {
-      type: String,
-      enum: storeEnums.USER_ROLES,
-      required: true,
-    },
-  },
-  { _id: false },
-);
 
 const storeSchema = new Schema(
   {
@@ -64,10 +47,6 @@ const storeSchema = new Schema(
     },
     lastInvoiceNumber: {
       type: String,
-    },
-    accessList: {
-      type: [accessListUserSchema],
-      required: true,
     },
     settingsId: {
       type: mongoose.Types.ObjectId,

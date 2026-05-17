@@ -13,6 +13,8 @@ import { Category } from "../models/category.model";
 import { StoreSettings } from "../models/storeSettings.model";
 import { uploadToCloudinary } from "../utils/coludinary-upload";
 import { cloudinaryFolders } from "../constants/cloudinary.constant";
+import { StoreUser } from "../models/storeUser.model";
+import { userRoles } from "../enums/store.enum";
 
 export const createStore = asyncHandler(
   async (req: NextRequest, context: MiddlewareContext | undefined) => {
@@ -30,16 +32,13 @@ export const createStore = asyncHandler(
       address,
       contactEmail,
       contactNo,
-      accessList: [
-        {
-          userId,
-          role: "ADMIN",
-        },
-        {
-          userId,
-          role: "OWNER",
-        },
-      ],
+    });
+
+    // create user-store access entry for owner
+    await StoreUser.create({
+      storeId: store._id,
+      userId,
+      role: userRoles.OWNER,
     });
 
     // create store settings

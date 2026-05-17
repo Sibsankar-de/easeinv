@@ -1,5 +1,7 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { models, PaginateModel, Schema } from "mongoose";
 import { storeEnums } from "../enums/store.enum";
+import mongoosePaginate from "mongoose-paginate-v2";
+import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const storeUserSchema = new Schema(
   {
@@ -22,9 +24,18 @@ const storeUserSchema = new Schema(
   { timestamps: true },
 );
 
+storeUserSchema.plugin(mongoosePaginate);
+storeUserSchema.plugin(aggregatePaginate);
+
 type StoreUser = mongoose.InferSchemaType<typeof storeUserSchema>;
 
-export const StoreUser = mongoose.model<StoreUser>(
-  "StoreUser",
-  storeUserSchema,
-);
+if (process.env.NODE_ENV === "development" && models.StoreUser) {
+  delete models.StoreUser;
+}
+
+export const StoreUser =
+  (models.StoreUser as PaginateModel<StoreUser>) ||
+  mongoose.model<StoreUser, PaginateModel<StoreUser>>(
+    "StoreUser",
+    storeUserSchema,
+  );
