@@ -1,16 +1,28 @@
 "use client";
 
+import { Badge, BadgeVariant } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { ConditionalDiv } from "@/components/ui/ConditionalDiv";
+import { cn } from "@/components/utils";
 import { StoreDto } from "@/types/dto/storeDto";
 import { formatDateStr } from "@/utils/formatDate";
-import { MapPin, Settings, Store } from "lucide-react";
+import { Dot, MapPin, Settings, Store } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+const RoleBadgeVarient: Record<string, BadgeVariant> = {
+  OWNER: "success",
+  MANAGER: "primary",
+  EMPLOYEE: "info",
+};
 
 export const StoreCard = ({ store }: { store: StoreDto }) => {
   const router = useRouter();
   return (
     <div
-      className={`bg-white rounded-lg border p-6 transition-all hover:shadow-md border-gray-200 flex justify-between items-baseline`}
+      className={cn(
+        `bg-white rounded-lg border p-6 border-border flex justify-between items-baseline`,
+        "transition-all hover:shadow-md",
+      )}
     >
       <div className="flex items-start gap-4">
         <div
@@ -19,16 +31,21 @@ export const StoreCard = ({ store }: { store: StoreDto }) => {
           <Store className={`w-6 h-6 text-indigo-600`} />
         </div>
         <div>
-          <div className="mb-1">
+          <div className="flex items-baseline gap-2 mb-1">
             <h3 className="text-gray-900">{store.name}</h3>
+            <Badge variant={RoleBadgeVarient[store.role]}>{store.role}</Badge>
           </div>
           <p className="text-sm text-gray-600 mb-1">{store.businessType}</p>
-          <div className="flex items-center gap-4 text-xs text-gray-500">
-            <span className="flex items-center gap-1">
+          <div className="flex items-center gap-1 text-xs text-gray-500">
+            <ConditionalDiv
+              className="flex items-center gap-1"
+              condition={store.address}
+            >
               <MapPin className="w-3 h-3" />
               {store.address}
-            </span>
-            <span>Since {formatDateStr(store?.createdAt || "").dateStr}</span>
+              <Dot size={15} />
+            </ConditionalDiv>
+            <div>Since {formatDateStr(store?.createdAt || "").dateStr}</div>
           </div>
         </div>
       </div>

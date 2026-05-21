@@ -8,6 +8,7 @@ import { StockInput } from "@/components/ui/StockInput";
 import { Input } from "@/components/ui/Input";
 import { Trash2 } from "lucide-react";
 import { ProductDto } from "@/types/dto/productDto";
+import { Button } from "@/components/ui/Button";
 
 export function BillingSectionRow({
   id,
@@ -123,12 +124,13 @@ export function BillingSectionRow({
       </td>
 
       <td className="px-2 py-3">
-        <button
+        <Button
+          variant="outline"
+          className="p-2 text-red-300"
           onClick={() => onRemoveItem(item.id)}
-          className="p-2 text-red-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
         >
           <Trash2 className="w-4 h-4" />
-        </button>
+        </Button>
       </td>
     </tr>
   );

@@ -1,5 +1,9 @@
 import { CustomerDto } from "@/types/dto/customerDto";
-import { StoreDto, StoreSettingsDto } from "@/types/dto/storeDto";
+import {
+  StoreAccessorDto,
+  StoreDto,
+  StoreSettingsDto,
+} from "@/types/dto/storeDto";
 import { createApiThunk, setState } from "../utils";
 import api from "@/configs/axios-config";
 import { createSlice } from "@reduxjs/toolkit";
@@ -48,11 +52,37 @@ export const uploadQRCodeThunk: any = createApiThunk(
     }),
 );
 
+export const fetchAccessorsListThunk: any = createApiThunk(
+  "/current-store/fetch-accessors",
+  async (storeId: string) => await api.get(`/stores/${storeId}/users`),
+);
+
+export const addStoreAccessorThunk: any = createApiThunk(
+  "/current-store/add-accessor",
+  async (data: { storeId: string; userData: any }) =>
+    await api.post(`/stores/${data.storeId}/users`, data.userData),
+);
+
+export const updateStoreAccessorRoleThunk: any = createApiThunk(
+  "/current-store/update-accessor-role",
+  async (data: { storeId: string; userId: string; newRole: string }) =>
+    await api.patch(`/stores/${data.storeId}/users/${data.userId}`, {
+      role: data.newRole,
+    }),
+);
+
+export const removeStoreAccessorThunk: any = createApiThunk(
+  "/current-store/remove-accessor",
+  async (data: { storeId: string; userId: string }) =>
+    await api.delete(`/stores/${data.storeId}/users/${data.userId}`),
+);
+
 const initialState = {
   data: {
     currentStore: {} as StoreDto,
     storeSettings: {} as StoreSettingsDto,
     customerList: [] as CustomerDto[],
+    accessorsList: [] as StoreAccessorDto[],
   },
   status: "idle",
   customerStatus: "idle",
@@ -60,6 +90,10 @@ const initialState = {
   settingsUpdateStatus: "idle",
   logoUploadStatus: "idle",
   qrUploadStatus: "idle",
+  accessorsStatus: "idle",
+  accessorAddStatus: "idle",
+  accessorUpdateStatus: "idle",
+  accessorDeleteStatus: "idle",
   error: null,
 };
 
@@ -135,6 +169,57 @@ const currentStoreSlice = createSlice({
         state.qrUploadStatus = "success";
         state.data.storeSettings.invoicePaymentQrCode =
           action.payload.qrCodeUrl;
+        state.error = null;
+      })
+      .addCase(fetchAccessorsListThunk.pending, (state, action) =>
+        setState(state, action, "accessorsStatus"),
+      )
+      .addCase(fetchAccessorsListThunk.rejected, (state, action) =>
+        setState(state, action, "accessorsStatus"),
+      )
+      .addCase(fetchAccessorsListThunk.fulfilled, (state, action) => {
+        state.accessorsStatus = "success";
+        state.data.accessorsList = action.payload;
+        state.error = null;
+      })
+      .addCase(addStoreAccessorThunk.pending, (state, action) =>
+        setState(state, action, "accessorAddStatus"),
+      )
+      .addCase(addStoreAccessorThunk.rejected, (state, action) =>
+        setState(state, action, "accessorAddStatus"),
+      )
+      .addCase(addStoreAccessorThunk.fulfilled, (state, action) => {
+        state.accessorAddStatus = "success";
+        state.data.accessorsList.push(action.payload);
+        state.error = null;
+      })
+      .addCase(updateStoreAccessorRoleThunk.pending, (state, action) =>
+        setState(state, action, "accessorUpdateStatus"),
+      )
+      .addCase(updateStoreAccessorRoleThunk.rejected, (state, action) =>
+        setState(state, action, "accessorUpdateStatus"),
+      )
+      .addCase(updateStoreAccessorRoleThunk.fulfilled, (state, action) => {
+        state.accessorUpdateStatus = "success";
+        const index = state.data.accessorsList.findIndex(
+          (a) => a.userId === action.payload.userId,
+        );
+        if (index !== -1) {
+          state.data.accessorsList[index].role = action.payload.role;
+        }
+        state.error = null;
+      })
+      .addCase(removeStoreAccessorThunk.pending, (state, action) =>
+        setState(state, action, "accessorDeleteStatus"),
+      )
+      .addCase(removeStoreAccessorThunk.rejected, (state, action) =>
+        setState(state, action, "accessorDeleteStatus"),
+      )
+      .addCase(removeStoreAccessorThunk.fulfilled, (state, action) => {
+        state.accessorDeleteStatus = "success";
+        state.data.accessorsList = state.data.accessorsList.filter(
+          (a) => a.userId !== action.payload.userId,
+        );
         state.error = null;
       });
   },

@@ -25,6 +25,7 @@ export type StoreSettingsDto = {
 
 export type StoreDto = {
   _id: string;
+  role: string;
   name: string;
   owner?: string;
   address?: string;
@@ -38,4 +39,12 @@ export type StoreDto = {
   storeSettingsId?: string;
   createdAt?: Date;
   updatedAt?: Date;
+};
+
+export type StoreAccessorDto = {
+  storeId: string;
+  userId: string;
+  userName: string;
+  email: string;
+  role: string;
 };

@@ -218,7 +218,36 @@ export const getStoreList = asyncHandler(
   async (req: NextRequest, context: MiddlewareContext | undefined) => {
     const { userId } = await context!;
 
-    const storeList = await Store.find({ owner: userId }).select("-accessList");
+    const storeList = await StoreUser.aggregate([
+      {
+        $match: {
+          userId: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $lookup: {
+          from: "stores",
+          localField: "storeId",
+          foreignField: "_id",
+          as: "storeDetails",
+        },
+      },
+      {
+        $unwind: "$storeDetails",
+      },
+      {
+        $project: {
+          _id: "$storeDetails._id",
+          role: 1,
+          name: "$storeDetails.name",
+          businessType: "$storeDetails.businessType",
+          address: "$storeDetails.address",
+          contactEmail: "$storeDetails.contactEmail",
+          contactNo: "$storeDetails.contactNo",
+          createdAt: "$storeDetails.createdAt",
+        },
+      },
+    ]);
 
     if (!storeList) {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to get list");
