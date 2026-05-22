@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  db:
+    image: mongo:7
+    container_name: easeinv
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - easeinv_mongo:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: root
+      MONGO_INITDB_DATABASE: testdb
+
+volumes:
+  easeinv_mongo:
