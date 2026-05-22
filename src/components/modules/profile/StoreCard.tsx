@@ -4,16 +4,11 @@ import { Badge, BadgeVariant } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ConditionalDiv } from "@/components/ui/ConditionalDiv";
 import { cn } from "@/components/utils";
+import { RoleBadgeVarient } from "@/constants/storeUserRole";
 import { StoreDto } from "@/types/dto/storeDto";
 import { formatDateStr } from "@/utils/formatDate";
 import { Dot, MapPin, Settings, Store } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-const RoleBadgeVarient: Record<string, BadgeVariant> = {
-  OWNER: "success",
-  MANAGER: "primary",
-  EMPLOYEE: "info",
-};
 
 export const StoreCard = ({ store }: { store: StoreDto }) => {
   const router = useRouter();

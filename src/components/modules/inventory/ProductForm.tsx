@@ -313,7 +313,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
         </div>
       </div>
 
-      <div className="mt-10 flex items-center gap-3 justify-self-end">
+      <div className="mt-10 flex items-center gap-3 justify-end">
         <Button variant="outline" onClick={() => router.back()}>
           Cancel
         </Button>

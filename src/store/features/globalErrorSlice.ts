@@ -17,7 +17,9 @@ const globalErrorSlice = createSlice({
     setGlobalError: (state, action) => {
       state.data = action.payload;
     },
-    clearGlobalError: () => {},
+    clearGlobalError: (state) => {
+      state.data = {} as GlobalError;
+    },
   },
 });
 

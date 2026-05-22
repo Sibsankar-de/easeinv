@@ -24,6 +24,8 @@ import {
   updateStoreAccessorRoleThunk,
 } from "@/store/features/currentStoreSlice";
 import { StoreAccessorDto } from "@/types/dto/storeDto";
+import { Badge } from "@/components/ui/Badge";
+import { RoleBadgeVarient } from "@/constants/storeUserRole";
 
 const ROLES = [
   { key: "OWNER", value: "Owner" },
@@ -120,11 +122,9 @@ export const AccessControlSettingsComponent = () => {
       {
         header: "Role",
         cell: ({ row }) => (
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold text-center`}
-          >
+          <Badge variant={RoleBadgeVarient[row.original.role]}>
             {row.original.role}
-          </span>
+          </Badge>
         ),
         meta: { className: "text-center" },
       },

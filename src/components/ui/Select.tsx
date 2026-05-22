@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { ChevronDown } from "lucide-react";
 import { KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 import { cn } from "../utils";
+import { Dropdown } from "./Dropdown";
 
 export const Select = ({
   id,
@@ -20,7 +21,6 @@ export const Select = ({
   const [selected, setSelected] = useState<string>(value ?? "");
   const [isFocused, setIsFocused] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
-  const placeholderRef = useRef<HTMLLabelElement | null>(null);
 
   const normalized = options.map((o) =>
     typeof o === "string" ? { key: o, value: o } : o,
@@ -105,33 +105,36 @@ export const Select = ({
       </div>
       {/* dropdown */}
       {open && !disabled && (
-        <ul
-          role="listbox"
-          aria-labelledby={uid}
-          className="absolute left-0 w-full mt-1 bg-white border border-primary rounded-md shadow-md z-50 max-h-56 overflow-auto"
+        <Dropdown
+          openState={open}
+          onClose={() => setOpen(false)}
+          className="mt-2 w-full"
         >
-          {normalized.map((opt) => (
-            <li
-              key={opt.key}
-              role="option"
-              aria-selected={selected === opt.key}
-              tabIndex={0}
-              className={clsx(
-                "px-4 py-2 hover:bg-accent hover:text-white cursor-pointer",
-                selected === opt.key && "font-semibold bg-secondary text-white",
-              )}
-              onClick={() => selectValue(opt.key)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  selectValue(opt.key);
-                }
-              }}
-            >
-              {opt.value}
-            </li>
-          ))}
-        </ul>
+          <ul role="listbox" aria-labelledby={uid}>
+            {normalized.map((opt) => (
+              <li
+                key={opt.key}
+                role="option"
+                aria-selected={selected === opt.key}
+                tabIndex={0}
+                className={clsx(
+                  "px-4 py-2 rounded-md hover:bg-accent hover:text-white cursor-pointer",
+                  selected === opt.key &&
+                    "font-semibold bg-secondary text-white",
+                )}
+                onClick={() => selectValue(opt.key)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    selectValue(opt.key);
+                  }
+                }}
+              >
+                {opt.value}
+              </li>
+            ))}
+          </ul>
+        </Dropdown>
       )}
     </div>
   );

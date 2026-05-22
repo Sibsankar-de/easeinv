@@ -113,7 +113,7 @@ export const addStoreUser = asyncHandler(
     return NextResponse.json(
       new ApiResponse(
         StatusCodes.OK,
-        populated[0] ?? newStoreUser,
+        populated,
         "User added to store successfully.",
       ),
     );
@@ -249,7 +249,7 @@ export const removeStoreUser = asyncHandler(
     return NextResponse.json(
       new ApiResponse(
         StatusCodes.OK,
-        null,
+        { userId: targetUserId },
         "User removed from store successfully.",
       ),
     );
