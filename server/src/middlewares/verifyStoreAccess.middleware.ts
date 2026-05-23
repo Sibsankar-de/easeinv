@@ -3,6 +3,11 @@ import { Store } from "../models/store.model";
 import { StoreUser } from "../models/storeUser.model";
 import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
+import {
+  EmployeeLevelRoles,
+  ManagerLevelRoles,
+  OwnerLevelRoles,
+} from "../constants/userStoreRoles";
 
 export const verifyStoreAccess = (allowed_roles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -36,3 +41,7 @@ export const verifyStoreAccess = (allowed_roles: string[]) => {
     }
   };
 };
+
+export const verifyOwnerLevelAccess = verifyStoreAccess(OwnerLevelRoles);
+export const verifyManagerLevelAccess = verifyStoreAccess(ManagerLevelRoles);
+export const verifyEmployeeLevelAccess = verifyStoreAccess(EmployeeLevelRoles);

@@ -6,26 +6,21 @@ import {
   getInvoiceSummary,
 } from "../controllers/invoice.controller";
 import { verifyAuth } from "../middlewares/auth.middleware";
-import { verifyStoreAccess } from "../middlewares/verifyStoreAccess.middleware";
 import {
-  EmployeeLevelRoles,
-  ManagerLevelRoles,
-} from "../constants/userStoreRoles";
+  verifyEmployeeLevelAccess,
+  verifyManagerLevelAccess,
+} from "../middlewares/verifyStoreAccess.middleware";
 
 const router = Router();
 
 router.use(verifyAuth);
 
-router.get("/:storeId", verifyStoreAccess(EmployeeLevelRoles), searchInvoice);
-router.post("/:storeId", verifyStoreAccess(EmployeeLevelRoles), createInvoice);
-router.get(
-  "/:storeId/summary",
-  verifyStoreAccess(EmployeeLevelRoles),
-  getInvoiceSummary,
-);
+router.get("/:storeId", verifyEmployeeLevelAccess, searchInvoice);
+router.post("/:storeId", verifyEmployeeLevelAccess, createInvoice);
+router.get("/:storeId/summary", verifyEmployeeLevelAccess, getInvoiceSummary);
 router.patch(
   "/:storeId/:invoiceId",
-  verifyStoreAccess(ManagerLevelRoles),
+  verifyManagerLevelAccess,
   updateInvoiceDueAmount,
 );
 

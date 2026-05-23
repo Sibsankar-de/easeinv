@@ -22,10 +22,12 @@ const storeSchema = new Schema(
     businessType: {
       type: String,
       trim: true,
+      default: "",
     },
     address: {
       type: String,
       trim: true,
+      default: "",
     },
     contactNo: {
       type: String,

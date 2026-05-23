@@ -15,11 +15,6 @@ export const fetchCurrentStore: any = createApiThunk(
   async (storeId: string) => await api.get(`/stores/${storeId}`),
 );
 
-export const fetchCustomerList: any = createApiThunk(
-  "/current-store/customers",
-  async (storeId: string) => await api.get(`/stores/${storeId}/customer-list`),
-);
-
 export const updateStoreDetailsThunk: any = createApiThunk(
   "/current-store/update-store-details",
   async (data: { storeId: string; updateData: Partial<StoreDto> }) =>
@@ -81,11 +76,9 @@ const initialState = {
   data: {
     currentStore: {} as StoreDto,
     storeSettings: {} as StoreSettingsDto,
-    customerList: [] as CustomerDto[],
     accessorsList: [] as StoreAccessorDto[],
   },
   status: "idle",
-  customerStatus: "idle",
   storeUpdateStatus: "idle",
   settingsUpdateStatus: "idle",
   logoUploadStatus: "idle",
@@ -109,17 +102,6 @@ const currentStoreSlice = createSlice({
         state.status = "success";
         state.data.currentStore = action.payload;
         state.data.storeSettings = action.payload.storeSettings;
-        state.error = null;
-      })
-      .addCase(fetchCustomerList.pending, (state, action) =>
-        setState(state, action, "customerStatus"),
-      )
-      .addCase(fetchCustomerList.rejected, (state, action) =>
-        setState(state, action, "customerStatus"),
-      )
-      .addCase(fetchCustomerList.fulfilled, (state, action) => {
-        state.customerStatus = "success";
-        state.data.customerList = action.payload;
         state.error = null;
       })
       .addCase(updateStoreDetailsThunk.pending, (state, action) =>

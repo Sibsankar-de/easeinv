@@ -42,14 +42,17 @@ const storeSettingsSchema = new Schema(
     invoiceStoreName: {
       type: String,
       default: "",
+      trim: true,
     },
     invoiceStoreAddress: {
       type: String,
       default: "",
+      trim: true,
     },
     invoiceFooterNote: {
       type: String,
       default: "",
+      trim: true,
     },
     invoiceStoreLogoUrl: {
       type: String,

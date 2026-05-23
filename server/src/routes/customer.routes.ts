@@ -4,28 +4,29 @@ import {
   createCustomer,
   updateCustomer,
   deleteCustomer,
+  getCustomerById,
 } from "../controllers/customer.controller";
 import { verifyAuth } from "../middlewares/auth.middleware";
-import { verifyStoreAccess } from "../middlewares/verifyStoreAccess.middleware";
 import {
-  EmployeeLevelRoles,
-  ManagerLevelRoles,
-} from "../constants/userStoreRoles";
+  verifyEmployeeLevelAccess,
+  verifyManagerLevelAccess,
+} from "../middlewares/verifyStoreAccess.middleware";
 
 const router = Router();
 
 router.use(verifyAuth);
 
-router.get("/:storeId", verifyStoreAccess(EmployeeLevelRoles), getCustomers);
-router.post("/:storeId", verifyStoreAccess(EmployeeLevelRoles), createCustomer);
+router.get("/:storeId", verifyEmployeeLevelAccess, getCustomers);
+router.post("/:storeId", verifyEmployeeLevelAccess, createCustomer);
+router.get("/:storeId/:customerId", verifyEmployeeLevelAccess, getCustomerById);
 router.patch(
   "/:storeId/:customerId",
-  verifyStoreAccess(EmployeeLevelRoles),
+  verifyEmployeeLevelAccess,
   updateCustomer,
 );
 router.delete(
   "/:storeId/:customerId",
-  verifyStoreAccess(ManagerLevelRoles),
+  verifyManagerLevelAccess,
   deleteCustomer,
 );
 

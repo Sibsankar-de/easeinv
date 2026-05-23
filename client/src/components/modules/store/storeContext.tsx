@@ -2,12 +2,10 @@
 
 import {
   fetchCurrentStore,
-  fetchCustomerList,
   selectCurrentStoreState,
 } from "@/store/features/currentStoreSlice";
 import {
   fetchCategoriesThunk,
-  fetchProducts,
   selectProductState,
 } from "@/store/features/productSlice";
 import { useParams } from "next/navigation";
@@ -24,7 +22,6 @@ export const StoreContextProvider = ({
   const params = useParams();
   const storeId = params?.store_id;
   const dispatch = useDispatch();
-  const { customerStatus } = useSelector(selectCurrentStoreState);
   const { status: listStatus, categoryStatus } =
     useSelector(selectProductState);
 

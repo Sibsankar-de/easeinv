@@ -14,125 +14,120 @@ import { cloudinaryFolders } from "../constants/cloudinary.constant";
 import { StoreUser } from "../models/storeUser.model";
 import { userRoles } from "../enums/store.enum";
 
-export const createStore = asyncHandler(
-  async (req: Request, res: Response) => {
-    const userId = req.user?._id;
-    const { name, businessType, address, contactEmail, contactNo } = req.body;
+export const createStore = asyncHandler(async (req: Request, res: Response) => {
+  const userId = req.user?._id;
+  const { name, businessType, address, contactEmail, contactNo } = req.body;
 
-    if (!name)
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Store name is required.");
+  if (!name)
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Store name is required.");
 
-    const store = await Store.create({
-      name,
-      owner: userId,
-      businessType,
-      address,
-      contactEmail,
-      contactNo,
-    });
+  const store = await Store.create({
+    name,
+    owner: userId,
+    businessType,
+    address,
+    contactEmail,
+    contactNo,
+  });
 
-    // create user-store access entry for owner
-    await StoreUser.create({
-      storeId: store._id,
-      userId,
-      role: userRoles.OWNER,
-    });
+  // create user-store access entry for owner
+  await StoreUser.create({
+    storeId: store._id,
+    userId,
+    role: userRoles.OWNER,
+  });
 
-    // create store settings
-    const storeSettings = await StoreSettings.create({
-      storeId: store._id,
-    });
+  // create store settings
+  const storeSettings = await StoreSettings.create({
+    storeId: store._id,
+    invoiceStoreName: store.name,
+    invoiceStoreAddress: store.address,
+  });
 
-    store.settingsId = storeSettings._id as mongoose.Types.ObjectId;
-    await store.save();
+  store.settingsId = storeSettings._id as mongoose.Types.ObjectId;
+  await store.save();
 
-    return res.status(StatusCodes.OK).json(
+  return res
+    .status(StatusCodes.OK)
+    .json(
       new ApiResponse(StatusCodes.OK, store, "Store created successfully!"),
     );
-  },
-);
+});
 
-export const updateStore = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { storeId } = req.params;
-    const updateData = req.body;
+export const updateStore = asyncHandler(async (req: Request, res: Response) => {
+  const { storeId } = req.params;
+  const updateData = req.body;
 
-    if (!updateData.name)
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Store name is required");
+  if (!updateData.name)
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Store name is required");
 
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-    let logoUrl, qrCodeUrl;
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+  let logoUrl, qrCodeUrl;
 
-    if (files) {
-      if (files.logo && files.logo[0]) {
-        const uploadData = await uploadToCloudinary(
-          files.logo[0].buffer,
-          files.logo[0].originalname,
-          cloudinaryFolders.STORE_LOGO,
-        );
-        if (uploadData) logoUrl = uploadData.url;
-      }
-      if (files.qrCode && files.qrCode[0]) {
-        const uploadData = await uploadToCloudinary(
-          files.qrCode[0].buffer,
-          files.qrCode[0].originalname,
-          cloudinaryFolders.PAYMENT_QR,
-        );
-        if (uploadData) qrCodeUrl = uploadData.url;
-      }
-    }
-
-    const updatedStore = await Store.findByIdAndUpdate(
-      storeId,
-      {
-        ...updateData,
-      },
-      { new: true },
-    ).select("-accessList");
-
-    if (logoUrl || qrCodeUrl) {
-      const settingsUpdate: any = {};
-      if (logoUrl) settingsUpdate.invoiceStoreLogoUrl = logoUrl;
-      if (qrCodeUrl) settingsUpdate.invoicePaymentQrCode = qrCodeUrl;
-
-      await StoreSettings.findOneAndUpdate(
-        { storeId },
-        { $set: settingsUpdate },
+  if (files) {
+    if (files.logo && files.logo[0]) {
+      const uploadData = await uploadToCloudinary(
+        files.logo[0].buffer,
+        files.logo[0].originalname,
+        cloudinaryFolders.STORE_LOGO,
       );
+      if (uploadData) logoUrl = uploadData.url;
     }
-
-    return res.status(StatusCodes.OK).json(
-      new ApiResponse(StatusCodes.OK, updatedStore, "Store updated"),
-    );
-  },
-);
-
-export const deleteStore = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { storeId } = req.params;
-
-    const store = await Store.findById(storeId);
-    if (!store) {
-      throw new ApiError(StatusCodes.NOT_FOUND, "Store not found");
+    if (files.qrCode && files.qrCode[0]) {
+      const uploadData = await uploadToCloudinary(
+        files.qrCode[0].buffer,
+        files.qrCode[0].originalname,
+        cloudinaryFolders.PAYMENT_QR,
+      );
+      if (uploadData) qrCodeUrl = uploadData.url;
     }
+  }
 
-    // Delete related data
-    await Promise.all([
-      Store.findByIdAndDelete(storeId),
-      StoreUser.deleteMany({ storeId }),
-      StoreSettings.deleteMany({ storeId }),
-      Product.deleteMany({ storeId }),
-      Customer.deleteMany({ storeId }),
-      Category.deleteMany({ storeId }),
-      // Note: Invoices are usually kept for records, but for a full delete:
-      // Invoice.deleteMany({ storeId }),
-    ]);
+  const updatedStore = await Store.findByIdAndUpdate(
+    storeId,
+    {
+      ...updateData,
+    },
+    { new: true },
+  ).select("-accessList");
 
-    return res.status(StatusCodes.OK).json(
-      new ApiResponse(StatusCodes.OK, null, "Store deleted successfully"),
-    );
-  },
-);
+  if (logoUrl || qrCodeUrl) {
+    const settingsUpdate: any = {};
+    if (logoUrl) settingsUpdate.invoiceStoreLogoUrl = logoUrl;
+    if (qrCodeUrl) settingsUpdate.invoicePaymentQrCode = qrCodeUrl;
+
+    await StoreSettings.findOneAndUpdate({ storeId }, { $set: settingsUpdate });
+  }
+
+  return res
+    .status(StatusCodes.OK)
+    .json(new ApiResponse(StatusCodes.OK, updatedStore, "Store updated"));
+});
+
+export const deleteStore = asyncHandler(async (req: Request, res: Response) => {
+  const { storeId } = req.params;
+
+  const store = await Store.findById(storeId);
+  if (!store) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Store not found");
+  }
+
+  // Delete related data
+  await Promise.all([
+    Store.findByIdAndDelete(storeId),
+    StoreUser.deleteMany({ storeId }),
+    StoreSettings.deleteMany({ storeId }),
+    Product.deleteMany({ storeId }),
+    Customer.deleteMany({ storeId }),
+    Category.deleteMany({ storeId }),
+    // Note: Invoices are usually kept for records, but for a full delete:
+    // Invoice.deleteMany({ storeId }),
+  ]);
+
+  return res
+    .status(StatusCodes.OK)
+    .json(new ApiResponse(StatusCodes.OK, null, "Store deleted successfully"));
+});
 
 const populateStoreSettings = async (store: any) => {
   if (!store.settingsId) return store.toObject();
@@ -160,13 +155,15 @@ export const updateStoreSettings = asyncHandler(
       { new: true },
     );
 
-    return res.status(StatusCodes.OK).json(
-      new ApiResponse(
-        StatusCodes.OK,
-        updatedStoreSettings,
-        "Store settings updated",
-      ),
-    );
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        new ApiResponse(
+          StatusCodes.OK,
+          updatedStoreSettings,
+          "Store settings updated",
+        ),
+      );
   },
 );
 
@@ -190,7 +187,10 @@ export const uploadStoreLogo = asyncHandler(
     );
 
     if (!uploadData) {
-      throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, "Failed to upload logo");
+      throw new ApiError(
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        "Failed to upload logo",
+      );
     }
 
     const logoUrl = uploadData.url;
@@ -205,13 +205,15 @@ export const uploadStoreLogo = asyncHandler(
       { new: true },
     );
 
-    return res.status(StatusCodes.OK).json(
-      new ApiResponse(
-        StatusCodes.OK,
-        { logoUrl },
-        "Logo uploaded successfully!",
-      ),
-    );
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        new ApiResponse(
+          StatusCodes.OK,
+          { logoUrl },
+          "Logo uploaded successfully!",
+        ),
+      );
   },
 );
 
@@ -232,7 +234,10 @@ export const uploadInvoicePaymentQrCode = asyncHandler(
     );
 
     if (!uploadData) {
-      throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, "Failed to upload QR code");
+      throw new ApiError(
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        "Failed to upload QR code",
+      );
     }
 
     const qrCodeUrl = uploadData.url;
@@ -247,13 +252,15 @@ export const uploadInvoicePaymentQrCode = asyncHandler(
       { new: true },
     );
 
-    return res.status(StatusCodes.OK).json(
-      new ApiResponse(
-        StatusCodes.OK,
-        { qrCodeUrl },
-        "QR code uploaded successfully!",
-      ),
-    );
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        new ApiResponse(
+          StatusCodes.OK,
+          { qrCodeUrl },
+          "QR code uploaded successfully!",
+        ),
+      );
   },
 );
 
@@ -296,9 +303,9 @@ export const getStoreList = asyncHandler(
       throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to get list");
     }
 
-    return res.status(StatusCodes.OK).json(
-      new ApiResponse(StatusCodes.OK, storeList, "Stores fetched"),
-    );
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(StatusCodes.OK, storeList, "Stores fetched"));
   },
 );
 
@@ -312,26 +319,30 @@ export const getStoreDetails = asyncHandler(
       throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to get store");
     }
 
-    return res.status(StatusCodes.OK).json(
-      new ApiResponse(
-        StatusCodes.OK,
-        await populateStoreSettings(store),
-        "Store fetched",
-      ),
-    );
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        new ApiResponse(
+          StatusCodes.OK,
+          await populateStoreSettings(store),
+          "Store fetched",
+        ),
+      );
   },
 );
 
 export const getProductsByStore = asyncHandler(
   async (req: Request, res: Response) => {
     const { storeId } = req.params;
-    const page = parseInt(req.query.page as string || "1");
-    const limit = parseInt(req.query.limit as string || "20");
-    const query = req.query.query as string || "";
-    const sortBy = req.query.sortBy as string || "createdAt";
+    const page = parseInt((req.query.page as string) || "1");
+    const limit = parseInt((req.query.limit as string) || "20");
+    const query = (req.query.query as string) || "";
+    const sortBy = (req.query.sortBy as string) || "createdAt";
     const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
 
-    const match: any = { storeId: new mongoose.Types.ObjectId(storeId as string) };
+    const match: any = {
+      storeId: new mongoose.Types.ObjectId(storeId as string),
+    };
 
     if (query) {
       const safeTerm = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -377,21 +388,9 @@ export const getProductsByStore = asyncHandler(
       throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to get list");
     }
 
-    return res.status(StatusCodes.OK).json(
-      new ApiResponse(StatusCodes.OK, productList, "Products fetched"),
-    );
-  },
-);
-
-export const getCustomerList = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { storeId } = req.params;
-
-    const customerList = await Customer.find({ storeId });
-
-    return res.status(StatusCodes.OK).json(
-      new ApiResponse(StatusCodes.OK, customerList, "Customer details fetched"),
-    );
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(StatusCodes.OK, productList, "Products fetched"));
   },
 );
 
@@ -412,11 +411,14 @@ export const createCategory = asyncHandler(
       );
     }
 
-    const category = await Category.create({ name, storeId: storeId as string });
+    const category = await Category.create({
+      name,
+      storeId: storeId as string,
+    });
 
-    return res.status(StatusCodes.OK).json(
-      new ApiResponse(StatusCodes.OK, category, "Category created"),
-    );
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(StatusCodes.OK, category, "Category created"));
   },
 );
 
@@ -428,8 +430,8 @@ export const getCategoriesByStore = asyncHandler(
       "_id name storeId",
     );
 
-    return res.status(StatusCodes.OK).json(
-      new ApiResponse(StatusCodes.OK, categories, "Categories fetched"),
-    );
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(StatusCodes.OK, categories, "Categories fetched"));
   },
 );

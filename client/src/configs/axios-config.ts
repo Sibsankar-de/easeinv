@@ -1,10 +1,9 @@
 import { setGlobalError } from "@/store/features/globalErrorSlice";
 import store from "@/store/store";
 import axios from "axios";
-import { toast } from "react-toastify";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URI || process.env.NEXT_APP_API_URI || "http://localhost:4000/api/v1",
+  baseURL: process.env.NEXT_PUBLIC_API_URI,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

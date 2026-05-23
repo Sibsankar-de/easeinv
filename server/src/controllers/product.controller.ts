@@ -8,66 +8,66 @@ import { Category } from "../models/category.model";
 import { generateGTIN } from "../utils/gtin-generator";
 import mongoose from "mongoose";
 
-export const getProducts = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { storeId } = req.params;
-    const page = parseInt((req.query.page as string) || "1");
-    const limit = parseInt((req.query.limit as string) || "20");
-    const query = (req.query.query as string) || "";
-    const sortBy = (req.query.sortBy as string) || "createdAt";
-    const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
+export const getProducts = asyncHandler(async (req: Request, res: Response) => {
+  const { storeId } = req.params;
+  const page = parseInt((req.query.page as string) || "1");
+  const limit = parseInt((req.query.limit as string) || "20");
+  const query = (req.query.query as string) || "";
+  const sortBy = (req.query.sortBy as string) || "createdAt";
+  const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
 
-    const match: any = { storeId: new mongoose.Types.ObjectId(storeId as string) };
+  const match: any = {
+    storeId: new mongoose.Types.ObjectId(storeId as string),
+  };
 
-    if (query) {
-      const safeTerm = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const regex = new RegExp(`^${safeTerm}`, "i");
-      match.$or = [
-        { name: { $regex: regex } },
-        { sku: { $regex: regex } },
-        { gtin: { $regex: regex } },
-      ];
-    }
+  if (query) {
+    const safeTerm = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`^${safeTerm}`, "i");
+    match.$or = [
+      { name: { $regex: regex } },
+      { sku: { $regex: regex } },
+      { gtin: { $regex: regex } },
+    ];
+  }
 
-    const productList = await (Product as any).aggregatePaginate(
-      Product.aggregate([
-        {
-          $match: match,
-        },
-        {
-          $lookup: {
-            from: "categories",
-            let: { catIds: "$categories" },
-            pipeline: [
-              {
-                $match: {
-                  $expr: { $in: ["$_id", "$$catIds"] },
-                },
-              },
-              {
-                $project: { _id: 1, name: 1, storeId: 1 },
-              },
-            ],
-            as: "categories",
-          },
-        },
-      ]),
+  const productList = await (Product as any).aggregatePaginate(
+    Product.aggregate([
       {
-        page,
-        limit,
-        sort: { [sortBy]: sortOrder },
+        $match: match,
       },
-    );
+      {
+        $lookup: {
+          from: "categories",
+          let: { catIds: "$categories" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $in: ["$_id", "$$catIds"] },
+              },
+            },
+            {
+              $project: { _id: 1, name: 1, storeId: 1 },
+            },
+          ],
+          as: "categories",
+        },
+      },
+    ]),
+    {
+      page,
+      limit,
+      sort: { [sortBy]: sortOrder },
+    },
+  );
 
-    if (!productList) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to get list");
-    }
+  if (!productList) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to get list");
+  }
 
-    return res
-      .status(StatusCodes.OK)
-      .json(new ApiResponse(StatusCodes.OK, productList, "Products fetched"));
-  },
-);
+  return res
+    .status(StatusCodes.OK)
+    .json(new ApiResponse(StatusCodes.OK, productList, "Products fetched"));
+});
 
 export const createProduct = asyncHandler(
   async (req: Request, res: Response) => {
@@ -134,7 +134,13 @@ export const createProduct = asyncHandler(
 
     return res
       .status(StatusCodes.OK)
-      .json(new ApiResponse(StatusCodes.OK, productWithCategories, "Product created"));
+      .json(
+        new ApiResponse(
+          StatusCodes.OK,
+          productWithCategories,
+          "Product created",
+        ),
+      );
   },
 );
 
@@ -193,7 +199,13 @@ export const updateProduct = asyncHandler(
 
     return res
       .status(StatusCodes.OK)
-      .json(new ApiResponse(StatusCodes.OK, productWithCategories, "Product updated"));
+      .json(
+        new ApiResponse(
+          StatusCodes.OK,
+          productWithCategories,
+          "Product updated",
+        ),
+      );
   },
 );
 
@@ -209,7 +221,7 @@ const getOrCreateCategory = async (categoryName: string, storeId: string) => {
   return category._id;
 };
 
-export const getProduct = asyncHandler(
+export const getProductById = asyncHandler(
   async (req: Request, res: Response) => {
     const { productId } = req.params;
     const product = await Product.findById(productId).populate([
@@ -249,7 +261,6 @@ export const searchProducts = asyncHandler(
     if (!storeId)
       throw new ApiError(StatusCodes.BAD_REQUEST, "storeId is required");
 
-    // 1. Prepare Input
     const lowerTerm = decodeURIComponent(query).toLowerCase();
     const safeTerm = lowerTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 

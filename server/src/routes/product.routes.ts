@@ -4,29 +4,22 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  getProductById,
 } from "../controllers/product.controller";
 import { verifyAuth } from "../middlewares/auth.middleware";
-import { verifyStoreAccess } from "../middlewares/verifyStoreAccess.middleware";
 import {
-  EmployeeLevelRoles,
-  ManagerLevelRoles,
-} from "../constants/userStoreRoles";
+  verifyEmployeeLevelAccess,
+  verifyManagerLevelAccess,
+} from "../middlewares/verifyStoreAccess.middleware";
 
 const router = Router();
 
 router.use(verifyAuth);
 
-router.get("/:storeId", verifyStoreAccess(EmployeeLevelRoles), getProducts);
-router.post("/:storeId", verifyStoreAccess(ManagerLevelRoles), createProduct);
-router.patch(
-  "/:storeId/:productId",
-  verifyStoreAccess(ManagerLevelRoles),
-  updateProduct,
-);
-router.delete(
-  "/:storeId/:productId",
-  verifyStoreAccess(ManagerLevelRoles),
-  deleteProduct,
-);
+router.get("/:storeId", verifyEmployeeLevelAccess, getProducts);
+router.post("/:storeId", verifyManagerLevelAccess, createProduct);
+router.get("/:storeId/:productId", verifyManagerLevelAccess, getProductById);
+router.patch("/:storeId/:productId", verifyManagerLevelAccess, updateProduct);
+router.delete("/:storeId/:productId", verifyManagerLevelAccess, deleteProduct);
 
 export default router;

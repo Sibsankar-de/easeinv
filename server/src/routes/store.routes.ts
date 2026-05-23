@@ -5,7 +5,6 @@ import {
   getStoreDetails,
   updateStore,
   deleteStore,
-  getCustomerList,
   updateStoreSettings,
   uploadStoreLogo,
   uploadInvoicePaymentQrCode,
@@ -20,6 +19,11 @@ import {
 } from "../controllers/store-access.controller";
 import { verifyAuth } from "../middlewares/auth.middleware";
 import { upload } from "../middlewares/multer.middleware";
+import {
+  verifyEmployeeLevelAccess,
+  verifyManagerLevelAccess,
+  verifyOwnerLevelAccess,
+} from "../middlewares/verifyStoreAccess.middleware";
 
 const router = Router();
 
@@ -27,29 +31,55 @@ router.use(verifyAuth);
 
 router.post("/create", createStore);
 router.get("/list", getStoreList);
-router.get("/:storeId", getStoreDetails);
+router.get("/:storeId", verifyEmployeeLevelAccess, getStoreDetails);
 router.patch(
   "/:storeId",
+  verifyManagerLevelAccess,
   upload.fields([
     { name: "logo", maxCount: 1 },
     { name: "qrCode", maxCount: 1 },
   ]),
   updateStore,
 );
-router.delete("/:storeId", deleteStore);
+router.delete("/:storeId", verifyOwnerLevelAccess, deleteStore);
 
 // Store-specific extra routes
-router.get("/:storeId/customer-list", getCustomerList);
-router.post("/:storeId/update-settings", updateStoreSettings);
-router.post("/:storeId/upload-logo", upload.single("storeLogo"), uploadStoreLogo);
-router.post("/:storeId/upload-qr", upload.single("qrCode"), uploadInvoicePaymentQrCode);
-router.get("/:storeId/category-list", getCategoriesByStore);
-router.post("/:storeId/add-category", createCategory);
+router.post(
+  "/:storeId/update-settings",
+  verifyManagerLevelAccess,
+  updateStoreSettings,
+);
+router.post(
+  "/:storeId/upload-logo",
+  verifyManagerLevelAccess,
+  upload.single("storeLogo"),
+  uploadStoreLogo,
+);
+router.post(
+  "/:storeId/upload-qr",
+  verifyManagerLevelAccess,
+  upload.single("qrCode"),
+  uploadInvoicePaymentQrCode,
+);
+router.get(
+  "/:storeId/category-list",
+  verifyEmployeeLevelAccess,
+  getCategoriesByStore,
+);
+router.post("/:storeId/add-category", verifyManagerLevelAccess, createCategory);
 
 // Store access routes
-router.get("/:storeId/users", getStoreUsers);
-router.post("/:storeId/users", addStoreUser);
-router.patch("/:storeId/users/:userId", updateStoreUserRole);
-router.delete("/:storeId/users/:userId", removeStoreUser);
+router.get("/:storeId/users", verifyManagerLevelAccess, getStoreUsers);
+router.post("/:storeId/users", verifyManagerLevelAccess, addStoreUser);
+router.patch(
+  "/:storeId/users/:userId",
+  verifyManagerLevelAccess,
+  updateStoreUserRole,
+);
+router.delete(
+  "/:storeId/users/:userId",
+  verifyManagerLevelAccess,
+  removeStoreUser,
+);
 
 export default router;
