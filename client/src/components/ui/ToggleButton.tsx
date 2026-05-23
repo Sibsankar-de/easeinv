@@ -1,23 +1,23 @@
 "use client";
 
-import React from "react";
+import React, { useId } from "react";
 
 interface ToggleButtonProps {
   isActive?: boolean;
   onChange?: (isActive: boolean) => void;
   disabled?: boolean;
-  name?: string; // radios need a name to group them
+  name?: string;
   id?: string;
 }
 
-export const ToggleButton: React.FC<ToggleButtonProps> = ({
+export const ToggleButton = ({
   isActive = false,
   onChange,
   disabled = false,
   name = "",
   id,
-}) => {
-  id = id || `toogle-${Math.round(Math.random() * 100)}`;
+}: ToggleButtonProps) => {
+  id = id || useId();
   return (
     <label
       htmlFor={id}

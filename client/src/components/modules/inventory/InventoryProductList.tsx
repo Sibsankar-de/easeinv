@@ -48,8 +48,8 @@ const ProductActions = ({ product }: { product: ProductDto }) => {
         <Edit2 className="w-4 h-4" />
       </Button>
       <Button
-        variant="outline"
-        className="p-2 text-red-400"
+        variant="danger"
+        className="p-2"
         tooltip="Delete product"
         onClick={() => setIsDeleteOpen(true)}
       >

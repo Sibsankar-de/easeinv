@@ -80,8 +80,8 @@ export function CustomerDeleteModal({
       </div>
       <div>
         <Button
-          variant="outline"
-          className="w-full justify-center bg-gray-200 text-red-400 border-2 border-red-200 hover:bg-red-100"
+          variant="danger"
+          className="w-full justify-center"
           onClick={handleDelete}
           disabled={isDeleting || confInput !== confirmationLine}
           loading={isDeleting}

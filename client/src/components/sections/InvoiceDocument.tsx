@@ -176,25 +176,29 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
             <p className="mb-0.5 text-[9px] font-semibold uppercase tracking-wide text-gray-500">
               Bill To
             </p>
-            <ConditionalDiv condition={customerDetails?.name}>
-              <p className="font-semibold text-gray-950 wrap-break-word">
-                {customerDetails?.name}
-              </p>
+            <ConditionalDiv
+              condition={customerDetails?.name}
+              className="font-semibold text-gray-950 wrap-break-word"
+            >
+              {customerDetails?.name}
             </ConditionalDiv>
-            <ConditionalDiv condition={customerDetails?.phoneNumber}>
-              <p className="text-gray-700 wrap-break-word">
-                {customerDetails?.phoneNumber}
-              </p>
+            <ConditionalDiv
+              condition={customerDetails?.phoneNumber}
+              className="text-gray-700 wrap-break-word"
+            >
+              {customerDetails?.phoneNumber}
             </ConditionalDiv>
-            <ConditionalDiv condition={customerDetails?.email}>
-              <p className="text-gray-700 wrap-break-word">
-                {customerDetails?.email}
-              </p>
+            <ConditionalDiv
+              condition={customerDetails?.email}
+              className="text-gray-700 wrap-break-word"
+            >
+              {customerDetails?.email}
             </ConditionalDiv>
-            <ConditionalDiv condition={customerDetails?.address}>
-              <p className="whitespace-pre-line text-gray-700 wrap-break-word">
-                {customerDetails?.address}
-              </p>
+            <ConditionalDiv
+              condition={customerDetails?.address}
+              className="whitespace-pre-line text-gray-700 wrap-break-word"
+            >
+              {customerDetails?.address}
             </ConditionalDiv>
           </ConditionalDiv>
 
@@ -326,5 +330,3 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
     );
   },
 );
-
-InvoiceDocument.displayName = "InvoiceDocument";

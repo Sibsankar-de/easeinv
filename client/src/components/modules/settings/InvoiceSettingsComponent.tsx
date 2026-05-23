@@ -20,6 +20,7 @@ import { toast } from "react-toastify";
 import { FormSkeleton } from "@/components/ui/Skeleton";
 import { useNavContext } from "@/contexts/NavContext";
 import { NavActionButton } from "@/components/modules/navbar/navbar";
+import { LineToggle } from "@/components/ui/LineToggle";
 
 export const InvoiceSettingsComponent = () => {
   const { storeId } = useStoreNavigation();
@@ -158,16 +159,16 @@ export const InvoiceSettingsComponent = () => {
           />
           <p className="text-xs text-gray-500">Example: INV-1001, INV-1002</p>
         </div>
-        <div className="flex justify-between items-center gap-6">
-          <Label htmlFor="roundup-total" className="mb-0">
-            <p>Roundup Total</p>
-            <p className="text-sm text-gray-600">eg: 4.5 = 5</p>
-          </Label>
-          <ToggleButton
+        <div>
+          <LineToggle
             id="roundup-total"
-            isActive={formData.roundupInvoiceTotal}
-            disabled={isUpdating}
-            onChange={(e) => handleFormDataChange("roundupInvoiceTotal", e)}
+            title="Roundup Total"
+            subTitle="eg: 4.5 = 5"
+            toggleProps={{
+              isActive: formData.roundupInvoiceTotal,
+              disabled: isUpdating,
+              onChange: (e) => handleFormDataChange("roundupInvoiceTotal", e),
+            }}
           />
         </div>
       </PrimaryBox>

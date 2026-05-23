@@ -28,7 +28,6 @@ import { Badge } from "@/components/ui/Badge";
 import { RoleBadgeVarient } from "@/constants/storeUserRole";
 
 const ROLES = [
-  { key: "OWNER", value: "Owner" },
   { key: "MANAGER", value: "Manager" },
   { key: "EMPLOYEE", value: "Employee" },
 ];
@@ -50,13 +49,13 @@ const StoreUserActions = ({ row }: { row: StoreAccessorDto }) => {
         <Edit2 className="w-4 h-4 text-gray-500" />
       </Button>
       <Button
-        variant="outline"
+        variant="danger"
         className="p-2"
         tooltip="Remove access"
         disabled={isOwner}
         onClick={() => setDeleteOpen(true)}
       >
-        <Trash2 className="w-4 h-4 text-red-500" />
+        <Trash2 className="w-4 h-4" />
       </Button>
 
       <UserRoleEditModal
@@ -380,8 +379,8 @@ const UserDeleteModal = ({
           Cancel
         </Button>
         <Button
-          variant="outline"
-          className="text-red-400"
+          variant="danger"
+          // className="text-red-400"
           loading={isSubmitting}
           disabled={isSubmitting}
           onClick={handleDeleteUser}

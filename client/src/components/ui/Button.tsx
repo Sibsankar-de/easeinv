@@ -13,7 +13,14 @@ export interface ButtonType extends React.ComponentProps<"button"> {
   className?: string;
   id?: string;
   onClick?: (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
-  variant?: "nav" | "primary" | "none" | "secondary" | "outline" | "dark";
+  variant?:
+    | "nav"
+    | "primary"
+    | "none"
+    | "secondary"
+    | "outline"
+    | "danger"
+    | "dark";
   disabled?: boolean;
   loading?: boolean;
   tooltip?: string;
@@ -38,6 +45,7 @@ export const Button = ({
     primary: "bg-primary text-primary-foreground hover:bg-primary/90",
     outline:
       "border border-border bg-background text-foreground hover:bg-accent/50 hover:text-accent-foreground",
+    danger: "text-red-400 border border-border bg-gray-100 hover:bg-red-100",
     secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
     dark: "bg-[#353535] text-white hover:bg-gray-800",
     none: "hover:brightness-95",

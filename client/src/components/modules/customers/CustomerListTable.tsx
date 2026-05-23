@@ -33,13 +33,15 @@ const CustomerActions = ({ customer }: { customer: CustomerDto }) => {
       <Button
         variant="outline"
         className="p-2"
+        tooltip="View customer"
         onClick={() => navigate(`/customers/${customer._id}`)}
       >
         <Eye className="w-4 h-4" />
       </Button>
       <Button
-        variant="outline"
-        className="p-2 text-red-600"
+        variant="danger"
+        className="p-2"
+        tooltip="Remove customer"
         onClick={() => setIsDeleteOpen(true)}
       >
         <Trash2 className="w-4 h-4" />

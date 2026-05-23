@@ -16,6 +16,7 @@ import { ProductUnitAddSection } from "./ProductUnitAddSection";
 import { FormSkeleton } from "@/components/ui/Skeleton";
 import { useNavContext } from "@/contexts/NavContext";
 import { NavActionButton } from "@/components/modules/navbar/navbar";
+import { LineToggle } from "@/components/ui/LineToggle";
 
 export const InventorySettingsComponent = () => {
   const { storeId } = useStoreNavigation();
@@ -88,23 +89,18 @@ export const InventorySettingsComponent = () => {
     <div className="space-y-6">
       <PrimaryBox>
         <div className="space-y-6">
-          <div className="">
-            <div className="flex justify-between items-center gap-6">
-              <Label htmlFor="stock-tracking" className="mb-0">
-                <p>Enable Stock tracking</p>
-                <p className="text-sm text-gray-600">
-                  It will track your stock.
-                </p>
-              </Label>
-              <ToggleButton
-                id="stock-tracking"
-                isActive={formData.enableInventoryTracking}
-                disabled={isUpdating}
-                onChange={(e) =>
-                  handleFormDataChange("enableInventoryTracking", e)
-                }
-              />
-            </div>
+          <div>
+            <LineToggle
+              id="stock-tracking"
+              title="Enable Stock tracking"
+              subTitle="It will track your stock."
+              toggleProps={{
+                isActive: formData.enableInventoryTracking,
+                disabled: isUpdating,
+                onChange: (e) =>
+                  handleFormDataChange("enableInventoryTracking", e),
+              }}
+            />
           </div>
           <div>
             <Label>Add custom Units</Label>
