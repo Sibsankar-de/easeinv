@@ -25,7 +25,7 @@ export const verifyAuth = async (
         accessToken,
         env.ACCESS_TOKEN_SECRET as string,
       );
-    } catch (error) {
+    } catch (_error) {
       if (refreshToken) {
         // Attempt to refresh
         try {
@@ -60,7 +60,7 @@ export const verifyAuth = async (
             newAccessToken,
             env.ACCESS_TOKEN_SECRET as string,
           );
-        } catch (refreshError) {
+        } catch (_refreshError) {
           throw new ApiError(StatusCodes.UNAUTHORIZED, "Session expired");
         }
       } else {

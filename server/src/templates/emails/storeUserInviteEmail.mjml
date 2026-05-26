@@ -1,0 +1,137 @@
+<mjml>
+  <mj-head>
+    <mj-title>{{storeName}} Invitation</mj-title>
+
+    <mj-attributes>
+      <mj-all font-family="Inter, Arial, sans-serif" />
+      <mj-text color="#444" font-size="14px" line-height="1.4" padding="4px 0" />
+      <mj-section padding="0" />
+    </mj-attributes>
+  </mj-head>
+
+  <mj-body background-color="#f5f7fb">
+
+
+    <!-- HERO -->
+    <mj-section background-color="#4f39f6" padding="20px 24px">
+      <mj-column>
+        <mj-text color="#ffffff" font-size="20px" font-weight="600" padding="0 0 4px">
+          Invitation to join {{storeName}}
+        </mj-text>
+
+        <mj-text color="#e0dcff" font-size="13px" padding="0">
+          You've been invited to collaborate.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- BODY -->
+    <mj-section background-color="#ffffff" padding="22px 24px">
+      <mj-column>
+
+        <mj-text>
+          Hi <strong>{{recipientName}}</strong>,
+        </mj-text>
+
+        <mj-text>
+          Join <strong>{{storeName}}</strong> on EaseInv.
+        </mj-text>
+
+        <!-- CARD -->
+        <mj-section background-color="#f8f9ff" padding="14px" border="1px solid #ecebff" border-radius="6px">
+          <mj-column>
+
+            <mj-text font-size="12px" color="#777" padding="0">
+              Store
+            </mj-text>
+            <mj-text font-size="15px" font-weight="600" padding="0 0 6px">
+              {{storeName}}
+            </mj-text>
+
+            <mj-divider border-color="#ecebff" padding="6px 0" />
+
+            <mj-text font-size="12px" color="#777" padding="0">
+              Role
+            </mj-text>
+            <mj-text font-size="13px" color="#4f39f6" font-weight="600" padding="0 0 6px">
+              {{recipientRole}}
+            </mj-text>
+
+            <mj-divider border-color="#ecebff" padding="6px 0" />
+
+            <mj-text font-size="12px" color="#777" padding="0">
+              Email
+            </mj-text>
+            <mj-text font-size="13px" padding="0">
+              {{recipientEmail}}
+            </mj-text>
+
+          </mj-column>
+        </mj-section>
+
+        <!-- CTA -->
+        <mj-button
+          background-color="#4f39f6"
+          color="#ffffff"
+          href="{{joinLink}}"
+          font-size="13px"
+          font-weight="600"
+          border-radius="6px"
+          padding="18px 0"
+        >
+          Accept Invitation
+        </mj-button>
+
+        <mj-divider border-color="#eee" padding="10px 0" />
+
+        <!-- FALLBACK -->
+        <mj-text font-size="11px" color="#888" padding="0">
+          Or open this link:
+        </mj-text>
+
+        <mj-text font-size="11px" color="#4f39f6" padding="0">
+          {{joinLink}}
+        </mj-text>
+
+        <!-- SIGNOFF -->
+        <mj-text font-size="12px">
+          If not expected, you can ignore this email.
+        </mj-text>
+
+      </mj-column>
+    </mj-section>
+
+    <!-- ================= FOOTER (REUSABLE) ================= -->
+    <mj-section background-color="#ffffff" padding="20px 24px">
+      <mj-column>
+
+        <!-- LOGO -->
+        <mj-image 
+          src="http://localhost:3000/easeinv-logo-full.png"
+          alt="EaseInv"
+          width="90px"
+          align="left"
+          padding="0 0 8px"
+        />
+
+        <!-- LINKS -->
+        <mj-text font-size="12px" color="#777" padding="0 0 6px">
+          <a href="https://easeinv.com/about" style="color:#777; text-decoration:none;">About</a> &nbsp;•&nbsp;
+          <a href="https://easeinv.com/contact" style="color:#777; text-decoration:none;">Contact</a> &nbsp;•&nbsp;
+          <a href="https://easeinv.com/privacy" style="color:#777; text-decoration:none;">Privacy</a>
+        </mj-text>
+
+        <!-- META -->
+        <mj-text font-size="11px" color="#aaa" padding="0">
+          © 2026 EaseInv. All rights reserved.
+        </mj-text>
+
+        <mj-text font-size="11px" color="#aaa" padding="0">
+          Sent to {{recipientEmail}}
+        </mj-text>
+
+      </mj-column>
+    </mj-section>
+
+  </mj-body>
+</mjml>

@@ -27,7 +27,7 @@ export const generateAccessAndRefrehToken = async (
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
     return { accessToken, refreshToken };
-  } catch (error) {
+  } catch (_error) {
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,
       "Internal error on generating tokens",
@@ -90,7 +90,7 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
 
 // logout user
 export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
-  const user = await User.findByIdAndUpdate(
+  await User.findByIdAndUpdate(
     req.user?._id,
     {
       $set: {

@@ -108,7 +108,7 @@ export const createProduct = asyncHandler(
         "Price per quantity is required.",
       );
 
-    let categoryIds: string[] = [];
+    const categoryIds: string[] = [];
     if (categories && categories.length > 0) {
       for (const category of categories) {
         const categoryId = await getOrCreateCategory(category?.name, storeId);
@@ -174,7 +174,7 @@ export const updateProduct = asyncHandler(
     )
       throw new ApiError(StatusCodes.BAD_REQUEST, "All fields are required.");
 
-    let categoryIds: string[] = [];
+    const categoryIds: string[] = [];
     if (categories && categories.length > 0) {
       for (const category of categories) {
         const categoryId = await getOrCreateCategory(category?.name, storeId);
