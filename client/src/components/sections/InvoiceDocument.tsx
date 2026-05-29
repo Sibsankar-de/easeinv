@@ -24,8 +24,8 @@ type DetailLineProps = {
 const hasValue = (value: unknown) =>
   value !== undefined && value !== null && value !== "";
 
-const formatAmount = (value?: number) =>
-  `₹${Number(value || 0).toLocaleString("en-IN", {
+const formatAmount = (value?: number, currencySymbol = "₹") =>
+  `${currencySymbol}${Number(value || 0).toLocaleString("en-IN", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   })}`;
@@ -47,8 +47,11 @@ const DetailLine = ({ label, value, className }: DetailLineProps) => {
 export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
   ({ invoice, pageSize = "80mm", className, ...props }, ref) => {
     const {
-      data: { currentStore, storeSettings },
+      data: { currentStore, storeSettings, currencySymbol },
     } = useSelector(selectCurrentStoreState);
+
+    const formatAmountWithCurrency = (value?: number) =>
+      formatAmount(value, currencySymbol);
 
     const customerDetails = invoice.customerDetails;
     const bankDetails = storeSettings?.invoiceBankDetails;
@@ -208,10 +211,10 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
             <p className="mb-0.5 text-[9px] font-semibold uppercase tracking-wide text-gray-500">
               Payment Summary
             </p>
-            <DetailLine label="Paid" value={formatAmount(invoice.paidAmount)} />
+            <DetailLine label="Paid" value={formatAmountWithCurrency(invoice.paidAmount)} />
             <DetailLine
               label="Due"
-              value={formatAmount(invoice.dueAmount)}
+              value={formatAmountWithCurrency(invoice.dueAmount)}
               className={invoice.dueAmount > 0 ? "text-red-600" : undefined}
             />
           </div>
@@ -245,7 +248,7 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
                     </span>
                   </td>
                   <td className="py-1.5 pl-2 text-right align-top font-medium">
-                    {formatAmount(item.totalPrice)}
+                    {formatAmountWithCurrency(item.totalPrice)}
                   </td>
                 </tr>
               ))}
@@ -257,23 +260,23 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
           <div className="ml-auto space-y-0.5">
             <DetailLine
               label="Subtotal"
-              value={formatAmount(invoice.subTotal)}
+              value={formatAmountWithCurrency(invoice.subTotal)}
             />
             <ConditionalDiv condition={Number(invoice.discountAmount || 0) > 0}>
               <DetailLine
                 label="Discount"
-                value={`-${formatAmount(invoice.discountAmount)}`}
+                value={`-${formatAmountWithCurrency(invoice.discountAmount)}`}
               />
             </ConditionalDiv>
             <ConditionalDiv condition={Number(invoice.taxRate || 0) > 0}>
               <DetailLine
                 label={`Tax (${invoice.taxRate}%)`}
-                value={formatAmount(invoice.taxAmount)}
+                value={formatAmountWithCurrency(invoice.taxAmount)}
               />
             </ConditionalDiv>
             <div className="mt-1.5 flex justify-between gap-3 border-t border-gray-300 pt-1.5 text-sm font-bold">
               <span>Total</span>
-              <span className="text-right">{formatAmount(invoice.total)}</span>
+              <span className="text-right">{formatAmountWithCurrency(invoice.total)}</span>
             </div>
           </div>
         </section>

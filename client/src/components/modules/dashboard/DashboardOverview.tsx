@@ -18,12 +18,19 @@ import { CategorySalesPieChart } from "@/components/charts/DashboardCategorySale
 import { HorizontalCurrencyBarChart } from "@/components/charts/DashboardHorizontalCurrencyBarChart";
 import { SalesTrendAreaChart } from "@/components/charts/DashboardSalesTrendAreaChart";
 import { useDashboardAnalytics } from "@/hooks/use-dashboard-analytics";
-import { formatCurrency, formatNumber } from "@/utils/dashboard-formatters";
+import { formatCurrency, formatNumber } from "@/utils/currency-formatters";
 import { analyticsLinks } from "@/constants/dashboard";
+import { useSelector } from "react-redux";
+import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 
 export const DashboardOverview = () => {
   const { navigate } = useStoreNavigation();
   const { data, period, isLoading, setPeriod } = useDashboardAnalytics();
+  const {
+    data: { currentStore },
+  } = useSelector(selectCurrentStoreState);
+  const currencyCode = currentStore?.currencyCode;
+
   const hasAnalytics =
     data.kpis.totalInvoices > 0 ||
     data.salesTrend.length > 0 ||
@@ -45,14 +52,14 @@ export const DashboardOverview = () => {
           <MetricGrid>
             <MetricCard
               label="Total revenue"
-              value={formatCurrency(data.kpis.totalRevenue)}
+              value={formatCurrency(data.kpis.totalRevenue, currencyCode)}
               helper={`${formatNumber(data.kpis.totalInvoices)} invoices`}
               icon={BadgeIndianRupee}
             />
             <MetricCard
               label="Paid amount"
-              value={formatCurrency(data.kpis.totalPaid)}
-              helper={`${formatCurrency(data.kpis.totalDue)} pending`}
+              value={formatCurrency(data.kpis.totalPaid, currencyCode)}
+              helper={`${formatCurrency(data.kpis.totalDue, currencyCode)} pending`}
               icon={CreditCard}
               tone="success"
             />
@@ -65,7 +72,7 @@ export const DashboardOverview = () => {
             />
             <MetricCard
               label="Total profit"
-              value={formatCurrency(data.kpis.totalProfit)}
+              value={formatCurrency(data.kpis.totalProfit, currencyCode)}
               helper={`${formatNumber(data.kpis.totalCustomers)} customers`}
               icon={ChartNoAxesCombined}
               tone="warning"
@@ -80,14 +87,20 @@ export const DashboardOverview = () => {
               description="Revenue, paid collection, and due movement"
               className="xl:col-span-2"
             >
-              <SalesTrendAreaChart data={data.salesTrend} />
+              <SalesTrendAreaChart
+                data={data.salesTrend}
+                currencyCode={currencyCode}
+              />
             </ChartCard>
 
             <ChartCard
               title="Category sales"
               description="Revenue split by product category"
             >
-              <CategorySalesPieChart data={data.categorySales} />
+              <CategorySalesPieChart
+                data={data.categorySales}
+                currencyCode={currencyCode}
+              />
             </ChartCard>
           </div>
 
@@ -101,6 +114,7 @@ export const DashboardOverview = () => {
                 dataKey="revenue"
                 name="Revenue"
                 color="var(--chart-2)"
+                currencyCode={currencyCode}
               />
             </ChartCard>
 
@@ -109,7 +123,10 @@ export const DashboardOverview = () => {
               description="Latest billing activity in this store"
               heightClassName="h-auto"
             >
-              <RecentInvoicesList invoices={data.recentInvoices} />
+              <RecentInvoicesList
+                invoices={data.recentInvoices}
+                currencyCode={currencyCode}
+              />
             </ChartCard>
           </div>
 

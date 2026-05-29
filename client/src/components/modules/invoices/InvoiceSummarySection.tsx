@@ -11,6 +11,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { MetricCard, MetricGrid } from "@/components/ui/MetricCard";
 import { ClockAlert, IndianRupee, BookOpenCheck } from "lucide-react";
+import { compactCurrency } from "@/utils/currency-formatters";
+import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 
 export const InvoiceSummarySection = () => {
   const { storeId } = useStoreNavigation();
@@ -19,6 +21,11 @@ export const InvoiceSummarySection = () => {
     data: { summaryData },
     summaryStatus,
   } = useSelector(selectInvoiceState);
+  const {
+    data: {
+      currentStore: { currencyCode },
+    },
+  } = useSelector(selectCurrentStoreState);
 
   useEffect(() => {
     if (summaryStatus === "idle") {
@@ -44,7 +51,7 @@ export const InvoiceSummarySection = () => {
     <MetricGrid columns={3}>
       <MetricCard
         label="Total Revenue"
-        value={String(summaryData.totalRevenue)}
+        value={compactCurrency(summaryData.totalRevenue, currencyCode)}
         helper={`${summaryData.totalInvoices} invoices`}
         icon={IndianRupee}
         tone="primary"
@@ -52,7 +59,7 @@ export const InvoiceSummarySection = () => {
 
       <MetricCard
         label="Total Paid Amount"
-        value={String(summaryData.totalPaid)}
+        value={compactCurrency(summaryData.totalPaid, currencyCode)}
         helper={`${summaryData.paidCount} paid invoices`}
         icon={BookOpenCheck}
         tone="success"

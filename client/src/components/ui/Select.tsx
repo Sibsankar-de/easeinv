@@ -15,6 +15,7 @@ export const Select = ({
   onChange,
   disabled,
   className,
+  dropdownClass,
 }: SelectType) => {
   const uid = id || useId();
   const [open, setOpen] = useState(false);
@@ -108,7 +109,7 @@ export const Select = ({
         <Dropdown
           openState={open}
           onClose={() => setOpen(false)}
-          className="mt-2 w-full"
+          className={cn("mt-2 w-full overflow-auto", dropdownClass)}
         >
           <ul role="listbox" aria-labelledby={uid}>
             {normalized.map((opt) => (

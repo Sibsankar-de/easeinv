@@ -27,7 +27,7 @@ export function ProductSearchInput({
   const dispatch = useDispatch();
   const { searchStatus } = useSelector(selectProductState);
   const {
-    data: { storeSettings },
+    data: { storeSettings, currencySymbol },
   } = useSelector(selectCurrentStoreState);
 
   const [input, setInput] = useState("");
@@ -88,7 +88,8 @@ export function ProductSearchInput({
             </div>
             <div>
               <p className="text-green-800">
-                &#8377;{calculatePrice(1, p.pricePerQuantity).price} /{" "}
+                {currencySymbol}
+                {calculatePrice(1, p.pricePerQuantity).price} /{" "}
                 {convertUnit(p.stockUnit, storeSettings.customUnits)}
               </p>
             </div>

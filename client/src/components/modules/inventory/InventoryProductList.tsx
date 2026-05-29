@@ -72,7 +72,7 @@ export const InventoryProductList = () => {
     status,
   } = useSelector(selectProductState);
   const {
-    data: { storeSettings },
+    data: { storeSettings, currencySymbol },
   } = useSelector(selectCurrentStoreState);
 
   const [pagination, setPagination] = useState({
@@ -168,7 +168,7 @@ export const InventoryProductList = () => {
         cell: (info) => (
           <span className="text-gray-900">
             <span>
-              &#8377;
+              {currencySymbol}
               {Number(info.row.original.buyingPricePerQuantity?.toFixed(2))}
             </span>{" "}
             <span>/</span>{" "}
@@ -190,7 +190,7 @@ export const InventoryProductList = () => {
         meta: { className: "text-right" },
       }),
     ],
-    [storeSettings.customUnits],
+    [storeSettings.customUnits, currencySymbol],
   );
 
   const pageData = useMemo(

@@ -13,6 +13,7 @@ import {
   selectCustomerState,
   clearCustomerListData,
 } from "@/store/features/customerSlice";
+import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { DataTable } from "@/components/ui/DataTable";
 import { createColumnHelper, SortingState } from "@tanstack/react-table";
@@ -62,6 +63,9 @@ export const CustomerListTable = () => {
     data: { customerListData },
     status,
   } = useSelector(selectCustomerState);
+  const {
+    data: { currencySymbol },
+  } = useSelector(selectCurrentStoreState);
 
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -167,7 +171,7 @@ export const CustomerListTable = () => {
         header: "Total Due",
         cell: (info) => (
           <span className={info.getValue() ? "text-red-400" : "text-gray-900"}>
-            &#8377;{info.getValue() || 0}
+            {currencySymbol}{info.getValue() || 0}
           </span>
         ),
         meta: { className: "text-center" },
@@ -180,7 +184,7 @@ export const CustomerListTable = () => {
         meta: { className: "text-right" },
       }),
     ],
-    [],
+    [currencySymbol],
   );
 
   const pageData = useMemo(

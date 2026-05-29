@@ -25,11 +25,18 @@ import {
   } from "@/components/charts/DashboardPaymentStatusPieChart";
   import { RevenueProfitLineChart } from "@/components/charts/DashboardRevenueProfitLineChart";
   import { useDashboardAnalytics } from "@/hooks/use-dashboard-analytics";
-  import { formatCurrency, formatNumber } from "@/utils/dashboard-formatters";
+  import { formatCurrency, formatNumber } from "@/utils/currency-formatters";
+  import { useSelector } from "react-redux";
+  import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 
 
 export const SalesAnalyticsPageContent = () => {
   const { data, period, isLoading, setPeriod } = useDashboardAnalytics();
+  const {
+    data: { currentStore },
+  } = useSelector(selectCurrentStoreState);
+  const currencyCode = currentStore?.currencyCode;
+
   const averageInvoice =
     data.kpis.totalInvoices > 0
       ? data.kpis.totalRevenue / data.kpis.totalInvoices
@@ -50,20 +57,20 @@ export const SalesAnalyticsPageContent = () => {
       <MetricGrid columns={3}>
         <MetricCard
           label="Revenue"
-          value={formatCurrency(data.kpis.totalRevenue)}
+          value={formatCurrency(data.kpis.totalRevenue, currencyCode)}
           helper={`${formatNumber(data.kpis.totalInvoices)} invoices`}
           icon={BadgeIndianRupee}
         />
         <MetricCard
           label="Profit"
-          value={formatCurrency(data.kpis.totalProfit)}
+          value={formatCurrency(data.kpis.totalProfit, currencyCode)}
           helper={`${profitRate.toFixed(1)}% profit rate`}
           icon={TrendingUp}
           tone="success"
         />
         <MetricCard
           label="Average invoice"
-          value={formatCurrency(averageInvoice)}
+          value={formatCurrency(averageInvoice, currencyCode)}
           helper="Revenue per invoice"
           icon={FileText}
           tone="info"
@@ -77,7 +84,10 @@ export const SalesAnalyticsPageContent = () => {
           className="xl:col-span-2"
           heightClassName="h-96"
         >
-          <RevenueProfitLineChart data={data.salesTrend} />
+          <RevenueProfitLineChart
+            data={data.salesTrend}
+            currencyCode={currencyCode}
+          />
         </ChartCard>
 
         <ChartCard
@@ -94,6 +104,11 @@ export const SalesAnalyticsPageContent = () => {
 
 export const BillingAnalyticsPageContent = () => {
   const { data, period, isLoading, setPeriod } = useDashboardAnalytics();
+  const {
+    data: { currentStore },
+  } = useSelector(selectCurrentStoreState);
+  const currencyCode = currentStore?.currencyCode;
+
   const billingStatusData: PaymentStatusDatum[] = [
     { name: "Paid", value: data.billingStatus.paid },
     { name: "Partial", value: data.billingStatus.partial },
@@ -115,14 +130,14 @@ export const BillingAnalyticsPageContent = () => {
       <MetricGrid columns={3}>
         <MetricCard
           label="Collected"
-          value={formatCurrency(data.kpis.totalPaid)}
+          value={formatCurrency(data.kpis.totalPaid, currencyCode)}
           helper={`${collectionRate.toFixed(1)}% collection rate`}
           icon={CreditCard}
           tone="success"
         />
         <MetricCard
           label="Outstanding"
-          value={formatCurrency(data.kpis.totalDue)}
+          value={formatCurrency(data.kpis.totalDue, currencyCode)}
           helper="Pending customer payments"
           icon={BadgeIndianRupee}
           tone="danger"
@@ -142,7 +157,7 @@ export const BillingAnalyticsPageContent = () => {
           className="xl:col-span-2"
           heightClassName="h-96"
         >
-          <PaidDueAreaChart data={data.salesTrend} />
+          <PaidDueAreaChart data={data.salesTrend} currencyCode={currencyCode} />
         </ChartCard>
 
         <ChartCard
@@ -168,10 +183,10 @@ export const BillingAnalyticsPageContent = () => {
               key={invoice._id}
               title={invoice.invoiceNumber}
               detail={invoice.customerName}
-              value={formatCurrency(invoice.total)}
+              value={formatCurrency(invoice.total, currencyCode)}
               meta={
                 invoice.dueAmount > 0
-                  ? `${formatCurrency(invoice.dueAmount)} due`
+                  ? `${formatCurrency(invoice.dueAmount, currencyCode)} due`
                   : "Paid"
               }
               danger={invoice.dueAmount > 0}
@@ -185,6 +200,10 @@ export const BillingAnalyticsPageContent = () => {
 
 export const ProductAnalyticsPageContent = () => {
   const { data, period, isLoading, setPeriod } = useDashboardAnalytics();
+  const {
+    data: { currentStore },
+  } = useSelector(selectCurrentStoreState);
+  const currencyCode = currentStore?.currencyCode;
 
   return (
     <AnalyticsPageLayout
@@ -210,7 +229,7 @@ export const ProductAnalyticsPageContent = () => {
         />
         <MetricCard
           label="Product revenue"
-          value={formatCurrency(data.kpis.totalRevenue)}
+          value={formatCurrency(data.kpis.totalRevenue, currencyCode)}
           helper="Revenue from billed items"
           icon={BadgeIndianRupee}
           tone="success"
@@ -228,6 +247,7 @@ export const ProductAnalyticsPageContent = () => {
             dataKey="revenue"
             name="Revenue"
             color="var(--chart-2)"
+            currencyCode={currencyCode}
           />
         </ChartCard>
 
@@ -236,7 +256,10 @@ export const ProductAnalyticsPageContent = () => {
           description="Revenue split by category"
           heightClassName="h-96"
         >
-          <CategorySalesPieChart data={data.categorySales} />
+          <CategorySalesPieChart
+            data={data.categorySales}
+            currencyCode={currencyCode}
+          />
         </ChartCard>
       </div>
 
@@ -256,8 +279,8 @@ export const ProductAnalyticsPageContent = () => {
               detail={`${formatNumber(product.quantitySold)} units sold${
                 product.sku ? ` • ${product.sku}` : ""
               }`}
-              value={formatCurrency(product.revenue)}
-              meta={`${formatCurrency(product.profit)} profit`}
+              value={formatCurrency(product.revenue, currencyCode)}
+              meta={`${formatCurrency(product.profit, currencyCode)} profit`}
             />
           )}
         />
@@ -268,6 +291,11 @@ export const ProductAnalyticsPageContent = () => {
 
 export const CustomerAnalyticsPageContent = () => {
   const { data, period, isLoading, setPeriod } = useDashboardAnalytics();
+  const {
+    data: { currentStore },
+  } = useSelector(selectCurrentStoreState);
+  const currencyCode = currentStore?.currencyCode;
+
   const averageCustomerRevenue =
     data.kpis.totalCustomers > 0
       ? data.kpis.totalRevenue / data.kpis.totalCustomers
@@ -290,14 +318,14 @@ export const CustomerAnalyticsPageContent = () => {
         />
         <MetricCard
           label="Average revenue"
-          value={formatCurrency(averageCustomerRevenue)}
+          value={formatCurrency(averageCustomerRevenue, currencyCode)}
           helper="Revenue per customer"
           icon={BadgeIndianRupee}
           tone="success"
         />
         <MetricCard
           label="Customer dues"
-          value={formatCurrency(data.kpis.totalDue)}
+          value={formatCurrency(data.kpis.totalDue, currencyCode)}
           helper="Outstanding balance"
           icon={CreditCard}
           tone="danger"
@@ -314,6 +342,7 @@ export const CustomerAnalyticsPageContent = () => {
             data={data.topCustomers}
             dataKey="totalBilled"
             name="Billed"
+            currencyCode={currencyCode}
           />
         </ChartCard>
 
@@ -327,6 +356,7 @@ export const CustomerAnalyticsPageContent = () => {
             dataKey="totalDue"
             name="Due"
             color="var(--destructive)"
+            currencyCode={currencyCode}
           />
         </ChartCard>
       </div>
@@ -347,8 +377,8 @@ export const CustomerAnalyticsPageContent = () => {
               detail={`${formatNumber(customer.invoiceCount)} invoices${
                 customer.phoneNumber ? ` • ${customer.phoneNumber}` : ""
               }`}
-              value={formatCurrency(customer.totalBilled)}
-              meta={`${formatCurrency(customer.totalDue)} due`}
+              value={formatCurrency(customer.totalBilled, currencyCode)}
+              meta={`${formatCurrency(customer.totalDue, currencyCode)} due`}
               danger={customer.totalDue > 0}
             />
           )}

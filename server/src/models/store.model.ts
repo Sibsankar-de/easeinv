@@ -35,6 +35,10 @@ const storeSchema = new Schema(
     contactEmail: {
       type: String,
     },
+    currencyCode: {
+      type: String,
+      required: true,
+    },
     registrationNumber: {
       type: String,
       trim: true,

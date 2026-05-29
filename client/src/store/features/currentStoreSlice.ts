@@ -9,6 +9,7 @@ import api from "@/configs/axios-config";
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { createInvoiceThunk } from "./invoiceSlice";
+import getSymbolFromCurrency from "currency-symbol-map";
 
 export const fetchCurrentStore: any = createApiThunk(
   "/current-store/store",
@@ -77,6 +78,7 @@ const initialState = {
     currentStore: {} as StoreDto,
     storeSettings: {} as StoreSettingsDto,
     accessorsList: [] as StoreAccessorDto[],
+    currencySymbol: "",
   },
   status: "idle",
   storeUpdateStatus: "idle",
@@ -102,6 +104,8 @@ const currentStoreSlice = createSlice({
         state.status = "success";
         state.data.currentStore = action.payload;
         state.data.storeSettings = action.payload.storeSettings;
+        state.data.currencySymbol =
+          getSymbolFromCurrency(action.payload.currencyCode) || "";
         state.error = null;
       })
       .addCase(updateStoreDetailsThunk.pending, (state, action) =>
@@ -113,6 +117,8 @@ const currentStoreSlice = createSlice({
       .addCase(updateStoreDetailsThunk.fulfilled, (state, action) => {
         state.storeUpdateStatus = "success";
         state.data.currentStore = action.payload;
+        state.data.currencySymbol =
+          getSymbolFromCurrency(action.payload.currencyCode) || "";
         state.error = null;
       })
       .addCase(updateStoreSettingsThunk.pending, (state, action) =>

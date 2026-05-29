@@ -28,6 +28,7 @@ export type StoreDto = {
   role: string;
   name: string;
   owner?: string;
+  currencyCode: string;
   address?: string;
   contactNo?: string;
   contactEmail?: string;

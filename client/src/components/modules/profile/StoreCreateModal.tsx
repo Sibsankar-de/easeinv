@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
+import { CurrencySelector } from "@/components/ui/CurrencySelector";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Modal } from "@/components/ui/Modal";
@@ -22,6 +23,7 @@ export const StoreCreateModal = ({
 }) => {
   const [formData, setFormData] = useState({
     name: "",
+    currencyCode: "INR",
     businessType: "",
     contactEmail: "",
     address: "",
@@ -72,6 +74,17 @@ export const StoreCreateModal = ({
               value={formData.name}
               onChange={(e) => handleFormData("name", e)}
               placeholder="Enter store name"
+              disabled={isLoading}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="currency-selector" required>
+              Store Currency
+            </Label>
+            <CurrencySelector
+              value={formData.currencyCode}
+              onChange={(e) => handleFormData("currencyCode", e)}
+              placeholder="Select Currency"
               disabled={isLoading}
             />
           </div>

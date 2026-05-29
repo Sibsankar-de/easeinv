@@ -6,7 +6,7 @@ import {
   dashboardChartGridColor,
   dashboardChartPaidColor,
 } from "@/constants/dashboard";
-import { compactCurrency, formatCurrency } from "@/utils/dashboard-formatters";
+import { compactCurrency, formatCurrency } from "@/utils/currency-formatters";
 import {
   Area,
   AreaChart,
@@ -18,13 +18,25 @@ import {
   YAxis,
 } from "recharts";
 
-export const PaidDueAreaChart = ({ data }: { data: DashboardTrendPoint[] }) => (
+export const PaidDueAreaChart = ({
+  data,
+  currencyCode,
+}: {
+  data: DashboardTrendPoint[];
+  currencyCode?: string;
+}) => (
   <ResponsiveContainer width="100%" height="100%">
     <AreaChart data={data}>
       <CartesianGrid strokeDasharray="3 3" stroke={dashboardChartGridColor} />
       <XAxis dataKey="label" tickLine={false} axisLine={false} />
-      <YAxis tickFormatter={compactCurrency} tickLine={false} axisLine={false} />
-      <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+      <YAxis
+        tickFormatter={(val) => compactCurrency(val, currencyCode)}
+        tickLine={false}
+        axisLine={false}
+      />
+      <Tooltip
+        formatter={(value) => formatCurrency(Number(value), currencyCode)}
+      />
       <Legend />
       <Area
         type="monotone"

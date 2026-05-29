@@ -11,6 +11,7 @@ import {
   selectInvoiceState,
   clearInvoiceList,
 } from "@/store/features/invoiceSlice";
+import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 import { useStoreNavigation } from "@/hooks/store-navigation";
 import { InvoiceDto } from "@/types/dto/invoiceDto";
 import { pageLimits } from "@/constants/pageLimits";
@@ -89,6 +90,9 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
     data: { invoiceListData },
     status: invoiceFetchStatus,
   } = useSelector(selectInvoiceState);
+  const {
+    data: { currencySymbol },
+  } = useSelector(selectCurrentStoreState);
 
   const [pagination, setPagination] = useState({
     pageIndex: 0,
@@ -179,7 +183,7 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
         header: "Total",
         cell: (info) => (
           <span className="text-gray-900 font-medium">
-            &#8377;{info.getValue()}
+            {currencySymbol}{info.getValue()}
           </span>
         ),
         meta: { className: "text-center" },
@@ -194,7 +198,7 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
                 : "text-green-600 font-medium"
             }
           >
-            &#8377;{info.getValue()}
+            {currencySymbol}{info.getValue()}
           </span>
         ),
         meta: { className: "text-center" },
@@ -209,7 +213,7 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
         meta: { className: "text-right" },
       }),
     ],
-    [currentPage],
+    [currentPage, currencySymbol],
   );
 
   const pageData = useMemo(

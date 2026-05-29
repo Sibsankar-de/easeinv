@@ -11,6 +11,7 @@ import {
   customerSearchThunk,
   selectCustomerState,
 } from "@/store/features/customerSlice";
+import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 import { transformPaginatedResponse } from "@/store/utils";
 import { CustomerDto } from "@/types/dto/customerDto";
 import { useEffect, useState } from "react";
@@ -24,6 +25,9 @@ export const CustomerDetailsForm = ({
   const { storeId } = useStoreNavigation();
   const dispatch = useDispatch();
   const { searchStatus } = useSelector(selectCustomerState);
+  const {
+    data: { currencySymbol },
+  } = useSelector(selectCurrentStoreState);
 
   const [customerData, setCustomerData] = useState<CustomerDto>({
     name: "",
@@ -100,7 +104,7 @@ export const CustomerDetailsForm = ({
               </div>
               <ConditionalDiv condition={p.totalDue}>
                 <span className="text-sm">Due:</span>{" "}
-                <span className="text-red-400">₹{p.totalDue}</span>
+                <span className="text-red-400">{currencySymbol}{p.totalDue}</span>
               </ConditionalDiv>
             </SelectableItem>
           ))

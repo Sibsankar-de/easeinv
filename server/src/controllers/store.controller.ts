@@ -16,10 +16,14 @@ import { userRoles } from "../enums/store.enum";
 
 export const createStore = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?._id;
-  const { name, businessType, address, contactEmail, contactNo } = req.body;
+  const { name, businessType, address, contactEmail, contactNo, currencyCode } =
+    req.body;
 
-  if (!name)
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Store name is required.");
+  if (!name || !currencyCode)
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "Store name and currency is required.",
+    );
 
   const store = await Store.create({
     name,
@@ -28,6 +32,7 @@ export const createStore = asyncHandler(async (req: Request, res: Response) => {
     address,
     contactEmail,
     contactNo,
+    currencyCode,
   });
 
   // create user-store access entry for owner
@@ -58,8 +63,11 @@ export const updateStore = asyncHandler(async (req: Request, res: Response) => {
   const { storeId } = req.params;
   const updateData = req.body;
 
-  if (!updateData.name)
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Store name is required");
+  if (!updateData.name || !updateData.currencyCode)
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "Store name and currency is required",
+    );
 
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
   let logoUrl, qrCodeUrl;
@@ -120,8 +128,6 @@ export const deleteStore = asyncHandler(async (req: Request, res: Response) => {
     Product.deleteMany({ storeId }),
     Customer.deleteMany({ storeId }),
     Category.deleteMany({ storeId }),
-    // Note: Invoices are usually kept for records, but for a full delete:
-    // Invoice.deleteMany({ storeId }),
   ]);
 
   return res

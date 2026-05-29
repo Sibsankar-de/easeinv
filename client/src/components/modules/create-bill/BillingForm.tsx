@@ -25,7 +25,7 @@ interface BillingFormProps {
 
 export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
   const {
-    data: { storeSettings },
+    data: { storeSettings, currencySymbol },
   } = useSelector(selectCurrentStoreState);
 
   const initialBillItem: BillItemType = {
@@ -170,7 +170,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
                   Quantity
                 </th>
                 <th className="text-center text-gray-700 px-2 py-3 w-32">
-                  Price (₹)
+                  Price ({currencySymbol})
                 </th>
                 <th className="w-12"></th>
               </tr>
@@ -223,7 +223,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
           <div className="space-y-3 mb-4 pb-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <span className="text-gray-600">Subtotal</span>
-              <span className="text-gray-900">₹{calculations.subTotal}</span>
+              <span className="text-gray-900">{currencySymbol}{calculations.subTotal}</span>
             </div>
 
             <ConditionalDiv
@@ -233,7 +233,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
               <span className="text-gray-600">
                 Tax ({storeSettings?.defaultTaxRate}%)
               </span>
-              <span className="text-gray-900">₹0</span>
+              <span className="text-gray-900">{currencySymbol}0</span>
             </ConditionalDiv>
 
             <ConditionalDiv
@@ -245,7 +245,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
                 <span className="text-green-600">{discountRate}%</span>)
               </span>
               <span className="text-green-600">
-                - ₹{calculations.discountAmount}
+                - {currencySymbol}{calculations.discountAmount}
               </span>
             </ConditionalDiv>
           </div>
@@ -253,7 +253,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-gray-900">Total</span>
-              <span className="text-gray-900">₹{calculations.total}</span>
+              <span className="text-gray-900">{currencySymbol}{calculations.total}</span>
             </div>
 
             <div className="flex items-center justify-between">
@@ -275,7 +275,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
 
             <div className="flex items-center justify-between">
               <span className="text-gray-900">Due Amount</span>
-              <span className="text-gray-900">₹{calculations.dueAmount}</span>
+              <span className="text-gray-900">{currencySymbol}{calculations.dueAmount}</span>
             </div>
           </div>
         </div>

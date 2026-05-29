@@ -15,6 +15,7 @@ import { toast } from "react-toastify";
 import { FormSkeleton } from "@/components/ui/Skeleton";
 import { useNavContext } from "@/contexts/NavContext";
 import { NavActionButton } from "@/components/modules/navbar/navbar";
+import { CurrencySelector } from "@/components/ui/CurrencySelector";
 
 export const StoreInfoComponent = () => {
   const { storeId } = useStoreNavigation();
@@ -29,6 +30,7 @@ export const StoreInfoComponent = () => {
 
   const [formData, setFormData] = useState({
     name: "",
+    currencyCode: "",
     contactEmail: "",
     contactNo: "",
     address: "",
@@ -102,7 +104,17 @@ export const StoreInfoComponent = () => {
               disabled={isUpdating}
             />
           </div>
-
+          <div className="space-y-2">
+            <Label htmlFor="currency-selector" required>
+              Store Currency
+            </Label>
+            <CurrencySelector
+              value={formData.currencyCode}
+              onChange={(e) => handleFormDataChange("currencyCode", e)}
+              placeholder="Select Currency"
+              disabled={isUpdating}
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
             <Input

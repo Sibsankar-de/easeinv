@@ -8,6 +8,7 @@ import {
   selectCustomerState,
   clearCurrentCustomer,
 } from "@/store/features/customerSlice";
+import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 import { MetricGrid, MetricCard } from "@/components/ui/MetricCard";
 import {
   Mail,
@@ -29,6 +30,9 @@ export const CustomerDetailsView = () => {
     data: { currentCustomer },
     fetchStatus,
   } = useSelector(selectCustomerState);
+  const {
+    data: { currencySymbol },
+  } = useSelector(selectCurrentStoreState);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -119,7 +123,7 @@ export const CustomerDetailsView = () => {
         />
         <MetricCard
           label="Total Due"
-          value={`₹${currentCustomer.totalDue || 0}`}
+          value={`${currencySymbol}${currentCustomer.totalDue || 0}`}
           helper="Outstanding balance"
           icon={IndianRupee}
           tone="danger"

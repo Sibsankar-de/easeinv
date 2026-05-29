@@ -40,7 +40,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
   const { getStatus, createStatus, updateStatus } =
     useSelector(selectProductState);
   const {
-    data: { storeSettings },
+    data: { storeSettings, currencySymbol },
   } = useSelector(selectCurrentStoreState);
   const { navigate } = useStoreNavigation();
   const { setActionButtons } = useNavContext();
@@ -223,7 +223,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
             className="block text-gray-600 mb-1.5"
             required
           >
-            Buying price (&#8377;)
+            Buying price ({currencySymbol})
           </Label>
           <Input
             type="number"

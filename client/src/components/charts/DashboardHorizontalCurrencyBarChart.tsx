@@ -1,6 +1,6 @@
 "use client";
 
-import { compactCurrency, formatCurrency } from "@/utils/dashboard-formatters";
+import { compactCurrency, formatCurrency } from "@/utils/currency-formatters";
 import { dashboardChartGridColor, dashboardChartRevenueColor } from "@/constants/dashboard";
 import {
   Bar,
@@ -20,17 +20,22 @@ export const HorizontalCurrencyBarChart = ({
   name,
   color = dashboardChartRevenueColor,
   yAxisKey = "name",
+  currencyCode,
 }: {
   data: ChartRow[];
   dataKey: string;
   name: string;
   color?: string;
   yAxisKey?: string;
+  currencyCode?: string;
 }) => (
   <ResponsiveContainer width="100%" height="100%">
     <BarChart data={data} layout="vertical">
       <CartesianGrid strokeDasharray="3 3" stroke={dashboardChartGridColor} />
-      <XAxis type="number" tickFormatter={compactCurrency} />
+      <XAxis
+        type="number"
+        tickFormatter={(val) => compactCurrency(val, currencyCode)}
+      />
       <YAxis
         dataKey={yAxisKey}
         type="category"
@@ -38,7 +43,9 @@ export const HorizontalCurrencyBarChart = ({
         tickLine={false}
         axisLine={false}
       />
-      <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+      <Tooltip
+        formatter={(value) => formatCurrency(Number(value), currencyCode)}
+      />
       <Bar dataKey={dataKey} name={name} fill={color} radius={[0, 6, 6, 0]} />
     </BarChart>
   </ResponsiveContainer>

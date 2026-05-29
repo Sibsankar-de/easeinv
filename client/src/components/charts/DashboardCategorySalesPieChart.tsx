@@ -2,7 +2,7 @@
 
 import { CategoryAnalytics } from "@/types/DashboardAnalyticsType";
 import { dashboardChartColors } from "@/constants/dashboard";
-import { formatCurrency } from "@/utils/dashboard-formatters";
+import { formatCurrency } from "@/utils/currency-formatters";
 import {
   Cell,
   Legend,
@@ -14,8 +14,10 @@ import {
 
 export const CategorySalesPieChart = ({
   data,
+  currencyCode,
 }: {
   data: CategoryAnalytics[];
+  currencyCode?: string;
 }) => (
   <ResponsiveContainer width="100%" height="100%">
     <PieChart>
@@ -34,7 +36,9 @@ export const CategorySalesPieChart = ({
           />
         ))}
       </Pie>
-      <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+      <Tooltip
+        formatter={(value) => formatCurrency(Number(value), currencyCode)}
+      />
       <Legend />
     </PieChart>
   </ResponsiveContainer>

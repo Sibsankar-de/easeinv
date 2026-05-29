@@ -7,7 +7,7 @@ import {
   dashboardChartPaidColor,
   dashboardChartRevenueColor,
 } from "@/constants/dashboard";
-import { compactCurrency, formatCurrency } from "@/utils/dashboard-formatters";
+import { compactCurrency, formatCurrency } from "@/utils/currency-formatters";
 import {
   Area,
   AreaChart,
@@ -21,21 +21,37 @@ import {
 
 export const SalesTrendAreaChart = ({
   data,
+  currencyCode,
 }: {
   data: DashboardTrendPoint[];
+  currencyCode?: string;
 }) => (
   <ResponsiveContainer width="100%" height="100%">
     <AreaChart data={data}>
       <defs>
         <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="5%" stopColor={dashboardChartRevenueColor} stopOpacity={0.28} />
-          <stop offset="95%" stopColor={dashboardChartRevenueColor} stopOpacity={0.02} />
+          <stop
+            offset="5%"
+            stopColor={dashboardChartRevenueColor}
+            stopOpacity={0.28}
+          />
+          <stop
+            offset="95%"
+            stopColor={dashboardChartRevenueColor}
+            stopOpacity={0.02}
+          />
         </linearGradient>
       </defs>
       <CartesianGrid strokeDasharray="3 3" stroke={dashboardChartGridColor} />
       <XAxis dataKey="label" tickLine={false} axisLine={false} />
-      <YAxis tickFormatter={compactCurrency} tickLine={false} axisLine={false} />
-      <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+      <YAxis
+        tickFormatter={(val) => compactCurrency(val, currencyCode)}
+        tickLine={false}
+        axisLine={false}
+      />
+      <Tooltip
+        formatter={(value) => formatCurrency(Number(value), currencyCode)}
+      />
       <Legend />
       <Area
         type="monotone"

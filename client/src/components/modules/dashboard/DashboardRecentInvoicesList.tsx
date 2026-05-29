@@ -3,13 +3,15 @@ import { Pagination } from "@/components/ui/Pagination";
 import { formatDateStr } from "@/utils/formatDate";
 import { FileText } from "lucide-react";
 import { useState } from "react";
-import { formatCurrency } from "@/utils/dashboard-formatters";
+import { formatCurrency } from "@/utils/currency-formatters";
 import { EmptyState } from "@/components/ui/EmptyState";
 
 export const RecentInvoicesList = ({
   invoices,
+  currencyCode,
 }: {
   invoices: RecentInvoiceAnalytics[];
+  currencyCode?: string;
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 4;
@@ -74,7 +76,7 @@ export const RecentInvoicesList = ({
 
                 <div className="shrink-0 text-right">
                   <p className="text-sm font-medium text-foreground">
-                    {formatCurrency(invoice.total)}
+                    {formatCurrency(invoice.total, currencyCode)}
                   </p>
                   <p
                     className={`mt-1 text-xs ${
@@ -82,8 +84,8 @@ export const RecentInvoicesList = ({
                     }`}
                   >
                     {isPending
-                      ? `${formatCurrency(invoice.dueAmount)} due`
-                      : `${formatCurrency(invoice.paidAmount)} paid`}
+                      ? `${formatCurrency(invoice.dueAmount, currencyCode)} due`
+                      : `${formatCurrency(invoice.paidAmount, currencyCode)} paid`}
                   </p>
                 </div>
               </div>
