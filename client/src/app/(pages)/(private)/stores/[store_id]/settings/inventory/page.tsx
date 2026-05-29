@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { InventorySettingsComponent } from "@/components/modules/settings/InventorySettingsComponent";
-import { PageContainer } from "@/components/ui/PageContainer";
+import { StorePageContainer } from "@/components/ui/PageContainer";
 import { Package } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function InventorySettings() {
   return (
-    <PageContainer>
+    <StorePageContainer>
       <div className="flex items-center gap-3 mb-8">
         <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
           <Package className="w-5 h-5 text-green-600" />
@@ -25,6 +25,6 @@ export default function InventorySettings() {
       </div>
 
       <InventorySettingsComponent />
-    </PageContainer>
+    </StorePageContainer>
   );
 }

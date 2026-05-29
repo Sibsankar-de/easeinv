@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CustomerListTable } from "@/components/modules/customers/CustomerListTable";
-import { PageContainer } from "@/components/ui/PageContainer";
+import { StorePageContainer } from "@/components/ui/PageContainer";
 
 export const metadata: Metadata = {
   title: "Customers",
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function CustomersPage() {
   return (
-    <PageContainer>
+    <StorePageContainer>
       <div className="mb-8">
         <h1 className="text-gray-900 mb-2">Customers</h1>
         <p className="text-gray-600">View and manage all your Customers</p>
@@ -36,6 +36,6 @@ export default function CustomersPage() {
       </div> */}
 
       <CustomerListTable />
-    </PageContainer>
+    </StorePageContainer>
   );
 }

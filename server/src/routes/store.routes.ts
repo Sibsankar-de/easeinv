@@ -17,6 +17,7 @@ import {
   acceptStoreUserInvite,
   updateStoreUserRole,
   removeStoreUser,
+  getStoreUserInvite,
 } from "../controllers/store-access.controller";
 import { verifyAuth } from "../middlewares/auth.middleware";
 import { upload } from "../middlewares/multer.middleware";
@@ -76,7 +77,8 @@ router.post(
   verifyManagerLevelAccess,
   inviteStoreUser,
 );
-router.post("/accept-invite", acceptStoreUserInvite);
+router.get("/user-invite/:token", getStoreUserInvite);
+router.post("/user-invite/accept", acceptStoreUserInvite);
 router.patch(
   "/:storeId/users/:userId",
   verifyManagerLevelAccess,

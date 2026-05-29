@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CreateBillPage } from "@/components/modules/create-bill/CreateBillPage";
-import { PageContainer } from "@/components/ui/PageContainer";
+import { StorePageContainer } from "@/components/ui/PageContainer";
 import React from "react";
 
 export const metadata: Metadata = {
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function BillingPage() {
   return (
-    <PageContainer>
+    <StorePageContainer>
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-gray-900 mb-2">Create New Invoice</h1>
@@ -25,6 +25,6 @@ export default function BillingPage() {
         {/* Billing sector */}
         <CreateBillPage />
       </div>
-    </PageContainer>
+    </StorePageContainer>
   );
 }

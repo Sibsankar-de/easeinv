@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PageContainer } from "@/components/ui/PageContainer";
+import { StorePageContainer } from "@/components/ui/PageContainer";
 import { BillingAnalyticsPageContent } from "@/components/modules/dashboard/FocusedAnalyticsPages";
 
 export const metadata: Metadata = {
@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 export default function BillingAnalyticsPage() {
   return (
-    <PageContainer>
+    <StorePageContainer>
       <BillingAnalyticsPageContent />
-    </PageContainer>
+    </StorePageContainer>
   );
 }

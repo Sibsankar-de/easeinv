@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Button } from '@/components/ui/Button'
-import { PageContainer } from '@/components/ui/PageContainer'
+import { StorePageContainer } from '@/components/ui/PageContainer'
 import { Plus } from 'lucide-react'
 import { InventoryProductList } from '@/components/modules/inventory/InventoryProductList'
 import Link from 'next/link'
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default async function ProductsPage({ params }: { params: Record<string, any> }) {
     const { store_id } = await params;
     return (
-        <PageContainer>
+        <StorePageContainer>
             <div className="mb-8">
                 <div className="flex items-center justify-between mb-2">
                     <div>
@@ -34,6 +34,6 @@ export default async function ProductsPage({ params }: { params: Record<string, 
             {/* Search and Filters */}
             <InventoryProductList />
 
-        </PageContainer>
+        </StorePageContainer>
     )
 }

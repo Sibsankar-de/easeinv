@@ -1,5 +1,5 @@
 import { AccessControlSettingsComponent } from "@/components/modules/settings/AccessControlSettingsComponent";
-import { PageContainer } from "@/components/ui/PageContainer";
+import { StorePageContainer } from "@/components/ui/PageContainer";
 import { Users } from "lucide-react";
 import { Metadata } from "next";
 
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function AccessControlPage() {
   return (
-    <PageContainer>
+    <StorePageContainer>
       <div className="flex items-center gap-3 mb-8">
         <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
           <Users className="w-5 h-5 text-green-600" />
@@ -24,6 +24,6 @@ export default function AccessControlPage() {
       </div>
 
       <AccessControlSettingsComponent />
-    </PageContainer>
+    </StorePageContainer>
   );
 }

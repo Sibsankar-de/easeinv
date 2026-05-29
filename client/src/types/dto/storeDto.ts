@@ -48,3 +48,10 @@ export type StoreAccessorDto = {
   email: string;
   role: string;
 };
+
+export type StoreUserInviteDto = {
+  storeId: string;
+  storeName: string;
+  email: string;
+  role: string;
+};

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { InvoiceListTable } from "@/components/modules/invoices/InvoiceListTable";
 import { InvoiceSummarySection } from "@/components/modules/invoices/InvoiceSummarySection";
-import { PageContainer } from "@/components/ui/PageContainer";
+import { StorePageContainer } from "@/components/ui/PageContainer";
 
 export const metadata: Metadata = {
   title: "Invoices",
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function InvoicesPage() {
   return (
-    <PageContainer>
+    <StorePageContainer>
       <div className="mb-8">
         <h1 className="text-gray-900 mb-2">Invoices</h1>
         <p className="text-gray-600">View and manage all your invoices</p>
@@ -22,6 +22,6 @@ export default function InvoicesPage() {
 
         <InvoiceListTable />
       </div>
-    </PageContainer>
+    </StorePageContainer>
   );
 }

@@ -6,6 +6,6 @@ export const clientPages = {
   BASE_URL: FRONTEND_URL,
   PROFILE_PAGE: `${FRONTEND_URL}/profile`,
   constructPageUrl: (path: string) => `${FRONTEND_URL}${path}`,
-  getStoreInvitatonPage: (invitationToken: string) =>
-    `${FRONTEND_URL}/store-invitation?token=${invitationToken}`,
+  getStoreInvitePage: (invitationToken: string) =>
+    `${FRONTEND_URL}/store-invite?token=${invitationToken}`,
 };

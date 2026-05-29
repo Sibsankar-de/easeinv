@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ProductForm } from "@/components/modules/inventory/ProductForm";
-import { PageContainer } from "@/components/ui/PageContainer";
+import { StorePageContainer } from "@/components/ui/PageContainer";
 import React from "react";
 
 export const metadata: Metadata = {
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function ProductEditPage() {
   return (
-    <PageContainer>
+    <StorePageContainer>
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
           <div>
@@ -20,6 +20,6 @@ export default function ProductEditPage() {
         </div>
       </div>
       <ProductForm formFor="edit" />
-    </PageContainer>
+    </StorePageContainer>
   );
 }

@@ -1,5 +1,5 @@
 import { CustomerDetailsView } from "@/components/modules/customers/CustomerDetailsView";
-import { PageContainer } from "@/components/ui/PageContainer";
+import { StorePageContainer } from "@/components/ui/PageContainer";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function CustomerDetailsPage() {
   return (
-    <PageContainer>
+    <StorePageContainer>
       <div className="mb-8">
         <h1 className="text-gray-900 mb-2">Customer Details</h1>
         <p className="text-gray-600">
@@ -18,6 +18,6 @@ export default function CustomerDetailsPage() {
       </div>
 
       <CustomerDetailsView />
-    </PageContainer>
+    </StorePageContainer>
   );
 }

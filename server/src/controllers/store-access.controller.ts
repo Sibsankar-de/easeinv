@@ -14,6 +14,7 @@ import { getStoreUserInviteEmail } from "./email.controller";
 import { StoreUserInvite } from "../models/storeUserInvite.model";
 import { addDays } from "../utils/date-utils";
 import { dateConstants } from "../constants/date.constants";
+import { Store } from "../models/store.model";
 
 /**
  * Get all users for a specific store.
@@ -117,7 +118,7 @@ export const inviteStoreUser = asyncHandler(
 
     // send invitation email
     const invitationToken = generateSecureToken(256);
-    const invitationLink = clientPages.getStoreInvitatonPage(invitationToken);
+    const invitationLink = clientPages.getStoreInvitePage(invitationToken);
 
     const expiresAt = addDays(
       new Date(),
@@ -142,6 +143,48 @@ export const inviteStoreUser = asyncHandler(
           StatusCodes.OK,
           null,
           "Invitation created successfully.",
+        ),
+      );
+  },
+);
+
+export const getStoreUserInvite = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { token } = req.params;
+    const user = req.user!;
+
+    if (!token || typeof token !== "string") {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Invitation token is required.",
+      );
+    }
+
+    const invite = await StoreUserInvite.findOne({ email: user.email, token });
+    if (!invite || invite.isExpired()) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Invalid or expired invitation token.",
+      );
+    }
+
+    const store = await Store.findById(invite.storeId);
+
+    const inviteDetails = {
+      storeId: invite.storeId,
+      storeName: store ? store.name : "Unknown Store",
+      email: invite.email,
+      role: invite.role,
+      expiresAt: invite.expiresAt,
+    };
+
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        new ApiResponse(
+          StatusCodes.OK,
+          inviteDetails,
+          "Invitation details fetched successfully.",
         ),
       );
   },
@@ -181,7 +224,7 @@ export const acceptStoreUserInvite = asyncHandler(
       .json(
         new ApiResponse(
           StatusCodes.OK,
-          null,
+          { storeId: invite.storeId },
           "Invitation accepted. You have been added to the store.",
         ),
       );

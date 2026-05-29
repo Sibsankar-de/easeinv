@@ -1,5 +1,6 @@
 import mongoose, { InferSchemaType, PaginateModel, Schema } from "mongoose";
 import { storeEnums, userRoles } from "../enums/store.enum";
+import { isAfter } from "../utils/date-utils";
 
 interface StoreUserInviteMethods {
   isExpired(): boolean;
@@ -39,7 +40,7 @@ const storeUserInviteSchema = new Schema(
 storeUserInviteSchema.index({ storeId: 1, email: 1 }, { unique: true });
 
 storeUserInviteSchema.methods.isExpired = function (): boolean {
-  return new Date() > this.expiresAt;
+  return isAfter(new Date(), this.expiresAt);
 };
 
 export type StoreUserInviteModelType = InferSchemaType<
