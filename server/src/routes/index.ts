@@ -7,6 +7,7 @@ import invoiceRoutes from "./invoice.routes";
 import analyticsRoutes from "./analytics.routes";
 import oauthRoutes from "./oauth.routes";
 import searchRoutes from "./search.routes";
+import galleryRoutes from "./galleryImage.routes";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/invoices", invoiceRoutes);
 router.use("/analytics", analyticsRoutes);
 router.use("/oauth", oauthRoutes);
 router.use("/search", searchRoutes);
+router.use("/gallery", galleryRoutes);
 
 export default router;

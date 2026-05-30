@@ -4,7 +4,6 @@ import mongoose, {
   InferSchemaType,
   PaginateModel,
 } from "mongoose";
-import { storeEnums } from "../enums/store.enum";
 import mongoosePaginate from "mongoose-paginate-v2";
 import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 import { AggregatePaginateModel } from "mongoose";

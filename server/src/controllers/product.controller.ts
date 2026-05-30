@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiResponse } from "../utils/ApiResponse";
-import { Product } from "../models/product.model";
+import { Product, ProductModelType } from "../models/product.model";
+import { ProductImage } from "../models/productImage.model";
 import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { Category } from "../models/category.model";
@@ -30,7 +31,7 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
     ];
   }
 
-  const productList = await (Product as any).aggregatePaginate(
+  const productList = await Product.aggregatePaginate(
     Product.aggregate([
       {
         $match: match,
@@ -50,6 +51,34 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
             },
           ],
           as: "categories",
+        },
+      },
+      {
+        $lookup: {
+          from: "productimages",
+          let: { productId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$productId", "$$productId"] },
+              },
+            },
+            {
+              $lookup: {
+                from: "galleryimages",
+                localField: "imageId",
+                foreignField: "_id",
+                as: "image",
+              },
+            },
+            {
+              $unwind: "$image",
+            },
+            {
+              $replaceRoot: { newRoot: "$image" },
+            },
+          ],
+          as: "images",
         },
       },
     ]),
@@ -84,6 +113,7 @@ export const createProduct = asyncHandler(
       stockUnit,
       pricePerQuantity,
       categories,
+      imageIds,
     } = productData;
 
     if (
@@ -130,6 +160,10 @@ export const createProduct = asyncHandler(
         "Failed to create product",
       );
 
+    if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
+      await addOrRemoveProductImages(product._id.toString(), imageIds);
+    }
+
     const productWithCategories = await getProductWithCategories(product);
 
     return res
@@ -159,6 +193,7 @@ export const updateProduct = asyncHandler(
       stockUnit,
       pricePerQuantity,
       categories,
+      imageIds,
     } = productData;
 
     if (
@@ -194,6 +229,11 @@ export const updateProduct = asyncHandler(
       { new: true },
     );
 
+    // add product images
+    if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
+      await addOrRemoveProductImages(productId as string, imageIds);
+    }
+
     const productWithCategories =
       await getProductWithCategories(updatedProduct);
 
@@ -208,6 +248,35 @@ export const updateProduct = asyncHandler(
       );
   },
 );
+
+const addOrRemoveProductImages = async (
+  productId: string,
+  imageIds: string[],
+) => {
+  const existingImages = await ProductImage.find({ productId });
+  const existingImageIds = existingImages.map((img) => img.imageId.toString());
+
+  const imagesToRemove = existingImageIds.filter(
+    (id) => !imageIds.includes(id),
+  );
+  const imagesToAdd = imageIds.filter((id) => !existingImageIds.includes(id));
+
+  if (imagesToRemove.length > 0) {
+    await ProductImage.deleteMany({
+      productId,
+      imageId: { $in: imagesToRemove },
+    });
+  }
+
+  if (imagesToAdd.length > 0) {
+    await ProductImage.insertMany(
+      imagesToAdd.map((imageId) => ({
+        productId,
+        imageId,
+      })),
+    );
+  }
+};
 
 const getOrCreateCategory = async (categoryName: string, storeId: string) => {
   // Check if category exists
@@ -231,16 +300,28 @@ export const getProductById = asyncHandler(
     if (!product)
       throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid product id");
 
-    return res
-      .status(StatusCodes.OK)
-      .json(new ApiResponse(StatusCodes.OK, product, "Product fetched"));
+    const images = await ProductImage.find({ productId }).populate("imageId");
+
+    return res.status(StatusCodes.OK).json(
+      new ApiResponse(
+        StatusCodes.OK,
+        {
+          ...product.toObject(),
+          images: images.map((img) => img.imageId),
+        },
+        "Product fetched",
+      ),
+    );
   },
 );
 
 export const deleteProduct = asyncHandler(
   async (req: Request, res: Response) => {
     const { productId } = req.params;
-    await Product.findByIdAndDelete(productId);
+    await Promise.all([
+      Product.findByIdAndDelete(productId),
+      ProductImage.deleteMany({ productId }),
+    ]);
 
     return res
       .status(StatusCodes.OK)
@@ -250,7 +331,14 @@ export const deleteProduct = asyncHandler(
 
 const getProductWithCategories = async (product: any) => {
   const categories = await Category.find({ _id: { $in: product.categories } });
-  return { ...product.toObject(), categories };
+  const images = await ProductImage.find({ productId: product._id }).populate(
+    "imageId",
+  );
+  return {
+    ...product.toObject(),
+    categories,
+    images: images.map((img) => img.imageId),
+  };
 };
 
 export const searchProducts = asyncHandler(

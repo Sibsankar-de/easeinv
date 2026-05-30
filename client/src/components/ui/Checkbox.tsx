@@ -1,59 +1,59 @@
-import React, { useState } from 'react';
-import { Check } from 'lucide-react';
+import React, { useState } from "react";
+import { Check } from "lucide-react";
+import { cn } from "../utils";
 
-interface CheckboxProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onChange'> {
-    checked?: boolean;
-    onChange?: (checked: boolean) => void;
-    disabled?: boolean;
-    className?: string;
+interface CheckboxProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "onChange"
+> {
+  checked?: boolean;
+  onChange?: (checked: boolean) => void;
+  disabled?: boolean;
+  className?: string;
 }
 
 export const Checkbox: React.FC<CheckboxProps> = ({
-    checked: controlledChecked,
-    onChange,
-    disabled = false,
-    className = '',
-    ...props
+  checked: controlledChecked,
+  onChange,
+  disabled = false,
+  className = "",
+  ...props
 }) => {
-    const [internalChecked, setInternalChecked] = useState(false);
+  const [internalChecked, setInternalChecked] = useState(false);
 
-    const isControlled = controlledChecked !== undefined;
-    const checked = isControlled ? controlledChecked : internalChecked;
+  const isControlled = controlledChecked !== undefined;
+  const checked = isControlled ? controlledChecked : internalChecked;
 
-    const handleClick = () => {
-        if (disabled) return;
+  const handleClick = () => {
+    if (disabled) return;
 
-        if (isControlled) {
-            onChange?.(!checked);
-        } else {
-            setInternalChecked(!checked);
-            onChange?.(!checked);
-        }
-    };
+    if (isControlled) {
+      onChange?.(!checked);
+    } else {
+      setInternalChecked(!checked);
+      onChange?.(!checked);
+    }
+  };
 
-    return (
-        <button
-            type="button"
-            role="checkbox"
-            aria-checked={checked}
-            disabled={disabled}
-            onClick={handleClick}
-            className={`
-        relative inline-flex items-center justify-center
-        w-5 h-5 rounded border transition-all duration-200
-        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-        disabled:opacity-50 disabled:cursor-not-allowed
-        ${checked
-                    ? 'bg-blue-600 border-blue-600 hover:bg-blue-700'
-                    : 'bg-white border-gray-300 hover:border-gray-400'
-                }
-        ${className}
-      `}
-            {...props}
-        >
-            {checked && (
-                <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
-            )}
-        </button>
-    );
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={handleClick}
+      className={cn(
+        "relative inline-flex items-center justify-center cursor-pointer",
+        "w-5 h-5 rounded border-2 transition-all duration-200",
+        "hover:border-primary",
+        "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1",
+        "disabled:opacity-50 disabled:cursor-not-allowed",
+        checked ? "bg-primary border-primary" : "bg-background border-border",
+        className,
+      )}
+      {...props}
+    >
+      {checked && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+    </button>
+  );
 };

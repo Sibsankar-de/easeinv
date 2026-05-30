@@ -7,6 +7,10 @@ import mongoose, {
 import mongoosePaginate from "mongoose-paginate-v2";
 import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 
+interface StoreMethods {
+  _id: mongoose.Types.ObjectId;
+}
+
 const storeSchema = new Schema(
   {
     name: {
@@ -64,7 +68,7 @@ const storeSchema = new Schema(
 storeSchema.plugin(mongoosePaginate);
 storeSchema.plugin(aggregatePaginate);
 
-export type StoreModelType = InferSchemaType<typeof storeSchema>;
+export type StoreModelType = InferSchemaType<typeof storeSchema> & StoreMethods;
 
 export const Store = model<StoreModelType, PaginateModel<StoreModelType>>(
   "Store",

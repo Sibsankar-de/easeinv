@@ -8,6 +8,7 @@ import invoiceReducer from "./features/invoiceSlice";
 import customerReducer from "./features/customerSlice";
 import globalErrorReducer from "./features/globalErrorSlice";
 import analyticsReducer from "./features/analyticsSlice";
+import galleryReducer from "./features/gallerySlice";
 
 export function makeStore() {
   return configureStore({
@@ -20,6 +21,7 @@ export function makeStore() {
       analytics: analyticsReducer,
       customers: customerReducer,
       globalError: globalErrorReducer,
+      gallery: galleryReducer,
     },
   });
 }

@@ -18,6 +18,12 @@ export type ProductDto = {
   enableInventoryTracking?: boolean;
   stockUnit: string;
   pricePerQuantity: PricePerQuantityType[];
+  images?: {
+    _id: string;
+    url: string;
+    name: string;
+  }[];
+  imageIds?: string[];
   createdAt?: Date;
   updatedAt?: Date;
 };

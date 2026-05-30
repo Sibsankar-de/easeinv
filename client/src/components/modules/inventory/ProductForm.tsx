@@ -30,11 +30,13 @@ import { useNavContext } from "@/contexts/NavContext";
 import { NavActionButton } from "../navbar/navbar";
 import { IconTooltip } from "@/components/ui/IconTooltip";
 import descriptiveTooltip from "@/constants/descriptiveTooltip";
+import { ProductImageSection } from "./ProductImageSection";
+import { GalleryImageDto } from "@/types/dto/galleryImageDto";
 
 export const ProductForm = ({ formFor }: { formFor: string }) => {
   const router = useRouter();
   const params = useParams();
-  const storeId = params?.store_id;
+  const storeId = params?.store_id as string;
   const productId = params?.product_id;
   const dispatch = useDispatch();
   const { getStatus, createStatus, updateStatus } =
@@ -57,7 +59,10 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     totalStock: 0,
     enableInventoryTracking: false,
     pricePerQuantity: [] as PricePerQuantityType[],
+    imageIds: [] as string[],
   });
+
+  const [selectedImages, setSelectedImages] = useState<GalleryImageDto[]>([]);
 
   // UI State (String values for Inputs)
   const [localInputs, setLocalInputs] = useState({
@@ -70,7 +75,11 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
       dispatch(getProductDetailsThunk({ productId, storeId }))
         .unwrap()
         .then((product: any) => {
-          setFormData(product);
+          setFormData({
+            ...product,
+            imageIds: product.images?.map((img: any) => img._id) || [],
+          });
+          setSelectedImages(product.images || []);
 
           setLocalInputs({
             buyingPricePerQuantity:
@@ -84,7 +93,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
           });
         });
     }
-  }, [productId, formFor]);
+  }, [productId, formFor, storeId]);
 
   function handleFormData(key: keyof typeof formData, value: any) {
     setFormData((prev) => ({
@@ -92,6 +101,14 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
       [key]: value,
     }));
   }
+
+  const handleSelectedImageChange = (images: GalleryImageDto[]) => {
+    setSelectedImages(images);
+    handleFormData(
+      "imageIds",
+      images.map((img) => img._id),
+    );
+  };
 
   const handleNumberChange = (key: keyof typeof formData, rawValue: string) => {
     setLocalInputs((prev) => ({
@@ -204,6 +221,25 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
           disabled={isLoading}
         />
       </div>
+
+      <Separator text={"Product images"} className="mb-8 mt-10" />
+
+      <div>
+        <Label className="flex items-center gap-3" htmlFor="">
+          <p>Add product images</p>
+          <IconTooltip
+            icon={<Info size={15} />}
+            tooltip={descriptiveTooltip.PRODUCT_IMAGE}
+          />
+        </Label>
+        <ProductImageSection
+          selectedImages={selectedImages}
+          onImageChange={handleSelectedImageChange}
+        />
+      </div>
+
+      <Separator text={"Categories"} className="mb-8 mt-10" />
+      
       <div>
         <Label htmlFor="category" className="block text-gray-600 mb-1.5">
           Select categories
@@ -260,7 +296,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
             <p>Enable Inventory tracking</p>
             <IconTooltip
               icon={<Info size={15} />}
-              tooltip={descriptiveTooltip.STOCK_TRACKING_TOOLTIP}
+              tooltip={descriptiveTooltip.STOCK_TRACKING}
             />
           </Label>
           <ToggleButton
@@ -300,7 +336,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
           <p>Add price per quantity (Selling prices)</p>
           <IconTooltip
             icon={<Info size={15} />}
-            tooltip={descriptiveTooltip.PRICE_PER_QUANTITY_TOOLTIP}
+            tooltip={descriptiveTooltip.PRICE_PER_QUANTITY}
           />
         </Label>
         <div>

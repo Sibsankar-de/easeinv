@@ -4,4 +4,5 @@ export const pageLimits = {
   CUSTOMER_SEARCH: 10,
   PRODUCT_LIST: 10,
   PRODUCT_SEARCH: 10,
+  GALLERY_IMAGE:10
 };
