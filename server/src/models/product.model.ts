@@ -8,6 +8,10 @@ import mongoosePaginate from "mongoose-paginate-v2";
 import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 import { AggregatePaginateModel } from "mongoose";
 
+interface ProductMethods {
+  _id: mongoose.Types.ObjectId;
+}
+
 export const pricePerQuantitySchema = new Schema(
   {
     id: {
@@ -111,7 +115,8 @@ productSchema.index(
 productSchema.plugin(mongoosePaginate);
 productSchema.plugin(aggregatePaginate);
 
-export type ProductModelType = InferSchemaType<typeof productSchema>;
+export type ProductModelType = InferSchemaType<typeof productSchema> &
+  ProductMethods;
 type ProductModel = PaginateModel<ProductModelType> &
   AggregatePaginateModel<ProductModelType>;
 

@@ -43,6 +43,15 @@ export const deleteProductThunk: any = createApiThunk(
     await api.delete(`/products/${payload.storeId}/${payload.productId}`),
 );
 
+export const rearrangeProductImagesThunk: any = createApiThunk(
+  "/products/rearrange-images",
+  async (payload: any) =>
+    await api.patch(
+      `/products/${payload.storeId}/${payload.productId}/rearrange-images`,
+      { imagePriorities: payload.imagePriorities },
+    ),
+);
+
 export const fetchCategoriesThunk: any = createApiThunk(
   "categories/list",
   async (storeId) => await api.get(`/stores/${storeId}/category-list`),
@@ -80,6 +89,7 @@ const initialState = {
   deleteStatus: "idle",
   categoryStatus: "idle",
   searchStatus: "idle",
+  rearrangeStatus: "idle",
   error: null,
 };
 
@@ -131,6 +141,16 @@ const productSlice = createSlice({
       )
       .addCase(deleteProductThunk.fulfilled, (state, action) => {
         state.deleteStatus = "success";
+        state.error = null;
+      })
+      .addCase(rearrangeProductImagesThunk.pending, (state, action) =>
+        setState(state, action, "rearrangeStatus"),
+      )
+      .addCase(rearrangeProductImagesThunk.rejected, (state, action) =>
+        setState(state, action, "rearrangeStatus"),
+      )
+      .addCase(rearrangeProductImagesThunk.fulfilled, (state, action) => {
+        state.rearrangeStatus = "success";
         state.error = null;
       })
       .addCase(fetchCategoriesThunk.pending, (state, action) =>

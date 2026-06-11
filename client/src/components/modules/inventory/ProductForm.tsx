@@ -9,7 +9,11 @@ import { PriceBreakdownInput } from "./PriceBreakdownInput";
 import { Button } from "../../ui/Button";
 import { CloudCheck, Info } from "lucide-react";
 import { useEffect, useState } from "react";
-import { PricePerQuantityType, ProductImageType } from "@/types/dto/productDto";
+import {
+  PricePerQuantityType,
+  ProductDto,
+  ProductImageType,
+} from "@/types/dto/productDto";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addNewProductThunk,
@@ -73,7 +77,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     if (formFor === "edit" && productId) {
       dispatch(getProductDetailsThunk({ productId, storeId }))
         .unwrap()
-        .then((product: any) => {
+        .then((product: ProductDto) => {
           setFormData({
             ...product,
             imageIds: product.images?.map((img: any) => img._id) || [],
@@ -235,6 +239,9 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
         <ProductImageSection
           selectedImages={selectedImages}
           onImageChange={handleSelectedImageChange}
+          storeId={storeId}
+          productId={productId as string}
+          rearrangeAllowed={formFor === "edit"}
         />
       </div>
 

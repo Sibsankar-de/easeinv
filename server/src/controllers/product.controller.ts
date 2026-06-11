@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiResponse } from "../utils/ApiResponse";
-import { Product } from "../models/product.model";
+import { Product, ProductModelType } from "../models/product.model";
 import { ProductImage } from "../models/productImage.model";
 import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
@@ -164,7 +164,7 @@ export const createProduct = asyncHandler(
       );
 
     if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
-      await addOrRemoveProductImages(product._id.toString(), imageIds);
+      await addOrRemoveProductImages(product, imageIds);
     }
 
     const productWithCategories = await getPopulatedProductData(product);
@@ -233,8 +233,13 @@ export const updateProduct = asyncHandler(
     );
 
     // add product images
-    if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
-      await addOrRemoveProductImages(productId as string, imageIds);
+    if (
+      updatedProduct &&
+      imageIds &&
+      Array.isArray(imageIds) &&
+      imageIds.length > 0
+    ) {
+      await addOrRemoveProductImages(updatedProduct, imageIds);
     }
 
     const productWithCategories = await getPopulatedProductData(updatedProduct);
@@ -252,9 +257,10 @@ export const updateProduct = asyncHandler(
 );
 
 const addOrRemoveProductImages = async (
-  productId: string,
+  product: ProductModelType,
   imageIds: string[],
 ) => {
+  const productId = product._id.toString();
   const existingImages = await ProductImage.find({ productId });
   const existingImageIds = existingImages.map((img) => img.imageId.toString());
 
@@ -281,6 +287,25 @@ const addOrRemoveProductImages = async (
         };
       }),
     );
+  }
+
+  // Update thumbnail image in product
+  if (imageIds.length > 0) {
+    // Update image with priority 1 image if changed
+    const thumbnailImageId = imageIds[0];
+    if (
+      mongoose.Types.ObjectId.isValid(thumbnailImageId) &&
+      thumbnailImageId !== product.thumbnailImageId?.toString()
+    ) {
+      await Product.findByIdAndUpdate(productId, {
+        thumbnailImageId,
+      });
+    }
+  } else {
+    // if no images left, remove thumbnail image reference
+    await Product.findByIdAndUpdate(productId, {
+      thumbnailImageId: null,
+    });
   }
 };
 
@@ -360,34 +385,56 @@ export const rearrangeProductImages = asyncHandler(
       await ProductImage.bulkWrite(bulkOps);
     }
 
+    // update the thumbnail image with priority 1
+    const thumbnailImageId = Object.keys(imagePriorities).find(
+      (key) => imagePriorities[key] === 1,
+    );
+
+    if (thumbnailImageId && mongoose.Types.ObjectId.isValid(thumbnailImageId)) {
+      await Product.findByIdAndUpdate(productId, {
+        thumbnailImageId: thumbnailImageId,
+      });
+    }
+
+    const productImages = await getProductImages(productId as string);
+
     return res
       .status(StatusCodes.OK)
       .json(
-        new ApiResponse(StatusCodes.OK, null, "Images rearranged successfully"),
+        new ApiResponse(
+          StatusCodes.OK,
+          productImages,
+          "Images rearranged successfully",
+        ),
       );
   },
 );
 
 const getPopulatedProductData = async (product: any) => {
   const categories = await Category.find({ _id: { $in: product.categories } });
-  const images = await ProductImage.find({ productId: product._id })
-    .sort({ priority: 1 })
-    .populate("imageId");
+  const productImages = await getProductImages(product._id.toString());
 
   return {
     ...product.toObject(),
     categories,
-    images: images.map((img) => {
-      const imageData = img.imageId as any;
-      return {
-        _id: img._id,
-        priority: img.priority,
-        imageId: imageData._id,
-        url: imageData.url,
-        name: imageData.name,
-      };
-    }),
+    images: productImages,
   };
+};
+
+const getProductImages = async (productId: string) => {
+  const images = await ProductImage.find({ productId })
+    .sort({ priority: 1 })
+    .populate("imageId");
+  return images.map((img) => {
+    const imageData = img.imageId as any;
+    return {
+      _id: img._id,
+      priority: img.priority,
+      imageId: imageData._id,
+      url: imageData.url,
+      name: imageData.name,
+    };
+  });
 };
 
 export const searchProducts = asyncHandler(
