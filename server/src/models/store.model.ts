@@ -70,6 +70,8 @@ storeSchema.plugin(aggregatePaginate);
 
 export type StoreModelType = InferSchemaType<typeof storeSchema> & StoreMethods;
 
+export type StoreDocument = mongoose.HydratedDocument<StoreModelType>;
+
 export const Store = model<StoreModelType, PaginateModel<StoreModelType>>(
   "Store",
   storeSchema,

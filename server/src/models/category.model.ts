@@ -36,6 +36,8 @@ categorySchema.plugin(aggregatePaginate);
 export type CategoryModelType = InferSchemaType<typeof categorySchema> &
   CategoryMethods;
 
+export type CategoryDocument = mongoose.HydratedDocument<CategoryModelType>;
+
 type CategoryModel = PaginateModel<CategoryModelType> &
   AggregatePaginateModel<CategoryModelType>;
 

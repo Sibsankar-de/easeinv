@@ -1,5 +1,5 @@
 import mongoose, { InferSchemaType, PaginateModel, Schema } from "mongoose";
-import { storeEnums, userRoles } from "../enums/store.enum";
+import { storeEnums } from "../enums/store.enum";
 import { isAfter } from "../utils/date-utils";
 
 interface StoreUserInviteMethods {
@@ -47,6 +47,9 @@ export type StoreUserInviteModelType = InferSchemaType<
   typeof storeUserInviteSchema
 > &
   StoreUserInviteMethods;
+
+export type StoreUserInviteDocument =
+  mongoose.HydratedDocument<StoreUserInviteModelType>;
 
 export const StoreUserInvite = mongoose.model<
   StoreUserInviteModelType,

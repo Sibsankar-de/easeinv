@@ -1,13 +1,15 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiResponse } from "../utils/ApiResponse";
-import { Product, ProductModelType } from "../models/product.model";
+import { Product, ProductDocument } from "../models/product.model";
 import { ProductImage } from "../models/productImage.model";
 import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { Category } from "../models/category.model";
 import { generateGTIN } from "../utils/gtin-generator";
 import mongoose from "mongoose";
+import { productLimits } from "../constants/limits.constants";
+import { GalleryImageDocument } from "../models/galleryImage.model";
 
 export const getProducts = asyncHandler(async (req: Request, res: Response) => {
   const { storeId } = req.params;
@@ -232,13 +234,15 @@ export const updateProduct = asyncHandler(
       { new: true },
     );
 
+    if (!updatedProduct) {
+      throw new ApiError(
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        "Failed to update product",
+      );
+    }
+
     // add product images
-    if (
-      updatedProduct &&
-      imageIds &&
-      Array.isArray(imageIds) &&
-      imageIds.length > 0
-    ) {
+    if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
       await addOrRemoveProductImages(updatedProduct, imageIds);
     }
 
@@ -257,9 +261,17 @@ export const updateProduct = asyncHandler(
 );
 
 const addOrRemoveProductImages = async (
-  product: ProductModelType,
+  product: ProductDocument,
   imageIds: string[],
 ) => {
+  // check product image add limit
+  if (imageIds.length > productLimits.MAX_IMAGES) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      `You can add maximum ${productLimits.MAX_IMAGES} images to a product.`,
+    );
+  }
+
   const productId = product._id.toString();
   const existingImages = await ProductImage.find({ productId });
   const existingImageIds = existingImages.map((img) => img.imageId.toString());
@@ -410,8 +422,10 @@ export const rearrangeProductImages = asyncHandler(
   },
 );
 
-const getPopulatedProductData = async (product: any) => {
-  const categories = await Category.find({ _id: { $in: product.categories } });
+const getPopulatedProductData = async (product: ProductDocument) => {
+  const categories = await Category.find({
+    _id: { $in: product.categories },
+  });
   const productImages = await getProductImages(product._id.toString());
 
   return {
@@ -425,8 +439,9 @@ const getProductImages = async (productId: string) => {
   const images = await ProductImage.find({ productId })
     .sort({ priority: 1 })
     .populate("imageId");
+
   return images.map((img) => {
-    const imageData = img.imageId as any;
+    const imageData = img.imageId as any as GalleryImageDocument;
     return {
       _id: img._id,
       priority: img.priority,

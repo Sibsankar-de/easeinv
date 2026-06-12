@@ -51,6 +51,8 @@ galleryImageSchema.plugin(aggregatePaginate);
 
 export type GalleryImageModelType = InferSchemaType<typeof galleryImageSchema>;
 
+export type GalleryImageDocument = mongoose.HydratedDocument<GalleryImageModelType>;
+
 type GalleryImageModel = PaginateModel<GalleryImageModelType> &
   AggregatePaginateModel<GalleryImageModelType>;
 

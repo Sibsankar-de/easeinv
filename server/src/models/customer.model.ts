@@ -65,6 +65,9 @@ customerSchema.plugin(mongoosePaginate);
 customerSchema.plugin(aggregatePaginate);
 
 export type CustomerModelType = InferSchemaType<typeof customerSchema>;
+
+export type CustomerDocument = mongoose.HydratedDocument<CustomerModelType>;
+
 type CustomerModel = PaginateModel<CustomerModelType> &
   AggregatePaginateModel<CustomerModelType>;
 

@@ -69,7 +69,7 @@ const productSchema = new Schema(
       ref: "GalleryImage",
     },
     categories: {
-      type: [mongoose.Types.ObjectId],
+      type: [Schema.Types.ObjectId],
       ref: "Category",
       default: [],
     },
@@ -117,6 +117,9 @@ productSchema.plugin(aggregatePaginate);
 
 export type ProductModelType = InferSchemaType<typeof productSchema> &
   ProductMethods;
+
+export type ProductDocument = mongoose.HydratedDocument<ProductModelType>;
+
 export type ProductModel = PaginateModel<ProductModelType> &
   AggregatePaginateModel<ProductModelType>;
 

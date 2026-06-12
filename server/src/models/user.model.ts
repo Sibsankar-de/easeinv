@@ -112,6 +112,8 @@ userSchema.plugin(aggregatePaginate);
 
 export type UserModelType = InferSchemaType<typeof userSchema> & UserMethods;
 
+export type UserDocument = mongoose.HydratedDocument<UserModelType>;
+
 export const User = mongoose.model<UserModelType, PaginateModel<UserModelType>>(
   "User",
   userSchema,

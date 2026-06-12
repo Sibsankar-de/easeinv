@@ -144,6 +144,8 @@ invoiceSchema.plugin(aggregatePaginate);
 
 export type InvoiceModelType = InferSchemaType<typeof invoiceSchema>;
 
+export type InvoiceDocument = mongoose.HydratedDocument<InvoiceModelType>;
+
 type InvoiceModel = PaginateModel<InvoiceModelType> &
   AggregatePaginateModel<InvoiceModelType>;
 

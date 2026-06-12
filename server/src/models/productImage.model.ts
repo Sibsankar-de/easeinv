@@ -22,6 +22,8 @@ const productImageSchema = new Schema(
 
 export type ProductImageModelType = InferSchemaType<typeof productImageSchema>;
 
+export type ProductImageDocument = mongoose.HydratedDocument<ProductImageModelType>;
+
 export const ProductImage = model<ProductImageModelType>(
   "ProductImage",
   productImageSchema,

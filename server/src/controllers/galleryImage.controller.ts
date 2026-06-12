@@ -9,7 +9,7 @@ import { uploadToCloudinary } from "../services/cloudinary.service";
 import { cloudinaryFolders } from "../constants/cloudinary.constant";
 import { ApiResponse } from "../utils/ApiResponse";
 import { ProductImage } from "../models/productImage.model";
-import { uploadLimits } from "../constants/fileUpload.constants";
+import { uploadSizeLimits } from "../constants/limits.constants";
 
 export function createFileHash(file: Express.Multer.File): string {
   return createHash("sha256").update(file.buffer).digest("hex");
@@ -25,7 +25,7 @@ export const uploadGalleryImage = asyncHandler(
       throw new ApiError(StatusCodes.BAD_REQUEST, "Image file is required.");
     }
 
-    if (file.size > uploadLimits.GALLERY_IMAGE) {
+    if (file.size > uploadSizeLimits.GALLERY_IMAGE) {
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
         "File size must be within 4MB",

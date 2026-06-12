@@ -98,6 +98,9 @@ export type StoreSettingsModelType = InferSchemaType<
   typeof storeSettingsSchema
 >;
 
+export type StoreSettingsDocument =
+  mongoose.HydratedDocument<StoreSettingsModelType>;
+
 export const StoreSettings = model<
   StoreSettingsModelType,
   PaginateModel<StoreSettingsModelType>
