@@ -8,6 +8,7 @@ import analyticsRoutes from "./analytics.routes";
 import oauthRoutes from "./oauth.routes";
 import searchRoutes from "./search.routes";
 import galleryRoutes from "./galleryImage.routes";
+import apiKeyRoutes from "./apiKey.routes";
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use("/analytics", analyticsRoutes);
 router.use("/oauth", oauthRoutes);
 router.use("/search", searchRoutes);
 router.use("/gallery", galleryRoutes);
+router.use("/api-keys", apiKeyRoutes);
 
 export default router;

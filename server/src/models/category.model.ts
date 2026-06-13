@@ -28,7 +28,10 @@ const categorySchema = new Schema(
   { timestamps: true },
 );
 
-categorySchema.index({ name: 1 }, { collation: { locale: "en", strength: 2 } });
+categorySchema.index(
+  { storeId: 1, name: 1 },
+  { collation: { locale: "en", strength: 2 } },
+);
 
 categorySchema.plugin(mongoosePaginate);
 categorySchema.plugin(aggregatePaginate);
