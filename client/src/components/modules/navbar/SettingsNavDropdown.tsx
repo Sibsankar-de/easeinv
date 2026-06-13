@@ -1,6 +1,13 @@
 import { Dropdown } from "../../ui/Dropdown";
 import { NavMenuType } from "@/types/NavMenuTypes";
-import { Settings, FileText, Archive, CreditCard, Lock } from "lucide-react";
+import {
+  Settings,
+  FileText,
+  Archive,
+  CreditCard,
+  Lock,
+  Cable,
+} from "lucide-react";
 import { NavMenuItem } from "./SideNavMenu";
 
 const menuItems: NavMenuType[] = [
@@ -33,6 +40,12 @@ const menuItems: NavMenuType[] = [
     basePath: "/settings/access-control",
     label: "Access Control",
     icon: Lock,
+  },
+  {
+    id: "api-integrations",
+    basePath: "/settings/api-integrations",
+    label: "API & Integrations",
+    icon: Cable,
   },
 ];
 
