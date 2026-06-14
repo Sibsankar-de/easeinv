@@ -1,0 +1,14 @@
+import { ApiKeyScope } from "@/constants/apiKeyConstants";
+
+export type ApiKeyDto = {
+  _id: string;
+  key: string;
+  storeId: string;
+  userId: string;
+  name: string;
+  scopes: ApiKeyScope[];
+  status: string;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+};

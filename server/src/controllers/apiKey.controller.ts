@@ -93,7 +93,7 @@ export const revokeApiKey = asyncHandler(async (req, res) => {
 export const getAllApiKeys = asyncHandler(async (req, res) => {
   const storeId = req.store?._id;
 
-  const apiKeys = await ApiKey.find({ storeId });
+  const apiKeys = await ApiKey.find({ storeId }).sort({ status: 1 });
 
   return res
     .status(200)

@@ -9,6 +9,7 @@ import customerReducer from "./features/customerSlice";
 import globalErrorReducer from "./features/globalErrorSlice";
 import analyticsReducer from "./features/analyticsSlice";
 import galleryReducer from "./features/gallerySlice";
+import apikeyReducer from "./features/apiKeySlice";
 
 export function makeStore() {
   return configureStore({
@@ -22,6 +23,7 @@ export function makeStore() {
       customers: customerReducer,
       globalError: globalErrorReducer,
       gallery: galleryReducer,
+      apiKey: apikeyReducer,
     },
   });
 }

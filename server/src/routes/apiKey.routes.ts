@@ -11,11 +11,10 @@ import {
 const router = Router();
 
 router.use(verifyAuth);
-router.use(verifyOwnerLevelAccess);
 
-router.post("/", createApiKey);
-router.patch("/rename/:keyId", renameApiKey);
-router.patch("/revoke/:keyId", revokeApiKey);
-router.get("/", getAllApiKeys);
+router.post("/:storeId", verifyOwnerLevelAccess, createApiKey);
+router.patch("/rename/:storeId/:keyId", verifyOwnerLevelAccess, renameApiKey);
+router.patch("/revoke/:storeId/:keyId", verifyOwnerLevelAccess, revokeApiKey);
+router.get("/:storeId", verifyOwnerLevelAccess, getAllApiKeys);
 
 export default router;
