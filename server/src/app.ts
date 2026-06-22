@@ -26,7 +26,7 @@ app.use(express.static("public"));
 app.use(morgan("dev"));
 
 // routes
-app.use("/api/v1", routes);
+app.use(routes);
 
 // error middleware
 app.use(errorMiddleware);
