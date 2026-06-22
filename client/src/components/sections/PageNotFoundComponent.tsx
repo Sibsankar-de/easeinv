@@ -3,8 +3,10 @@
 import { Home, ArrowLeft } from "lucide-react";
 import { Button } from "../ui/Button";
 import { PrimaryBox } from "../ui/PrimaryBox";
+import { useRouter } from "next/navigation";
 
 export function PageNotFoundComponent() {
+  const router = useRouter();
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="max-w-2xl w-full text-center">
@@ -24,7 +26,7 @@ export function PageNotFoundComponent() {
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button onClick={() => window.history.back()}>
+          <Button onClick={() => router.back()}>
             <ArrowLeft className="w-5 h-5" />
             Go Back
           </Button>

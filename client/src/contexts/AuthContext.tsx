@@ -21,13 +21,13 @@ const AuthContext = createContext<AuthContextTypes | null>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const router = useRouter();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isAuthChecking, setIsAuthChecking] = useState(false);
 
   // fetch current user
   useEffect(() => {
+    setIsAuthChecking(true);
     dispatch(fetchCurrentUser())
       .unwrap()
       .then(() => {
