@@ -4,6 +4,7 @@ import { TopNav } from "@/components/modules/landing-page/TopNav";
 import { Footer } from "@/components/layout/Footer";
 import PricingGrid from "@/components/modules/pricing/PricingGrid";
 import InteractiveAccordion from "@/components/modules/landing-page/InteractiveAccordion";
+import PageHeader from "@/components/ui/PageHeader";
 import { ArrowRight, Gem } from "lucide-react";
 import type { Metadata } from "next";
 
@@ -122,23 +123,13 @@ export default function PricingPage() {
       <TopNav />
 
       <main className="flex-1">
-        {/* Header Section */}
-        <section className="relative overflow-hidden px-6 lg:px-12 py-20 text-center border-b border-border/40">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-primary/10 rounded-full blur-[100px] -z-10" />
-
-          <div className="max-w-3xl mx-auto space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
-              <Gem className="w-3.5 h-3.5" /> Flexible Business Subscriptions
-            </div>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
-              Fair Pricing, Built To Scale With You
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-              Start on our feature-packed 14-day free trial. Choose a plan that
-              matches your current commerce and billing operations.
-            </p>
-          </div>
-        </section>
+        {/* Unified Page Header */}
+        <PageHeader
+          badgeLabel="Flexible Business Subscriptions"
+          badgeIcon={Gem}
+          title="Fair Pricing, Built To Scale With You"
+          description="Start on our feature-packed 14-day free trial. Choose a plan that matches your current commerce and billing operations."
+        />
 
         {/* Pricing toggle & grid (Client component leaf) */}
         <section className="py-20 px-6 lg:px-12 max-w-7xl mx-auto">

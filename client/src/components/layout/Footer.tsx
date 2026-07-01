@@ -85,7 +85,7 @@ export const Footer = () => {
               </h4>
               <ul className="space-y-4">
                 <li>
-                  <FooterLink href="#">About</FooterLink>
+                  <FooterLink href="/about">About</FooterLink>
                 </li>
                 <li>
                   <FooterLink href="#">Blog</FooterLink>
@@ -94,7 +94,7 @@ export const Footer = () => {
                   <FooterLink href="#">Careers</FooterLink>
                 </li>
                 <li>
-                  <FooterLink href="#">Contact</FooterLink>
+                  <FooterLink href="/contact">Contact</FooterLink>
                 </li>
               </ul>
             </div>
@@ -104,10 +104,10 @@ export const Footer = () => {
               </h4>
               <ul className="space-y-4">
                 <li>
-                  <FooterLink href="#">Privacy Policy</FooterLink>
+                  <FooterLink href="/privacy-policy">Privacy Policy</FooterLink>
                 </li>
                 <li>
-                  <FooterLink href="#">Terms of Service</FooterLink>
+                  <FooterLink href="/terms-of-service">Terms of Service</FooterLink>
                 </li>
                 <li>
                   <FooterLink href="#">Security</FooterLink>
