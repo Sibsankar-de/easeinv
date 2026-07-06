@@ -1,56 +1,22 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiResponse } from "../utils/ApiResponse";
-import { Store } from "../models/store.model";
-import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
-import { Product } from "../models/product.model";
-import { Customer } from "../models/customer.model";
-import mongoose from "mongoose";
-import { Category } from "../models/category.model";
-import { StoreSettings } from "../models/storeSettings.model";
-import { uploadToCloudinary } from "../services/cloudinary.service";
-import { cloudinaryFolders } from "../constants/cloudinary.constant";
-import { StoreUser } from "../models/storeUser.model";
-import { userRoles } from "../enums/store.enum";
+import * as storeService from "../services/store.service";
+import { validateBody } from "../utils/validate.utils";
+import {
+  createStoreSchema,
+  updateStoreSchema,
+  updateStoreSettingsSchema,
+  createCategorySchema,
+} from "../schemas/store.schema";
 
 export const createStore = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?._id;
-  const { name, businessType, address, contactEmail, contactNo, currencyCode } =
-    req.body;
+  
+  const validatedBody = validateBody(createStoreSchema, req.body);
 
-  if (!name || !currencyCode)
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Store name and currency is required.",
-    );
-
-  const store = await Store.create({
-    name,
-    owner: userId,
-    businessType,
-    address,
-    contactEmail,
-    contactNo,
-    currencyCode,
-  });
-
-  // create user-store access entry for owner
-  await StoreUser.create({
-    storeId: store._id,
-    userId,
-    role: userRoles.OWNER,
-  });
-
-  // create store settings
-  const storeSettings = await StoreSettings.create({
-    storeId: store._id,
-    invoiceStoreName: store.name,
-    invoiceStoreAddress: store.address,
-  });
-
-  store.settingsId = storeSettings._id as mongoose.Types.ObjectId;
-  await store.save();
+  const store = await storeService.createStore(userId!, validatedBody);
 
   return res
     .status(StatusCodes.OK)
@@ -60,52 +26,12 @@ export const createStore = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updateStore = asyncHandler(async (req: Request, res: Response) => {
-  const { storeId } = req.params;
-  const updateData = req.body;
-
-  if (!updateData.name || !updateData.currencyCode)
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Store name and currency is required",
-    );
-
+  const { storeId } = req.params as { storeId: string };
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-  let logoUrl, qrCodeUrl;
 
-  if (files) {
-    if (files.logo && files.logo[0]) {
-      const uploadData = await uploadToCloudinary(
-        files.logo[0].buffer,
-        files.logo[0].originalname,
-        cloudinaryFolders.STORE_LOGO,
-      );
-      if (uploadData) logoUrl = uploadData.url;
-    }
-    if (files.qrCode && files.qrCode[0]) {
-      const uploadData = await uploadToCloudinary(
-        files.qrCode[0].buffer,
-        files.qrCode[0].originalname,
-        cloudinaryFolders.PAYMENT_QR,
-      );
-      if (uploadData) qrCodeUrl = uploadData.url;
-    }
-  }
+  const validatedBody = validateBody(updateStoreSchema, req.body);
 
-  const updatedStore = await Store.findByIdAndUpdate(
-    storeId,
-    {
-      ...updateData,
-    },
-    { new: true },
-  ).select("-accessList");
-
-  if (logoUrl || qrCodeUrl) {
-    const settingsUpdate: any = {};
-    if (logoUrl) settingsUpdate.invoiceStoreLogoUrl = logoUrl;
-    if (qrCodeUrl) settingsUpdate.invoicePaymentQrCode = qrCodeUrl;
-
-    await StoreSettings.findOneAndUpdate({ storeId }, { $set: settingsUpdate });
-  }
+  const updatedStore = await storeService.updateStore(storeId, validatedBody, files);
 
   return res
     .status(StatusCodes.OK)
@@ -113,52 +39,24 @@ export const updateStore = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const deleteStore = asyncHandler(async (req: Request, res: Response) => {
-  const { storeId } = req.params;
+  const { storeId } = req.params as { storeId: string };
 
-  const store = await Store.findById(storeId);
-  if (!store) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Store not found");
-  }
-
-  // Delete related data
-  await Promise.all([
-    Store.findByIdAndDelete(storeId),
-    StoreUser.deleteMany({ storeId }),
-    StoreSettings.deleteMany({ storeId }),
-    Product.deleteMany({ storeId }),
-    Customer.deleteMany({ storeId }),
-    Category.deleteMany({ storeId }),
-  ]);
+  await storeService.deleteStore(storeId);
 
   return res
     .status(StatusCodes.OK)
     .json(new ApiResponse(StatusCodes.OK, null, "Store deleted successfully"));
 });
 
-const populateStoreSettings = async (store: any) => {
-  if (!store.settingsId) return store.toObject();
-
-  const storeSettings = await StoreSettings.findById(store.settingsId);
-
-  return { ...store.toObject(), storeSettings };
-};
-
 export const updateStoreSettings = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId } = req.params;
-    const updateData = req.body;
+    const { storeId } = req.params as { storeId: string };
+    
+    const validatedBody = validateBody(updateStoreSettingsSchema, req.body);
 
-    if (!updateData)
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Data is required");
-
-    const updatedStoreSettings = await StoreSettings.findOneAndUpdate(
-      { storeId },
-      {
-        $set: {
-          ...updateData,
-        },
-      },
-      { new: true },
+    const updatedStoreSettings = await storeService.updateStoreSettings(
+      storeId,
+      validatedBody,
     );
 
     return res
@@ -175,41 +73,10 @@ export const updateStoreSettings = asyncHandler(
 
 export const uploadStoreLogo = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId } = req.params;
-
+    const { storeId } = req.params as { storeId: string };
     const file = req.file;
-    if (!file) {
-      throw new ApiError(
-        StatusCodes.BAD_REQUEST,
-        "Store logo file is required",
-      );
-    }
 
-    const buffer = file.buffer;
-    const uploadData = await uploadToCloudinary(
-      buffer,
-      file.originalname,
-      cloudinaryFolders.STORE_LOGO,
-    );
-
-    if (!uploadData) {
-      throw new ApiError(
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        "Failed to upload logo",
-      );
-    }
-
-    const logoUrl = uploadData.url;
-
-    await StoreSettings.findOneAndUpdate(
-      { storeId },
-      {
-        $set: {
-          invoiceStoreLogoUrl: logoUrl,
-        },
-      },
-      { new: true },
-    );
+    const logoUrl = await storeService.uploadStoreLogo(storeId, file);
 
     return res
       .status(StatusCodes.OK)
@@ -225,38 +92,10 @@ export const uploadStoreLogo = asyncHandler(
 
 export const uploadInvoicePaymentQrCode = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId } = req.params;
-
+    const { storeId } = req.params as { storeId: string };
     const file = req.file;
-    if (!file) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "QR code file is required");
-    }
 
-    const buffer = file.buffer;
-    const uploadData = await uploadToCloudinary(
-      buffer,
-      file.originalname,
-      cloudinaryFolders.PAYMENT_QR,
-    );
-
-    if (!uploadData) {
-      throw new ApiError(
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        "Failed to upload QR code",
-      );
-    }
-
-    const qrCodeUrl = uploadData.url;
-
-    await StoreSettings.findOneAndUpdate(
-      { storeId },
-      {
-        $set: {
-          invoicePaymentQrCode: qrCodeUrl,
-        },
-      },
-      { new: true },
-    );
+    const qrCodeUrl = await storeService.uploadInvoicePaymentQrCode(storeId, file);
 
     return res
       .status(StatusCodes.OK)
@@ -274,40 +113,7 @@ export const getStoreList = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.user?._id;
 
-    const storeList = await StoreUser.aggregate([
-      {
-        $match: {
-          userId: new mongoose.Types.ObjectId(userId as any),
-        },
-      },
-      {
-        $lookup: {
-          from: "stores",
-          localField: "storeId",
-          foreignField: "_id",
-          as: "storeDetails",
-        },
-      },
-      {
-        $unwind: "$storeDetails",
-      },
-      {
-        $project: {
-          _id: "$storeDetails._id",
-          role: 1,
-          name: "$storeDetails.name",
-          businessType: "$storeDetails.businessType",
-          address: "$storeDetails.address",
-          contactEmail: "$storeDetails.contactEmail",
-          contactNo: "$storeDetails.contactNo",
-          createdAt: "$storeDetails.createdAt",
-        },
-      },
-    ]);
-
-    if (!storeList) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to get list");
-    }
+    const storeList = await storeService.getStoreList(userId!);
 
     return res
       .status(StatusCodes.OK)
@@ -317,20 +123,16 @@ export const getStoreList = asyncHandler(
 
 export const getStoreDetails = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId } = req.params;
+    const { storeId } = req.params as { storeId: string };
 
-    const store = await Store.findById(storeId).select("-accessList");
-
-    if (!store) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to get store");
-    }
+    const storeDetails = await storeService.getStoreDetails(storeId);
 
     return res
       .status(StatusCodes.OK)
       .json(
         new ApiResponse(
           StatusCodes.OK,
-          await populateStoreSettings(store),
+          storeDetails,
           "Store fetched",
         ),
       );
@@ -339,60 +141,21 @@ export const getStoreDetails = asyncHandler(
 
 export const getProductsByStore = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId } = req.params;
+    const { storeId } = req.params as { storeId: string };
     const page = parseInt((req.query.page as string) || "1");
     const limit = parseInt((req.query.limit as string) || "20");
     const query = (req.query.query as string) || "";
     const sortBy = (req.query.sortBy as string) || "createdAt";
     const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
 
-    const match: any = {
-      storeId: new mongoose.Types.ObjectId(storeId as string),
-    };
-
-    if (query) {
-      const safeTerm = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const regex = new RegExp(`^${safeTerm}`, "i");
-      match.$or = [
-        { name: { $regex: regex } },
-        { sku: { $regex: regex } },
-        { gtin: { $regex: regex } },
-      ];
-    }
-
-    const productList = await (Product as any).aggregatePaginate(
-      (Product as any).aggregate([
-        {
-          $match: match,
-        },
-        {
-          $lookup: {
-            from: "categories",
-            let: { catIds: "$categories" },
-            pipeline: [
-              {
-                $match: {
-                  $expr: { $in: ["$_id", "$$catIds"] },
-                },
-              },
-              {
-                $project: { _id: 1, name: 1, storeId: 1 },
-              },
-            ],
-            as: "categories",
-          },
-        },
-      ]),
-      {
-        page,
-        limit,
-        sort: { [sortBy]: sortOrder },
-      },
-    );
-
-    if (!productList) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to get list");
-    }
+    const productList = await storeService.getProductsByStore({
+      storeId,
+      page,
+      limit,
+      query,
+      sortBy,
+      sortOrder,
+    });
 
     return res
       .status(StatusCodes.OK)
@@ -402,25 +165,11 @@ export const getProductsByStore = asyncHandler(
 
 export const createCategory = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId } = req.params;
-    const { name } = req.body;
+    const { storeId } = req.params as { storeId: string };
+    
+    const validatedBody = validateBody(createCategorySchema, req.body);
 
-    if (!name) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Category name is required");
-    }
-
-    const existingCategory = await Category.findOne({ name, storeId });
-    if (existingCategory) {
-      throw new ApiError(
-        StatusCodes.BAD_REQUEST,
-        "Category with this name already exists",
-      );
-    }
-
-    const category = await Category.create({
-      name,
-      storeId: storeId as string,
-    });
+    const category = await storeService.createCategory(storeId, validatedBody.name);
 
     return res
       .status(StatusCodes.OK)
@@ -430,11 +179,9 @@ export const createCategory = asyncHandler(
 
 export const getCategoriesByStore = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId } = req.params;
+    const { storeId } = req.params as { storeId: string };
 
-    const categories = await Category.find({ storeId }).select(
-      "_id name storeId",
-    );
+    const categories = await storeService.getCategoriesByStore(storeId);
 
     return res
       .status(StatusCodes.OK)

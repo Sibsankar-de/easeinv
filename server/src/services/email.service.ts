@@ -1,7 +1,7 @@
 import { emailTemplates } from "../constants/emailTemplates";
 import { StoreModelType } from "../models/store.model";
 import { UserModelType } from "../models/user.model";
-import { renderEmail } from "../services/emailRender.service";
+import { renderEmail } from "./emailRender.service";
 import { EmailJob } from "../types/email";
 
 export const getStoreUserInviteEmail = async (

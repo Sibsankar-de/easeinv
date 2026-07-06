@@ -1,101 +1,64 @@
 import { StatusCodes } from "http-status-codes";
-import { ApiError } from "../utils/ApiError";
 import { asyncHandler } from "../utils/asyncHandler";
-import { ApiKey } from "../models/apiKey.model";
-import { generateSecureToken } from "../utils/token-generator";
 import { ApiResponse } from "../utils/ApiResponse";
-import { apiKeyStatus } from "../enums/apiKey.enum";
-
-const generateApiKey = () => {
-  return "sk_inv_" + generateSecureToken(256);
-};
+import * as apiKeyService from "../services/apiKey.service";
+import { validateBody } from "../utils/validate.utils";
+import { createApiKeySchema, renameApiKeySchema } from "../schemas/apiKey.schema";
 
 export const createApiKey = asyncHandler(async (req, res) => {
   const storeId = req.store?._id;
   const userId = req.user?._id;
 
-  const { name, scopes, expiresAt } = req.body;
-  if (!name) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Name is required.");
-  }
+  const validatedBody = validateBody(createApiKeySchema, req.body);
 
-  const newKey = generateApiKey();
-
-  const newApiKey = await ApiKey.create({
-    key: newKey,
-    storeId,
-    userId,
-    name,
-    scopes,
-    expiresAt,
-    status: apiKeyStatus.ACTIVE,
+  const newApiKey = await apiKeyService.createApiKey({
+    storeId: storeId!,
+    userId: userId!,
+    ...validatedBody,
   });
 
-  if (!newApiKey) {
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      "Failed to create Api key",
-    );
-  }
-
   return res
-    .status(200)
+    .status(StatusCodes.CREATED)
     .json(new ApiResponse(StatusCodes.CREATED, newApiKey, "Api key created."));
 });
 
 export const renameApiKey = asyncHandler(async (req, res) => {
   const storeId = req.store?._id;
-  const { keyId } = req.params;
-  const { name } = req.body;
+  const { keyId } = req.params as { keyId: string };
 
-  if (!keyId) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Key id is required.");
-  }
+  const validatedBody = validateBody(renameApiKeySchema, req.body);
 
-  if (!name) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Name is required.");
-  }
-
-  const key = await ApiKey.findOne({ _id: keyId, storeId });
-  if (!key) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Api key not found.");
-  }
-
-  key.name = name;
-  await key.save({ validateBeforeSave: false });
+  const key = await apiKeyService.renameApiKey({
+    storeId: storeId!,
+    keyId,
+    ...validatedBody,
+  });
 
   return res
-    .status(200)
+    .status(StatusCodes.OK)
     .json(new ApiResponse(StatusCodes.OK, key, "Api key renamed."));
 });
 
 export const revokeApiKey = asyncHandler(async (req, res) => {
   const storeId = req.store?._id;
-  const { keyId } = req.params;
+  const { keyId } = req.params as { keyId: string };
 
-  if (!keyId) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Key id is required.");
-  }
-
-  const key = await ApiKey.findOne({ _id: keyId, storeId });
-  if (!key) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Api key not found.");
-  }
-
-  key.status = apiKeyStatus.REVOKED;
-  await key.save({ validateBeforeSave: false });
+  const key = await apiKeyService.revokeApiKey({
+    storeId: storeId!,
+    keyId,
+  });
 
   return res
-    .status(200)
+    .status(StatusCodes.OK)
     .json(new ApiResponse(StatusCodes.OK, key, "Api key revoked."));
 });
 
 export const getAllApiKeys = asyncHandler(async (req, res) => {
   const storeId = req.store?._id;
 
-  const apiKeys = await ApiKey.find({ storeId }).sort({ status: 1 });
+  const apiKeys = await apiKeyService.getAllApiKeys(storeId!);
 
   return res
-    .status(200)
+    .status(StatusCodes.OK)
     .json(new ApiResponse(StatusCodes.OK, apiKeys, "Api keys fetched."));
 });

@@ -1,85 +1,34 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
-import { ApiError } from "../utils/ApiError";
-import { User } from "../models/user.model";
 import { ApiResponse } from "../utils/ApiResponse";
-import mongoose from "mongoose";
-import jwt, { JwtPayload } from "jsonwebtoken";
-import { deleteFromCloudinary, uploadToCloudinary } from "../services/cloudinary.service";
-import { cloudinaryFolders } from "../constants/cloudinary.constant";
 import { StatusCodes } from "http-status-codes";
-import { env } from "../configs/env";
+import * as userService from "../services/user.service";
+import { validateBody } from "../utils/validate.utils";
+import {
+  createUserSchema,
+  loginUserSchema,
+  updateUserSchema,
+  updatePasswordSchema,
+  validateAndResetPasswordSchema,
+} from "../schemas/user.schema";
 import {
   accessTokenCookieOptions,
   cookieOptions,
   refreshTokenCookieOptions,
 } from "../utils/cookie-utils";
 
-// generate tokens
-export const generateAccessAndRefrehToken = async (
-  userId: mongoose.Types.ObjectId,
-) => {
-  try {
-    const user = await User.findById(userId);
-    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
-    const accessToken = await user.getAccessToken();
-    const refreshToken = await user.getRefreshToken();
-    user.refreshToken = refreshToken;
-    await user.save({ validateBeforeSave: false });
-    return { accessToken, refreshToken };
-  } catch (_error) {
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      "Internal error on generating tokens",
-    );
-  }
-};
-
-// create user
 export const createUser = asyncHandler(async (req: Request, res: Response) => {
-  const { userName, email, password } = req.body;
-
-  if ([userName, email, password].some((e) => e === ""))
-    throw new ApiError(StatusCodes.BAD_REQUEST, "All fields are required");
-
-  const existedUser = await User.findOne({ email });
-  if (existedUser)
-    throw new ApiError(StatusCodes.BAD_REQUEST, "User already exist");
-
-  const newUser = await User.create({
-    userName,
-    email,
-    password,
-    authBy: "email",
-  });
-
-  if (!newUser)
-    throw new ApiError(StatusCodes.FORBIDDEN, "Failed to create user");
-
+  const validatedBody = validateBody(createUserSchema, req.body);
+  const result = await userService.createUser(validatedBody);
   return res
     .status(StatusCodes.CREATED)
-    .json(new ApiResponse(StatusCodes.CREATED, {}, "User created"));
+    .json(new ApiResponse(StatusCodes.CREATED, result, "User created"));
 });
 
-// log in
 export const loginUser = asyncHandler(async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-
-  if ([email, password].some((e) => e === ""))
-    throw new ApiError(StatusCodes.BAD_REQUEST, "All fields are required");
-
-  // check email
-  const user = await User.findOne({ email });
-  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not exist");
-
-  // check password
-  const isPasswordOk = await user.checkPassword(password);
-  if (!isPasswordOk)
-    throw new ApiError(StatusCodes.FORBIDDEN, "Invalid password");
-
-  const { accessToken, refreshToken } = await generateAccessAndRefrehToken(
-    user._id as mongoose.Types.ObjectId,
-  );
+  const validatedBody = validateBody(loginUserSchema, req.body);
+  const { accessToken, refreshToken } =
+    await userService.loginUser(validatedBody);
 
   return res
     .status(StatusCodes.OK)
@@ -88,17 +37,8 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
     .json(new ApiResponse(StatusCodes.OK, {}, "User logged in"));
 });
 
-// logout user
 export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
-  await User.findByIdAndUpdate(
-    req.user?._id,
-    {
-      $set: {
-        refreshToken: undefined,
-      },
-    },
-    { new: true },
-  );
+  await userService.logoutUser(req.user!._id);
 
   return res
     .status(StatusCodes.OK)
@@ -110,34 +50,8 @@ export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
 export const refreshAccessToken = asyncHandler(
   async (req: Request, res: Response) => {
     const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
-    if (!refreshToken)
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid request");
-
-    let decoded;
-    try {
-      decoded = jwt.verify(refreshToken, env.REFRESH_TOKEN_SECRET!);
-    } catch (error) {
-      if (error instanceof jwt.TokenExpiredError) {
-        throw new ApiError(StatusCodes.UNAUTHORIZED, "Session expired");
-      }
-      throw error;
-    }
-
-    if (!decoded || typeof decoded !== "object" || !("_id" in decoded)) {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, "Session expired");
-    }
-
-    const user = await User.findById((decoded as jwt.JwtPayload)._id);
-    if (!user) {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid token");
-    }
-
-    if (refreshToken !== user?.refreshToken) {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid token");
-    }
-
     const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-      await generateAccessAndRefrehToken(user._id as mongoose.Types.ObjectId);
+      await userService.refreshAccessToken(refreshToken);
 
     return res
       .status(StatusCodes.OK)
@@ -153,11 +67,9 @@ export const refreshAccessToken = asyncHandler(
   },
 );
 
-// check for auth
 export const checkAuth = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?._id;
-  let isAuthenticated = false;
-  if (userId) isAuthenticated = true;
+  const isAuthenticated = !!userId;
 
   return res
     .status(StatusCodes.OK)
@@ -170,54 +82,28 @@ export const checkAuth = asyncHandler(async (req: Request, res: Response) => {
     );
 });
 
-// update user
 export const updateUser = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?._id;
-  const { email, userName } = req.body;
-  if (!email || !userName)
-    throw new ApiError(StatusCodes.BAD_REQUEST, "All fields are required");
 
-  // check for new email
-  const user = await User.findById(userId);
-  if (email !== user?.email) {
-    const userByNewEmail = await User.findOne({ email });
-    if (userByNewEmail)
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Email is already in use");
-  }
+  const validatedBody = validateBody(updateUserSchema, req.body);
 
-  const updatedUser = await User.findByIdAndUpdate(
-    userId,
-    {
-      userName,
-      email,
-    },
-    { new: true },
-  ).select("-password -refreshToken");
+  const updatedUser = await userService.updateUser(
+    userId!,
+    validatedBody,
+  );
 
   return res
     .status(StatusCodes.OK)
     .json(new ApiResponse(StatusCodes.OK, updatedUser, "User details updated"));
 });
 
-// update password
 export const updatePassword = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.user?._id;
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword)
-      throw new ApiError(StatusCodes.BAD_REQUEST, "All fields are required");
 
-    const user = await User.findById(userId);
+    const validatedBody = validateBody(updatePasswordSchema, req.body);
 
-    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
-
-    // check current password
-    const isPasswordOk = await user.checkPassword(currentPassword);
-    if (!isPasswordOk)
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid current password");
-
-    user.password = newPassword;
-    await user.save({ validateBeforeSave: false });
+    await userService.updatePassword(userId!, validatedBody);
 
     return res
       .status(StatusCodes.OK)
@@ -225,37 +111,12 @@ export const updatePassword = asyncHandler(
   },
 );
 
-// update avatar
 export const updateAvatar = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.user?._id;
-
-    const user = await User.findById(userId);
-    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
-
     const file = req.file;
-    if (!file)
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Avatar file is required");
 
-    const buffer = file.buffer;
-
-    const uploadData = await uploadToCloudinary(
-      buffer,
-      file.originalname,
-      cloudinaryFolders.USER_AVATAR,
-    );
-    if (!uploadData)
-      throw new ApiError(
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        "Failed to upload avatar",
-      );
-
-    if (user.avatar) {
-      await deleteFromCloudinary(user.avatar);
-    }
-
-    user.avatar = uploadData.url;
-    await user.save({ validateBeforeSave: false });
+    const user = await userService.updateAvatar(userId!, file);
 
     return res
       .status(StatusCodes.OK)
@@ -265,33 +126,12 @@ export const updateAvatar = asyncHandler(
 
 export const validateAndResetPassword = asyncHandler(
   async (req: Request, res: Response) => {
-    const { token, password } = req.body;
+    const validatedBody = validateBody(
+      validateAndResetPasswordSchema,
+      req.body,
+    );
 
-    if (!token || !password) throw new ApiError(400, "Token is required");
-
-    let decodedToken;
-    try {
-      decodedToken = jwt.verify(token, env.PASSWORD_RESET_TOKEN_SECRET!);
-    } catch (error) {
-      if (error instanceof jwt.TokenExpiredError) {
-        throw new ApiError(StatusCodes.UNAUTHORIZED, "Token Expired");
-      }
-      throw error;
-    }
-
-    if (
-      !decodedToken ||
-      typeof decodedToken !== "object" ||
-      !("_id" in decodedToken)
-    )
-      throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid token");
-
-    const user = await User.findById((decodedToken as JwtPayload)._id);
-
-    if (!user) throw new ApiError(StatusCodes.UNAUTHORIZED, "Token Expired");
-
-    user.password = password;
-    await user.save({ validateBeforeSave: false });
+    await userService.validateAndResetPassword(validatedBody);
 
     return res
       .status(StatusCodes.OK)
@@ -299,17 +139,11 @@ export const validateAndResetPassword = asyncHandler(
   },
 );
 
-// queries
 export const getCurrentUser = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.user?._id;
 
-    if (!userId)
-      throw new ApiError(StatusCodes.BAD_REQUEST, "userid is required");
-
-    const user = await User.findById(userId).select("-password -refreshToken");
-
-    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+    const user = await userService.getCurrentUser(userId!);
 
     return res
       .status(StatusCodes.OK)
