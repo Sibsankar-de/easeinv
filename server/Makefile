@@ -1,4 +1,4 @@
-.PHONY: dev docker-down docker-up
+.PHONY: dev docker-down docker-up build deploy
 
 dev: docker-down docker-up npm-dev
 
@@ -10,3 +10,10 @@ docker-up:
 
 npm-dev:
 	npm run dev
+
+build:
+	npm ci
+	npm run build
+
+deploy: build
+	bash deployment/deploy.sh

@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  db:
+    image: mongo:7
+    container_name: easeinv-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - easeinv_mongo:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: easeinv
+      MONGO_INITDB_ROOT_PASSWORD: aqwrew*q197wn
+      MONGO_INITDB_DATABASE: easeinvdb
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: easeinv-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672" # AMQP
+      - "15672:15672" # Dashboard
+    environment:
+      RABBITMQ_DEFAULT_USER: easeinv
+      RABBITMQ_DEFAULT_PASS: qwbtre*i184r
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+volumes:
+  easeinv_mongo:
+  rabbitmq_data:
