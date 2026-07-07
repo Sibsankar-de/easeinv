@@ -1,0 +1,42 @@
+[Unit]
+Description=EaseInv Node.js Backend
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+
+# Run as non-root user
+User=easeinv
+Group=easeinv
+
+# The deployment script updates this symlink to the latest release
+WorkingDirectory=/opt/easeinv/backend/current
+
+# Runtime environment — picks up NODE_ENV plus all vars from .env
+Environment=NODE_ENV=production
+EnvironmentFile=/opt/easeinv/backend/current/.env
+
+# Start the compiled ESM bundle
+ExecStart=/home/easeinv/.nvm/versions/node/v24.18.0/bin/node /opt/easeinv/backend/current/dist/index.js
+
+# Restart automatically if the process exits unexpectedly
+Restart=always
+RestartSec=5
+
+# Graceful shutdown
+KillSignal=SIGINT
+TimeoutStopSec=30
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
