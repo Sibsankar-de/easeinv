@@ -16,7 +16,9 @@ export const env = {
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || "localhost",
 
   MONGO_CONNECTION_URI: process.env.MONGO_CONNECTION_URI || "",
-  DB_NAME: process.env.DB_NAME || "ease-inv",
+  MONGO_USER: process.env.MONGO_USER || "root",
+  MONGO_PASS: process.env.MONGO_PASS || "admin",
+  DB_NAME: process.env.DB_NAME || "easeinv",
   MONGO_REPLICA_SET: process.env.MONGO_REPLICA_SET || undefined,
 
   ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,

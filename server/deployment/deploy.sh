@@ -84,9 +84,6 @@ if [[ -d "public" ]]; then
     cp -R public .deploy/
 fi
 
-# Upload .env.production as .env — systemd EnvironmentFile will read it
-cp "$PROJECT_DIR/.env.production" .deploy/.env
-
 tar -czf "$ARCHIVE_NAME" -C .deploy .
 
 # Upload

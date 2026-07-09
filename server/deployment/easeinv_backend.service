@@ -13,9 +13,8 @@ Group=easeinv
 # The deployment script updates this symlink to the latest release
 WorkingDirectory=/opt/easeinv/backend/current
 
-# Runtime environment — picks up NODE_ENV plus all vars from .env
 Environment=NODE_ENV=production
-EnvironmentFile=/opt/easeinv/backend/current/.env
+EnvironmentFile=/opt/easeinv/backend/shared/.env
 
 # Start the compiled ESM bundle
 ExecStart=/home/easeinv/.nvm/versions/node/v24.18.0/bin/node /opt/easeinv/backend/current/dist/index.js
