@@ -8,10 +8,16 @@ import BenefitsGrid from "./BenefitsGrid";
 import Testimonials from "./Testimonials";
 import FaqSection from "./FaqSection";
 import CtaBanner from "./CtaBanner";
+import { cn } from "@/components/utils";
 
 export const LandingPage = () => {
   return (
-    <div className="min-h-screen flex flex-col pt-16 bg-background text-foreground transition-colors duration-300 select-none">
+    <div
+      className={cn(
+        "min-h-screen flex flex-col pt-16 bg-background text-foreground",
+        "transition-colors duration-300",
+      )}
+    >
       <TopNav />
       <main className="flex-1">
         <HeroSection />

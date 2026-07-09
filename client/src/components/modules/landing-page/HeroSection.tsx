@@ -9,10 +9,6 @@ export default function HeroSection() {
       <div className="absolute top-1/3 left-1/4 -translate-x-1/2 w-[350px] h-[350px] bg-primary/15 rounded-full blur-[90px] -z-10 animate-pulse duration-8000" />
       <div className="absolute top-1/4 right-1/4 translate-x-1/2 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-[100px] -z-10 animate-pulse duration-10000" />
 
-      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary mb-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <Store className="w-3.5 h-3.5" /> Unified Commerce Operations Workspace
-      </div>
-
       <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight max-w-4xl mb-6 leading-[1.15] animate-in fade-in slide-in-from-bottom-6 duration-700">
         Billing & Inventory,{" "}
         <span className="text-transparent bg-clip-text bg-linear-to-r from-primary via-indigo-500 to-indigo-600">
