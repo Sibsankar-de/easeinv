@@ -139,7 +139,11 @@ export const SignupForm = () => {
               className="text-sm text-gray-700 cursor-pointer"
             >
               Accept{" "}
-              <Link href={"/"} className="text-primary">
+              <Link
+                href={"/terms-of-service"}
+                target="_blank"
+                className="text-primary"
+              >
                 Terms & conditions.
               </Link>
             </label>
