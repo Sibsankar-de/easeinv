@@ -38,14 +38,6 @@ cleanup() {
 
 trap cleanup EXIT
 
-# Load environment
-
-[[ -f "$PROJECT_DIR/.env.production" ]] || die ".env.production not found."
-
-set -a
-source "$PROJECT_DIR/.env.production"
-set +a
-
 # Confirmation
 
 echo
@@ -53,7 +45,6 @@ echo "=================================================="
 echo " EaseInv Frontend Deployment"
 echo "=================================================="
 echo "Server : $SERVER_HOST"
-echo "API    : $NEXT_PUBLIC_API_URI"
 echo
 
 read -rp "Deploy? (y/N): " confirm

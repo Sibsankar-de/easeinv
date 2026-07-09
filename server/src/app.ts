@@ -9,12 +9,14 @@ import { errorMiddleware } from "./middlewares/error.middleware";
 
 const app = express();
 
+const origins = env.CORS_ORIGIN.split(",");
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: origins,
     credentials: true,
   }),
 );
+
 app.use(helmet());
 app.use(cookieParser());
 
