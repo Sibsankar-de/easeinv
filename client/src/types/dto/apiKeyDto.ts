@@ -7,6 +7,8 @@ export type ApiKeyDto = {
   userId: string;
   name: string;
   scopes: ApiKeyScope[];
+  whitelistedOrigins: string[];
+  allowClientRequest: boolean;
   status: string;
   expiresAt: string;
   createdAt: string;

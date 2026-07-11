@@ -5,3 +5,8 @@ export const uploadSizeLimits = {
 export const productLimits = {
   MAX_IMAGES: 10,
 };
+
+export const apiKeyLimits = {
+  MAX_API_KEYS: 10,
+  MAX_WHITELISTED_ORIGINS: 10,
+};

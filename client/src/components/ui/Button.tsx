@@ -64,7 +64,7 @@ export const Button = ({
     <button
       type={type}
       className={cn(
-        "flex items-center gap-2 px-4 py-2.5 border border-transparent rounded-lg cursor-pointer select-none relative",
+        "flex items-center gap-2 px-3 py-2 border border-transparent rounded-lg cursor-pointer select-none relative",
         "disabled:brightness-75 disabled:cursor-not-allowed",
         "focus-visible:ring-blue-400 focus-visible:ring-1",
         "transition-all duration-150 active:translate-y-0.5 active:brightness-90",

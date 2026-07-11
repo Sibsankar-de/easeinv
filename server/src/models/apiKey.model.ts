@@ -33,6 +33,14 @@ const apiKeySchema = new Schema(
       type: String,
       required: true,
     },
+    allowClientRequest: {
+      type: Boolean,
+      default: false,
+    },
+    whitelistedOrigins: {
+      type: [String],
+      default: [],
+    },
     scopes: {
       type: [String],
       enum: apiKeyScopeList,

@@ -6,34 +6,56 @@ import {
 import { useEffect, useState } from "react";
 import { Checkbox } from "./Checkbox";
 
-const apiKeyScopeData = [
+export const apiKeyScopeData = [
   {
     key: "invoice:all",
     value: "Invoice scopes",
-    subScopes: Object.values(invoiceScope),
+    subScopes: [
+      { key: invoiceScope.INVOICE_READ, isClientSideAllowed: true },
+      { key: invoiceScope.INVOICE_WRITE, isClientSideAllowed: false },
+      { key: invoiceScope.INVOICE_DELETE, isClientSideAllowed: false },
+    ],
   },
   {
     key: "product:all",
     value: "Product scopes",
-    subScopes: Object.values(productScope),
+    subScopes: [
+      { key: productScope.PRODUCT_READ, isClientSideAllowed: true },
+      { key: productScope.PRODUCT_WRITE, isClientSideAllowed: false },
+      { key: productScope.PRODUCT_DELETE, isClientSideAllowed: false },
+    ],
   },
   {
     key: "customer:all",
     value: "Customer scopes",
-    subScopes: Object.values(customerScope),
+    subScopes: [
+      { key: customerScope.CUSTOMER_READ, isClientSideAllowed: true },
+      { key: customerScope.CUSTOMER_WRITE, isClientSideAllowed: false },
+      { key: customerScope.CUSTOMER_DELETE, isClientSideAllowed: false },
+    ],
   },
 ];
+
+export const getClientSideAllowedScopes = (scopes: string[]): string[] => {
+  const allowedSubScopes = apiKeyScopeData
+    .flatMap((p) => p.subScopes)
+    .filter((s) => s.isClientSideAllowed)
+    .map((s) => s.key);
+  return scopes.filter((s) => allowedSubScopes.includes(s));
+};
 
 type ApiKeyScopeSelectorType = {
   selectedScopes: string[];
   disabled?: boolean;
   onSelect: (scopes: string[]) => void;
+  allowClientRequest?: boolean;
 };
 
 export const ApiKeyScopeSelector = ({
   selectedScopes,
   disabled = false,
   onSelect,
+  allowClientRequest = false,
 }: ApiKeyScopeSelectorType) => {
   const [localSelections, setLocalSelections] =
     useState<string[]>(selectedScopes);
@@ -50,7 +72,7 @@ export const ApiKeyScopeSelector = ({
 
     apiKeyScopeData.forEach((parent) => {
       const allSubScopesSelected = parent.subScopes.every((sub) =>
-        nextSelections.includes(sub),
+        nextSelections.includes(sub.key),
       );
       if (allSubScopesSelected) {
         if (!nextSelections.includes(parent.key)) {
@@ -68,11 +90,11 @@ export const ApiKeyScopeSelector = ({
   };
 
   const handleParentScopeSelect = (scope: string) => {
-    if (disabled) return;
+    if (disabled || allowClientRequest) return;
     const parentScopeData = apiKeyScopeData.find((s) => s.key === scope);
     if (!parentScopeData) return;
 
-    const subScopes = parentScopeData.subScopes;
+    const subScopes = parentScopeData.subScopes.map((s) => s.key);
 
     let nextSelections: string[];
     if (localSelections.includes(scope)) {
@@ -95,6 +117,7 @@ export const ApiKeyScopeSelector = ({
   return (
     <div className="w-full border border-border rounded-lg p-3 h-50 overflow-y-auto select-none">
       {apiKeyScopeData.map((scope, index) => {
+        const isParentDisabled = disabled || allowClientRequest;
         return (
           <div key={index} className="mb-3">
             <label
@@ -104,28 +127,37 @@ export const ApiKeyScopeSelector = ({
               <Checkbox
                 id={scope.key}
                 checked={localSelections.includes(scope.key)}
-                disabled={disabled}
+                disabled={isParentDisabled}
                 onChange={() => handleParentScopeSelect(scope.key)}
               />
-              <p>{scope.value}</p>
+              <p className={isParentDisabled ? "text-gray-400" : ""}>
+                {scope.value}
+              </p>
             </label>
             <ul className="px-4">
-              {scope.subScopes.map((subScope, index2) => (
-                <li key={index2} className="my-1 text-gray-600">
-                  <label
-                    htmlFor={subScope}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <Checkbox
-                      id={subScope}
-                      checked={localSelections.includes(subScope)}
-                      disabled={disabled}
-                      onChange={() => handleSubScopeSelect(subScope)}
-                    />
-                    <p>{subScope}</p>
-                  </label>
-                </li>
-              ))}
+              {scope.subScopes.map((subScope, index2) => {
+                const isSubScopeDisabled =
+                  disabled ||
+                  (allowClientRequest && !subScope.isClientSideAllowed);
+                return (
+                  <li key={index2} className="my-1 text-gray-600">
+                    <label
+                      htmlFor={subScope.key}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <Checkbox
+                        id={subScope.key}
+                        checked={localSelections.includes(subScope.key)}
+                        disabled={isSubScopeDisabled}
+                        onChange={() => handleSubScopeSelect(subScope.key)}
+                      />
+                      <p className={isSubScopeDisabled ? "text-gray-400" : ""}>
+                        {subScope.key}
+                      </p>
+                    </label>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         );

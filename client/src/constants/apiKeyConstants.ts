@@ -1,6 +1,6 @@
 export const apiKeyStatus = {
   ACTIVE: "ACTIVE",
-  REVOKED: "REVOKED",
+  INACTIVE: "INACTIVE",
   EXPIRED: "EXPIRED",
 };
 

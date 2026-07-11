@@ -52,6 +52,7 @@ export const Modal = ({
     const key = e.key;
     // close modal on excape
     if (key === "Escape" && open) {
+      e.stopPropagation();
       e.preventDefault();
       onClose?.();
     }

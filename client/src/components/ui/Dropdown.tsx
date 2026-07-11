@@ -51,6 +51,7 @@ export const Dropdown = ({
 
     const handleKeyEvents = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
+        e.stopPropagation();
         e.preventDefault();
         onClose?.();
       }
@@ -71,7 +72,7 @@ export const Dropdown = ({
       className={clsx(
         `bg-white rounded-lg p-1 text-sm w-[20em] absolute border border-secondary z-50 dropdown-open-anim`,
         className,
-        isClose && "dropdown-close-anim"
+        isClose && "dropdown-close-anim",
       )}
       ref={boxRef}
     >
