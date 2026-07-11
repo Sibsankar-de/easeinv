@@ -1,11 +1,12 @@
 "use client";
 
+import { Info } from "lucide-react";
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { Tooltip } from "react-tooltip";
 
 type IconTooltipProps = {
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   tooltip: string;
   tooltipId?: string;
 };
@@ -28,7 +29,7 @@ export const IconTooltip = ({
       data-tooltip-id={tooltipId}
       data-tooltip-content={tooltip}
     >
-      {icon}
+      {icon || <Info size={15} />}
 
       {mounted &&
         createPortal(
@@ -36,7 +37,7 @@ export const IconTooltip = ({
             id={tooltipId}
             place="bottom"
             delayShow={0}
-            className="max-w-sm"
+            className="max-w-sm z-100"
           />,
           document.body,
         )}

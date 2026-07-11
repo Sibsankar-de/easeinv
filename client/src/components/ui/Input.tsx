@@ -30,9 +30,14 @@ export const Input = ({
   return (
     <div className="flex items-center relative group w-full">
       {icon && (
-        <span className="w-fit h-fit absolute left-3 flex items-center justify-center">
+        <div
+          className={cn(
+            "w-fit h-fit absolute left-3 flex items-center justify-center",
+            "text-gray-500! group-focus-within:text-primary!",
+          )}
+        >
           {icon}
-        </span>
+        </div>
       )}
       <input
         id={id}

@@ -28,10 +28,10 @@ export const renameApiKeyThunk: any = createApiThunk(
     ),
 );
 
-export const revokeApiKeyThunk: any = createApiThunk(
-  "/api-key/revoke",
+export const deleteApiKeyThunk: any = createApiThunk(
+  "/api-key/delete",
   async (data: { storeId: string; keyId: string }) =>
-    await api.patch(`api-keys/revoke/${data.storeId}/${data.keyId}`),
+    await api.delete(`api-keys/${data.storeId}/${data.keyId}`),
 );
 
 const initialState = {
@@ -40,7 +40,7 @@ const initialState = {
   },
   createStatus: "idle",
   renameStatus: "idle",
-  revokeStatus: "idle",
+  deleteStatus: "idle",
   status: "idle",
   error: null,
 };
@@ -78,21 +78,21 @@ const apiKeySlice = createSlice({
       .addCase(renameApiKeyThunk.fulfilled, (state, action) => {
         state.renameStatus = "success";
         state.error = null;
-        state.data.apiKeyList.map((item) =>
+        state.data.apiKeyList = state.data.apiKeyList.map((item) =>
           item._id === action.payload._id ? action.payload : item,
         );
       })
-      .addCase(revokeApiKeyThunk.pending, (state, action) =>
-        setState(state, action, "revokeStatus"),
+      .addCase(deleteApiKeyThunk.pending, (state, action) =>
+        setState(state, action, "deleteStatus"),
       )
-      .addCase(revokeApiKeyThunk.rejected, (state, action) =>
-        setState(state, action, "revokeStatus"),
+      .addCase(deleteApiKeyThunk.rejected, (state, action) =>
+        setState(state, action, "deleteStatus"),
       )
-      .addCase(revokeApiKeyThunk.fulfilled, (state, action) => {
-        state.revokeStatus = "success";
+      .addCase(deleteApiKeyThunk.fulfilled, (state, action) => {
+        state.deleteStatus = "success";
         state.error = null;
-        state.data.apiKeyList.filter((item) =>
-          item._id === action.payload._id ? action.payload : item,
+        state.data.apiKeyList = state.data.apiKeyList.filter(
+          (item) => item._id !== action.meta.arg.keyId,
         );
       });
   },

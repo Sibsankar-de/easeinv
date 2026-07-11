@@ -1,12 +1,8 @@
-import { ApiKeyScopeSelector } from "@/components/ui/ApiKeyScopeSelector";
 import { Badge } from "@/components/ui/Badge";
 import { Banner } from "@/components/ui/Banner";
 import { Button } from "@/components/ui/Button";
 import { DataTable } from "@/components/ui/DataTable";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Input } from "@/components/ui/Input";
-import { Label } from "@/components/ui/Label";
-import { Modal, ModalHeader } from "@/components/ui/Modal";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { TabContent } from "@/components/ui/Tabs";
 import { cn } from "@/components/utils";
@@ -14,10 +10,7 @@ import { apiKeyStatus } from "@/constants/apiKeyConstants";
 import { bannerDescriptions } from "@/constants/bannerDescriptions";
 import { useStoreNavigation } from "@/hooks/store-navigation";
 import {
-  createApiKeyThunk,
   fetchApiKeyListThunk,
-  renameApiKeyThunk,
-  revokeApiKeyThunk,
   selectApiKeyState,
 } from "@/store/features/apiKeySlice";
 import { ApiKeyDto } from "@/types/dto/apiKeyDto";
@@ -28,42 +21,43 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { createIndex, search, SearchRule } from "@/utils/genericSearch";
+import { ApiKeyCreateUpdateModal } from "./ApiKeyCreateUpdateModal";
+import { RemoveApiKeyModal } from "./RemoveApiKeyModal";
 
 const ApiKeyTableActions = ({ apiKey }: { apiKey: ApiKeyDto }) => {
-  const [renameModalOpen, setRenameModalOpen] = useState(false);
-  const [revokeModalOpen, setRevokeModalOpen] = useState(false);
-  const isRevoked = apiKey.status === apiKeyStatus.REVOKED;
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   return (
     <div className="flex justify-end gap-2">
       <Button
         variant="outline"
         className="p-2 text-primary"
-        tooltip="Rename key"
-        disabled={isRevoked}
-        onClick={() => setRenameModalOpen(true)}
+        tooltip="Update key"
+        onClick={() => setUpdateModalOpen(true)}
       >
         <Pen className="w-4 h-4" />
       </Button>
       <Button
         variant="danger"
         className="p-2"
-        tooltip="Revoke Key"
-        disabled={isRevoked}
-        onClick={() => setRevokeModalOpen(true)}
+        tooltip="Delete Key"
+        onClick={() => setDeleteModalOpen(true)}
       >
         <Trash2 className="w-4 h-4" />
       </Button>
 
-      <RenameApiKeyModal
-        isOpen={renameModalOpen}
+      <ApiKeyCreateUpdateModal
+        key={`${apiKey._id}-${updateModalOpen}`}
+        isOpen={updateModalOpen}
+        mode="edit"
         apiKey={apiKey}
-        onClose={() => setRenameModalOpen(false)}
+        onClose={() => setUpdateModalOpen(false)}
       />
 
-      <RevokeApiKeyModal
-        isOpen={revokeModalOpen}
+      <RemoveApiKeyModal
+        isOpen={deleteModalOpen}
         apiKey={apiKey}
-        onClose={() => setRevokeModalOpen(false)}
+        onClose={() => setDeleteModalOpen(false)}
       />
     </div>
   );
@@ -175,7 +169,7 @@ export const ApiKeyTabContent = () => {
         header: "API Key",
         enableSorting: false,
         cell: ({ row }) => {
-          const isRevoked = row.original.status === apiKeyStatus.REVOKED;
+          const isRevoked = row.original.status === apiKeyStatus.INACTIVE;
           const displayToken = `${row.original.key.slice(0, 12)}...${row.original.key.slice(-4)}`;
           return (
             <div className="flex items-center gap-1">
@@ -301,246 +295,11 @@ export const ApiKeyTabContent = () => {
       />
 
       {/* Sub-component modals */}
-      <CreateApiKeyModal
+      <ApiKeyCreateUpdateModal
         isOpen={createModalOpen}
+        mode="create"
         onClose={() => setCreateModalOpen(false)}
       />
     </TabContent>
-  );
-};
-
-const CreateApiKeyModal = ({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) => {
-  const { storeId } = useStoreNavigation();
-  const dispatch = useDispatch();
-  const { createStatus } = useSelector(selectApiKeyState);
-
-  const [formData, setFormData] = useState({
-    name: "",
-    expiresAt: "",
-    scopes: [] as string[],
-  });
-
-  const handleFormChange = (key: keyof typeof formData, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
-
-  const handleCreateApiKey = () => {
-    if (!formData.name || !storeId) return;
-
-    dispatch(createApiKeyThunk({ storeId, formData }))
-      .unwrap()
-      .then(() => {
-        toast.success("Api key added.");
-        onClose();
-      });
-  };
-
-  const isLoading = createStatus === "loading";
-
-  return (
-    <Modal
-      openState={isOpen}
-      onClose={onClose}
-      className="w-2xl"
-      header={
-        <ModalHeader
-          title="Create API Key"
-          subtitle="Generate a new key to access our developer APIs."
-        />
-      }
-    >
-      <div className="space-y-5">
-        <div className="space-y-1.5">
-          <Label htmlFor="name" required>
-            Key Name
-          </Label>
-          <Input
-            id="name"
-            placeholder="e.g. My store invoices"
-            value={formData.name}
-            disabled={isLoading}
-            onChange={(e) => handleFormChange("name", e)}
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="expiry">Expiration</Label>
-          <Input
-            id="expiry"
-            type="date"
-            value={formData.expiresAt}
-            disabled={isLoading}
-            onChange={(e) => handleFormChange("expiresAt", e)}
-          />
-        </div>
-
-        <div className="space-y-2.5">
-          <Label>Select Scopes & Permissions</Label>
-          <ApiKeyScopeSelector
-            selectedScopes={formData.scopes}
-            disabled={isLoading}
-            onSelect={(scopes) => handleFormChange("scopes", scopes)}
-          />
-        </div>
-
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            disabled={isLoading || !formData.name}
-            loading={isLoading}
-            onClick={handleCreateApiKey}
-          >
-            Create Key
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
-const RenameApiKeyModal = ({
-  isOpen,
-  apiKey,
-  onClose,
-}: {
-  isOpen: boolean;
-  apiKey: ApiKeyDto;
-  onClose: () => void;
-}) => {
-  const { storeId } = useStoreNavigation();
-  const dispatch = useDispatch();
-  const { renameStatus } = useSelector(selectApiKeyState);
-
-  const [name, setName] = useState(apiKey.name);
-
-  const handleRename = () => {
-    if (!name || !storeId || !apiKey._id) return;
-
-    dispatch(
-      renameApiKeyThunk({ storeId, keyId: apiKey._id, formData: { name } }),
-    )
-      .unwrap()
-      .then(() => {
-        toast.success("Api key renamed.");
-        onClose();
-      });
-  };
-
-  const isLoading = renameStatus === "loading";
-
-  return (
-    <Modal
-      openState={isOpen}
-      onClose={onClose}
-      className="w-xl"
-      header={
-        <ModalHeader
-          title="Rename API Key"
-          subtitle="Update the description of this key."
-        />
-      }
-    >
-      <div className="space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="rename-input" required>
-            Key Name
-          </Label>
-          <Input
-            id="rename-input"
-            value={name}
-            disabled={isLoading}
-            onChange={setName}
-          />
-        </div>
-
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            disabled={!name || isLoading || name === apiKey.name}
-            loading={isLoading}
-            onClick={handleRename}
-          >
-            Rename
-          </Button>
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
-const RevokeApiKeyModal = ({
-  isOpen,
-  apiKey,
-  onClose,
-}: {
-  isOpen: boolean;
-  apiKey: ApiKeyDto;
-  onClose: () => void;
-}) => {
-  const { storeId } = useStoreNavigation();
-  const dispatch = useDispatch();
-  const { revokeStatus } = useSelector(selectApiKeyState);
-
-  const handleRevoke = () => {
-    if (!storeId || !apiKey._id) return;
-
-    dispatch(revokeApiKeyThunk({ storeId, keyId: apiKey._id }))
-      .unwrap()
-      .then(() => {
-        toast.success("Api key revoked.");
-        onClose();
-      });
-  };
-
-  const isLoading = revokeStatus === "loading";
-  return (
-    <Modal
-      openState={isOpen}
-      onClose={onClose}
-      className="w-xl"
-      header={
-        <ModalHeader
-          title="Revoke API Key"
-          subtitle="This action is permanent and cannot be undone."
-        />
-      }
-    >
-      <div className="space-y-4">
-        <div className="text-gray-600">
-          Revoking <strong>{apiKey.name}</strong> will block all incoming
-          requests using this key immediately. Any connected application will
-          break.
-        </div>
-
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            variant="danger"
-            disabled={isLoading}
-            loading={isLoading}
-            onClick={handleRevoke}
-          >
-            Revoke Key
-          </Button>
-        </div>
-      </div>
-    </Modal>
   );
 };
