@@ -1,18 +1,25 @@
 import { z } from "zod";
+import { apiKeyLimits } from "../constants/limits.constants";
+import { apiKeyScopeList, apiKeyStatus } from "../enums/apiKey.enum";
 
-export const createApiKeySchema = z.object({
+export const createUpdateApiKeySchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
-  scopes: z.array(z.string()).optional(),
+  status: z
+    .enum([apiKeyStatus.ACTIVE, apiKeyStatus.INACTIVE])
+    .default(apiKeyStatus.ACTIVE),
+  scopes: z.array(z.enum(apiKeyScopeList)).default([]),
+  allowClientRequest: z.boolean().default(false),
+  whitelistedOrigins: z
+    .array(z.url({ normalize: true, message: "Invalid Origin" }))
+    .max(
+      apiKeyLimits.MAX_WHITELISTED_ORIGINS,
+      `Maximum ${apiKeyLimits.MAX_WHITELISTED_ORIGINS} whitelisted origins are allowed`,
+    )
+    .default([]),
   expiresAt: z
     .string()
     .or(z.date())
-    .transform((val) => new Date(val))
-    .optional(),
+    .transform((val) => new Date(val)),
 });
 
-export const renameApiKeySchema = z.object({
-  name: z.string().trim().min(1, "Name is required"),
-});
-
-export type CreateApiKeyDTO = z.infer<typeof createApiKeySchema>;
-export type RenameApiKeyDTO = z.infer<typeof renameApiKeySchema>;
+export type CreateUpdateApiKeyDTO = z.infer<typeof createUpdateApiKeySchema>;

@@ -4,8 +4,8 @@ import { verifyOwnerLevelAccess } from "../middlewares/verifyStoreAccess.middlew
 import {
   createApiKey,
   getAllApiKeys,
-  renameApiKey,
-  revokeApiKey,
+  updateApiKey,
+  removeApiKey,
 } from "../controllers/apiKey.controller";
 
 const router = Router();
@@ -13,8 +13,8 @@ const router = Router();
 router.use(verifyAuth);
 
 router.post("/:storeId", verifyOwnerLevelAccess, createApiKey);
-router.patch("/rename/:storeId/:keyId", verifyOwnerLevelAccess, renameApiKey);
-router.patch("/revoke/:storeId/:keyId", verifyOwnerLevelAccess, revokeApiKey);
+router.patch("/rename/:storeId/:keyId", verifyOwnerLevelAccess, updateApiKey);
+router.delete("/:storeId/:keyId", verifyOwnerLevelAccess, removeApiKey);
 router.get("/:storeId", verifyOwnerLevelAccess, getAllApiKeys);
 
 export default router;

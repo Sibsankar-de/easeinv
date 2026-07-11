@@ -3,13 +3,13 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { ApiResponse } from "../utils/ApiResponse";
 import * as apiKeyService from "../services/apiKey.service";
 import { validateBody } from "../utils/validate.utils";
-import { createApiKeySchema, renameApiKeySchema } from "../schemas/apiKey.schema";
+import { createUpdateApiKeySchema } from "../schemas/apiKey.schema";
 
 export const createApiKey = asyncHandler(async (req, res) => {
   const storeId = req.store?._id;
   const userId = req.user?._id;
 
-  const validatedBody = validateBody(createApiKeySchema, req.body);
+  const validatedBody = validateBody(createUpdateApiKeySchema, req.body);
 
   const newApiKey = await apiKeyService.createApiKey({
     storeId: storeId!,
@@ -22,13 +22,13 @@ export const createApiKey = asyncHandler(async (req, res) => {
     .json(new ApiResponse(StatusCodes.CREATED, newApiKey, "Api key created."));
 });
 
-export const renameApiKey = asyncHandler(async (req, res) => {
+export const updateApiKey = asyncHandler(async (req, res) => {
   const storeId = req.store?._id;
   const { keyId } = req.params as { keyId: string };
 
-  const validatedBody = validateBody(renameApiKeySchema, req.body);
+  const validatedBody = validateBody(createUpdateApiKeySchema, req.body);
 
-  const key = await apiKeyService.renameApiKey({
+  const key = await apiKeyService.updateApiKey({
     storeId: storeId!,
     keyId,
     ...validatedBody,
@@ -39,18 +39,18 @@ export const renameApiKey = asyncHandler(async (req, res) => {
     .json(new ApiResponse(StatusCodes.OK, key, "Api key renamed."));
 });
 
-export const revokeApiKey = asyncHandler(async (req, res) => {
+export const removeApiKey = asyncHandler(async (req, res) => {
   const storeId = req.store?._id;
   const { keyId } = req.params as { keyId: string };
 
-  const key = await apiKeyService.revokeApiKey({
+  await apiKeyService.removeApiKey({
     storeId: storeId!,
     keyId,
   });
 
   return res
     .status(StatusCodes.OK)
-    .json(new ApiResponse(StatusCodes.OK, key, "Api key revoked."));
+    .json(new ApiResponse(StatusCodes.OK, null, "Api key removed."));
 });
 
 export const getAllApiKeys = asyncHandler(async (req, res) => {
