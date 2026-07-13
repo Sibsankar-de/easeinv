@@ -9,3 +9,8 @@ export const clientPages = {
   getStoreInvitePage: (invitationToken: string) =>
     `${FRONTEND_URL}/store-invite?token=${invitationToken}`,
 };
+
+export const clientAssets = {
+  LOGO_FULL: `${FRONTEND_URL}/easeinv-logo-full.png`,
+} as const;
+

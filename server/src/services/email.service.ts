@@ -31,3 +31,50 @@ export const getStoreUserInviteEmail = async (
 
   return emailJob;
 };
+
+export const getEmailVerificationEmail = async (
+  user: UserModelType,
+  verificationLink: string,
+): Promise<EmailJob> => {
+  const data = {
+    recipientName: user.userName,
+    verificationLink,
+  };
+
+  const body = await renderEmail({
+    templateName: emailTemplates.EMAIL_VERIFICATION_TEMPLATE,
+    data,
+  });
+
+  const emailJob: EmailJob = {
+    to: user.email,
+    subject: "Verify your email address - EaseInv",
+    html: body,
+  };
+
+  return emailJob;
+};
+
+export const getWelcomeEmail = async (
+  user: UserModelType,
+  dashboardLink: string,
+): Promise<EmailJob> => {
+  const data = {
+    recipientName: user.userName,
+    dashboardLink,
+  };
+
+  const body = await renderEmail({
+    templateName: emailTemplates.WELCOME_EMAIL_TEMPLATE,
+    data,
+  });
+
+  const emailJob: EmailJob = {
+    to: user.email,
+    subject: "Welcome to EaseInv!",
+    html: body,
+  };
+
+  return emailJob;
+};
+

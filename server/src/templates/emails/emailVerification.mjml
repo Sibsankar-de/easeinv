@@ -1,6 +1,6 @@
 <mjml>
   <mj-head>
-    <mj-title>Invitation to join {{storeName}} on EaseInv</mj-title>
+    <mj-title>Verify your email address - EaseInv</mj-title>
     <mj-font name="Inter" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
     <mj-attributes>
       <mj-all font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" />
@@ -14,11 +14,6 @@
         border: 1px solid #E5E7EB;
         border-radius: 12px;
         overflow: hidden;
-      }
-      .details-table {
-        background-color: #F8F9FA;
-        border: 1px solid #ECEBFF;
-        border-radius: 8px;
       }
       .link-text {
         color: #4f39f6;
@@ -53,9 +48,8 @@
     <!-- MAIN CARD -->
     <mj-section css-class="email-card" background-color="#ffffff" padding="36px 32px">
       <mj-column>
-        <!-- Welcome Message -->
         <mj-text font-size="20px" font-weight="700" color="#111827" padding-bottom="16px">
-          You've been invited!
+          Verify your email address
         </mj-text>
         
         <mj-text padding-bottom="12px">
@@ -63,32 +57,14 @@
         </mj-text>
 
         <mj-text padding-bottom="24px">
-          You have been invited to collaborate on <strong>{{storeName}}</strong> on the EaseInv billing platform. Below are your invitation details:
+          Thank you for signing up for EaseInv. To complete your registration and secure your account, please verify your email address by clicking the button below:
         </mj-text>
-
-        <!-- Details Box -->
-        <mj-table css-class="details-table" padding="16px 20px" line-height="1.5">
-          <tr>
-            <td style="padding: 6px 0; font-size: 13px; color: #6B7280; width: 35%;">Store</td>
-            <td style="padding: 6px 0; font-size: 14px; font-weight: 600; color: #111827;">{{storeName}}</td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; font-size: 13px; color: #6B7280;">Role Assigned</td>
-            <td style="padding: 6px 0; font-size: 14px; font-weight: 600; color: #4f39f6;">{{recipientRole}}</td>
-          </tr>
-          <tr>
-            <td style="padding: 6px 0; font-size: 13px; color: #6B7280;">Invited Email</td>
-            <td style="padding: 6px 0; font-size: 14px; color: #111827;">{{recipientEmail}}</td>
-          </tr>
-        </mj-table>
-
-        <mj-spacer height="28px" />
 
         <!-- CTA Button -->
         <mj-button
           background-color="#4f39f6"
           color="#ffffff"
-          href="{{joinLink}}"
+          href="{{verificationLink}}"
           font-size="15px"
           font-weight="600"
           border-radius="8px"
@@ -96,10 +72,14 @@
           inner-padding="14px 28px"
           align="center"
         >
-          Accept Invitation
+          Verify Email Address
         </mj-button>
 
         <mj-spacer height="28px" />
+
+        <mj-text font-size="13px" color="#6B7280" padding-bottom="24px" align="center">
+          This verification link is only valid for <strong>15 minutes</strong>. If the link expires, you will need to request a new verification.
+        </mj-text>
 
         <mj-divider border-color="#F3F4F6" border-width="1px" padding="0 0 20px" />
 
@@ -108,11 +88,13 @@
           If the button above doesn't work, copy and paste this URL into your browser:
         </mj-text>
         <mj-text font-size="12px" padding-bottom="20px">
-          <a href="{{joinLink}}" class="link-text">{{joinLink}}</a>
+          <a href="{{verificationLink}}" class="link-text">{{verificationLink}}</a>
         </mj-text>
 
+        <mj-spacer height="12px" />
+
         <mj-text font-size="13px" color="#9CA3AF">
-          If you were not expecting this invitation, you can safely ignore this email.
+          If you did not register for an EaseInv account, you can safely ignore this message. Someone may have entered your email address by mistake.
         </mj-text>
       </mj-column>
     </mj-section>
@@ -125,11 +107,8 @@
           <a href="{{clientUrl}}/contact" class="footer-link">Contact Support</a> &nbsp;&bull;&nbsp;
           <a href="{{clientUrl}}/privacy" class="footer-link">Privacy Policy</a>
         </mj-text>
-        <mj-text align="center" font-size="11px" color="#BDBDBD" padding-bottom="4px">
-          © 2026 EaseInv. All rights reserved.
-        </mj-text>
         <mj-text align="center" font-size="11px" color="#BDBDBD">
-          Sent to {{recipientEmail}}
+          © 2026 EaseInv. All rights reserved.
         </mj-text>
       </mj-column>
     </mj-section>
