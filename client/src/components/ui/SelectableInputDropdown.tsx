@@ -157,7 +157,7 @@ export function SelectableItem<T>({
       className={cn(
         "p-2 px-3 rounded cursor-pointer",
         index === focusedIndex && "bg-accent!",
-        (selected as any)?._id === (item as any)._id && "bg-muted",
+        ((selected as any)?.id === (item as any).id || (selected as any)?._id === (item as any)._id) && "bg-muted",
         className,
       )}
       onClick={() => handleSelect(item)}

@@ -1,5 +1,5 @@
 export type GalleryImageDto = {
-  _id: string;
+  id: string;
   storeId: string;
   userId: string;
   url: string;

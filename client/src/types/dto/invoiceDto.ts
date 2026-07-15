@@ -35,5 +35,5 @@ export interface CreateInvoiceDto {
 }
 
 export interface InvoiceDto extends CreateInvoiceDto {
-  _id: string;
+  id: string;
 }

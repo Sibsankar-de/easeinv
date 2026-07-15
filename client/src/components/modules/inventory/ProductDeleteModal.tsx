@@ -39,7 +39,7 @@ export function ProductDeleteModal({
       return;
     }
 
-    dispatch(deleteProductThunk({ productId: product?._id, storeId }))
+    dispatch(deleteProductThunk({ productId: product?.id, storeId }))
       .unwrap()
       .then(() => {
         toast.success("Product removed successfully!");

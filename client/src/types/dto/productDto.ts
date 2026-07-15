@@ -6,7 +6,7 @@ export type PricePerQuantityType = {
 };
 
 export type ProductImageType = {
-  _id: string;
+  id: string;
   imageId: string;
   priority: number;
   url: string;
@@ -14,7 +14,7 @@ export type ProductImageType = {
 };
 
 export type ProductDto = {
-  _id: string;
+  id: string;
   storeId: string;
   name: string;
   sku: string;

@@ -45,13 +45,13 @@ export const StoreCard = ({ store }: { store: StoreDto }) => {
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Button onClick={() => router.push(`/stores/${store?._id}`)}>
+        <Button onClick={() => router.push(`/stores/${store?.id}`)}>
           <Store size={15} />
           Goto store
         </Button>
         <Button
           variant="outline"
-          onClick={() => router.push(`/stores/${store?._id}/settings`)}
+          onClick={() => router.push(`/stores/${store?.id}/settings`)}
         >
           <Settings size={20} />
         </Button>

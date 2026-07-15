@@ -114,9 +114,9 @@ export const ApiKeyCreateUpdateModal = ({
           onClose();
         });
     } else {
-      if (!apiKey?._id) return;
+      if (!apiKey?.id) return;
       dispatch(
-        renameApiKeyThunk({ storeId, keyId: apiKey._id, formData: payload }),
+        renameApiKeyThunk({ storeId, keyId: apiKey.id, formData: payload }),
       )
         .unwrap()
         .then(() => {

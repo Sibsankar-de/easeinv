@@ -121,7 +121,7 @@ export function search<T extends Record<string, any>>(
   // DEDUPE + SORT =====================================================
   const unique = new Map();
   results.forEach((item) =>
-    unique.set((item as any)._id ?? item.id ?? JSON.stringify(item), item)
+    unique.set(item.id ?? (item as any)._id ?? JSON.stringify(item), item)
   );
 
   return Array.from(unique.values())

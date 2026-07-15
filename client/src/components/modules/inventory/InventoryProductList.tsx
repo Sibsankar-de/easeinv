@@ -45,7 +45,7 @@ const ProductActions = ({ product }: { product: ProductDto }) => {
         variant="outline"
         className="p-2 text-indigo-400"
         tooltip="Edit product"
-        onClick={() => navigate(`/inventory/product/${product?._id}/edit`)}
+        onClick={() => navigate(`/inventory/product/${product?.id}/edit`)}
       >
         <Edit2 className="w-4 h-4" />
       </Button>

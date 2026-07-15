@@ -42,7 +42,7 @@ export function BillingSectionRow({
         ...item,
         id,
         product: {
-          id: selectedItem._id,
+          id: selectedItem.id,
           name: selectedItem.name,
           sku: selectedItem.sku,
         },

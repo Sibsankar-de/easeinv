@@ -1,6 +1,5 @@
 export interface SearchIndexItem {
   id: string;
-  _id: string;
   title: string;
   description: string;
   path: string;
@@ -12,7 +11,6 @@ export const searchIndex: SearchIndexItem[] = [
   // Global Pages
   {
     id: "stores",
-    _id: "stores",
     title: "All Stores",
     description: "View and manage all your available stores.",
     path: "/stores",
@@ -21,7 +19,6 @@ export const searchIndex: SearchIndexItem[] = [
   },
   {
     id: "profile",
-    _id: "profile",
     title: "User Profile",
     description: "Manage your account details and personal information.",
     path: "/profile",
@@ -32,7 +29,6 @@ export const searchIndex: SearchIndexItem[] = [
   // Store Pages
   {
     id: "store-dashboard",
-    _id: "store-dashboard",
     title: "Store Dashboard",
     description: "Overview of your store's performance and key metrics.",
     path: "dashboard",
@@ -41,7 +37,6 @@ export const searchIndex: SearchIndexItem[] = [
   },
   {
     id: "sales-analytics",
-    _id: "sales-analytics",
     title: "Sales Analytics",
     description: "Detailed analysis of sales trends, revenue, and profit.",
     path: "dashboard/sales",
@@ -50,7 +45,6 @@ export const searchIndex: SearchIndexItem[] = [
   },
   {
     id: "billing-analytics",
-    _id: "billing-analytics",
     title: "Billing Analytics",
     description: "Insights into invoices, due payments, and collection health.",
     path: "dashboard/billing",
@@ -59,7 +53,6 @@ export const searchIndex: SearchIndexItem[] = [
   },
   {
     id: "product-analytics",
-    _id: "product-analytics",
     title: "Product Analytics",
     description: "Top products, category contribution, and inventory insights.",
     path: "dashboard/products",
@@ -68,7 +61,6 @@ export const searchIndex: SearchIndexItem[] = [
   },
   {
     id: "customer-analytics",
-    _id: "customer-analytics",
     title: "Customer Analytics",
     description:
       "Customer activity, outstanding dues, and repeat billing behavior.",
@@ -78,7 +70,6 @@ export const searchIndex: SearchIndexItem[] = [
   },
   {
     id: "create-invoice",
-    _id: "create-invoice",
     title: "Create Invoice",
     description: "Generate a new professional invoice for a customer.",
     path: "billing",
@@ -87,7 +78,6 @@ export const searchIndex: SearchIndexItem[] = [
   },
   {
     id: "invoices-list",
-    _id: "invoices-list",
     title: "Invoices List",
     description: "View, manage, and track all your store's invoices.",
     path: "invoices",
@@ -96,7 +86,6 @@ export const searchIndex: SearchIndexItem[] = [
   },
   {
     id: "customers-list",
-    _id: "customers-list",
     title: "Customers",
     description: "Manage your store's customers and their billing details.",
     path: "customers",
@@ -105,7 +94,6 @@ export const searchIndex: SearchIndexItem[] = [
   },
   {
     id: "inventory-list",
-    _id: "inventory-list",
     title: "Inventory",
     description: "View and manage your store's products and categories.",
     path: "inventory",
@@ -114,7 +102,6 @@ export const searchIndex: SearchIndexItem[] = [
   },
   {
     id: "add-product",
-    _id: "add-product",
     title: "Add Product",
     description: "Add a new product to your store's inventory.",
     path: "inventory/add-product",
@@ -123,7 +110,6 @@ export const searchIndex: SearchIndexItem[] = [
   },
   {
     id: "store-settings",
-    _id: "store-settings",
     title: "Store Settings",
     description: "General store configuration and information.",
     path: "settings",
@@ -132,7 +118,6 @@ export const searchIndex: SearchIndexItem[] = [
   },
   {
     id: "invoice-settings",
-    _id: "invoice-settings",
     title: "Invoice Settings",
     description:
       "Customize your invoice branding, prefix, and payment details.",
@@ -142,7 +127,6 @@ export const searchIndex: SearchIndexItem[] = [
   },
   {
     id: "inventory-settings",
-    _id: "inventory-settings",
     title: "Inventory Settings",
     description: "Configure stock tracking and custom product units.",
     path: "settings/inventory",

@@ -180,7 +180,7 @@ export const BillingAnalyticsPageContent = () => {
           emptyText="No recent billing activity found"
           renderItem={(invoice) => (
             <DataListRow
-              key={invoice._id}
+              key={invoice.id}
               title={invoice.invoiceNumber}
               detail={invoice.customerName}
               value={formatCurrency(invoice.total, currencyCode)}

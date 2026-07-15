@@ -1,7 +1,7 @@
 import { ApiKeyScope } from "@/constants/apiKeyConstants";
 
 export type ApiKeyDto = {
-  _id: string;
+  id: string;
   key: string;
   storeId: string;
   userId: string;

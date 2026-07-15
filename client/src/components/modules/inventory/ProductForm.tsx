@@ -80,7 +80,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
         .then((product: ProductDto) => {
           setFormData({
             ...product,
-            imageIds: product.images?.map((img: any) => img._id) || [],
+            imageIds: product.images?.map((img: any) => img.id) || [],
           });
           setSelectedImages(product.images || []);
 
