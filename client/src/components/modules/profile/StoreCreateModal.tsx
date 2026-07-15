@@ -5,10 +5,14 @@ import { CurrencySelector } from "@/components/ui/CurrencySelector";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Modal, ModalHeader } from "@/components/ui/Modal";
+import { Select } from "@/components/ui/Select";
+import { Separator } from "@/components/ui/Separator";
 import {
   createNewStoreThunk,
   selectStoreState,
 } from "@/store/features/storeSlice";
+import { StoreType } from "@/types/dto/storeDto";
+import { getNames as getCountryNames } from "country-list";
 import { Store } from "lucide-react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -25,11 +29,30 @@ export const StoreCreateModal = ({
     name: "",
     currencyCode: "INR",
     businessType: "",
+    storeType: StoreType.ONLINE,
     contactEmail: "",
+    contactNo: "",
+    registrationNumber: "",
+    website: "",
     address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "India",
   });
 
-  function handleFormData(key: keyof typeof formData, value: any) {
+  const countryOptions = getCountryNames().map((name) => ({
+    key: name,
+    value: name,
+  }));
+
+  const storeTypeOptions = [
+    { key: StoreType.ONLINE, value: "Online" },
+    { key: StoreType.OFFLINE, value: "Offline" },
+    { key: StoreType.HYBRID, value: "Hybrid" },
+  ];
+
+  function handleFormData(key: keyof typeof formData, value: string) {
     setFormData((prev) => ({
       ...prev,
       [key]: value,
@@ -57,17 +80,17 @@ export const StoreCreateModal = ({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="min-w-[70vh]"
+      className="px-4 py-3 space-y-6 w-5xl"
       header={
         <ModalHeader
           title="Create New Store"
-          subtitle="Fill the details to create new store."
+          subtitle="Fill the details to create your new store."
         />
       }
     >
-      <div className="p-3 space-y-6">
-        <div className="space-y-4">
-          <div className="space-y-2">
+      <div className="p-2 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          <div className="space-y-1.5 md:col-span-2">
             <Label htmlFor="storeName" required>
               Store Name
             </Label>
@@ -79,7 +102,21 @@ export const StoreCreateModal = ({
               disabled={isLoading}
             />
           </div>
-          <div className="space-y-2">
+
+          <div className="space-y-1.5">
+            <Label htmlFor="storeType" required>
+              Store Type
+            </Label>
+            <Select
+              id="storeType"
+              value={formData.storeType}
+              onChange={(val) => handleFormData("storeType", val)}
+              options={storeTypeOptions}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="currency-selector" required>
               Store Currency
             </Label>
@@ -90,7 +127,8 @@ export const StoreCreateModal = ({
               disabled={isLoading}
             />
           </div>
-          <div className="space-y-2">
+
+          <div className="space-y-1.5 md:col-span-2">
             <Label htmlFor="businessType" required>
               Business Type
             </Label>
@@ -102,8 +140,12 @@ export const StoreCreateModal = ({
               disabled={isLoading}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="businessEmail">Contact email</Label>
+
+          {/* Section: Contact Details */}
+          <Separator text="Contact details" className="col-span-2" />
+
+          <div className="space-y-1.5">
+            <Label htmlFor="businessEmail">Contact Email</Label>
             <Input
               type="email"
               id="businessEmail"
@@ -113,19 +155,82 @@ export const StoreCreateModal = ({
               disabled={isLoading}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="storeLocation">Address</Label>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="contactNo">Contact Number</Label>
             <Input
-              id="storeLocation"
-              value={formData.address}
-              onChange={(e) => handleFormData("address", e)}
-              placeholder="e.g., Jalpaiguri, WB-735102, India"
+              id="contactNo"
+              value={formData.contactNo}
+              onChange={(e) => handleFormData("contactNo", e)}
+              placeholder="Enter contact phone number"
               disabled={isLoading}
             />
           </div>
+
+          {/* Section: Address */}
+          <Separator text="Address & Location" className="col-span-2" />
+
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="address">Address</Label>
+            <Input
+              id="address"
+              value={formData.address}
+              onChange={(e) => handleFormData("address", e)}
+              placeholder="e.g., Street address, P.O. box, company name"
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="city">City</Label>
+            <Input
+              id="city"
+              value={formData.city}
+              onChange={(e) => handleFormData("city", e)}
+              placeholder="Enter city"
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="state">State / Province</Label>
+            <Input
+              id="state"
+              value={formData.state}
+              onChange={(e) => handleFormData("state", e)}
+              placeholder="Enter state"
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="zipCode">ZIP / Postal Code</Label>
+            <Input
+              id="zipCode"
+              value={formData.zipCode}
+              onChange={(e) => handleFormData("zipCode", e)}
+              placeholder="Enter zip code"
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="country" required>
+              Country
+            </Label>
+            <Select
+              id="country"
+              value={formData.country}
+              onChange={(val) => handleFormData("country", val)}
+              options={countryOptions}
+              disabled={isLoading}
+              dropdownClass="max-h-60"
+            />
+          </div>
         </div>
-        <div className="flex items-center justify-end gap-3">
-          <Button variant="outline" onClick={onClose}>
+
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
           <Button

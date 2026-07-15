@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { cn } from "../utils";
 import { Button } from "./Button";
 import { X } from "lucide-react";
+import { OverlayManager } from "@/utils/overlay-manager";
 
 const ModalContext = createContext<{
   open: boolean;
@@ -35,11 +36,15 @@ export const Modal = ({
   const [closing, setClosing] = useState(false);
   useEffect(() => {
     if (openState) {
-      setOpen(true);
-      setClosing(false);
+      setTimeout(() => {
+        setOpen(true);
+        setClosing(false);
+      }, 0);
       document.body.style.overflowY = "hidden";
     } else {
-      setClosing(true);
+      setTimeout(() => {
+        setClosing(true);
+      }, 0);
       setTimeout(() => {
         setOpen(false);
         setClosing(false);
@@ -48,20 +53,14 @@ export const Modal = ({
     }
   }, [openState]);
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    const key = e.key;
-    // close modal on excape
-    if (key === "Escape" && open) {
-      e.stopPropagation();
-      e.preventDefault();
-      onClose?.();
-    }
-  };
-
   useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  });
+    if (open && onClose) {
+      OverlayManager.push(onClose);
+      return () => {
+        OverlayManager.pop(onClose);
+      };
+    }
+  }, [open, onClose]);
 
   if (!open) return null;
   return createPortal(

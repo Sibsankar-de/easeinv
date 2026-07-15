@@ -95,6 +95,9 @@ export const InventoryProductList = () => {
 
   // Debounce effect
   useEffect(() => {
+    if (searchTerm === debouncedSearchTerm) {
+      return;
+    }
     const delay = getTableSearchDebounceTime(searchTerm, debounceCtx.current);
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -103,7 +106,7 @@ export const InventoryProductList = () => {
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [searchTerm, dispatch]);
+  }, [searchTerm, debouncedSearchTerm, dispatch]);
 
   useEffect(() => {
     if (!productList.pages[currentPage]) {

@@ -61,7 +61,7 @@ export function HeaderNavbar() {
   return (
     <header
       ref={navRef}
-      className="bg-white border-b border-gray-200 px-8 py-2 sticky top-0 z-50 h-fit"
+      className="bg-white border-b border-gray-200 px-8 py-1 sticky top-0 z-50 h-fit"
     >
       <div className="flex items-center justify-between">
         <AppLogoFull size={120} />
@@ -102,14 +102,14 @@ export function HeaderNavbar() {
           <div className="border-l border-gray-200 pl-1">
             <div
               className={cn(
-                "flex items-center gap-3 pl-4 rounded-xl py-1.5 px-2 cursor-pointer",
+                "flex items-center gap-3 pl-4 rounded-xl py-1 px-2 cursor-pointer",
                 "hover:bg-gray-100 active:bg-gray-300 transition-all duration-200",
                 "select-none",
               )}
               onClick={() => setIsProfileOpen((p) => !p)}
             >
               <div className="text-right">
-                <p className="text-gray-900">{user?.userName}</p>
+                <p className="text-gray-900 text-sm">{user?.userName}</p>
                 <p className="text-xs text-gray-500">Member</p>
               </div>
               <Avatar size={40} />

@@ -1,3 +1,9 @@
+export enum StoreType {
+  ONLINE = "ONLINE",
+  OFFLINE = "OFFLINE",
+  HYBRID = "HYBRID",
+}
+
 export type CustomUnitType = {
   key: string;
   value: string;

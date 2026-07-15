@@ -2,10 +2,11 @@
 
 import clsx from "clsx";
 import React, { useEffect, useRef, useState } from "react";
+import { OverlayManager } from "@/utils/overlay-manager";
 
 type DropDownProps = {
   children?: React.ReactNode;
-  openState: Boolean;
+  openState: boolean;
   className?: string;
   onClose?: () => void;
 };
@@ -21,9 +22,13 @@ export const Dropdown = ({
   const [isClose, setIsClose] = useState(false);
   useEffect(() => {
     if (openState) {
-      setIsOpen(true);
+      setTimeout(() => {
+        setIsOpen(true);
+      }, 0);
     } else {
-      setIsClose(true);
+      setTimeout(() => {
+        setIsClose(true);
+      }, 0);
       setTimeout(() => {
         setIsOpen(false);
         setIsClose(false);
@@ -31,11 +36,19 @@ export const Dropdown = ({
     }
   }, [openState]);
 
+  useEffect(() => {
+    if (isOpen && onClose) {
+      OverlayManager.push(onClose);
+      return () => {
+        OverlayManager.pop(onClose);
+      };
+    }
+  }, [isOpen, onClose]);
+
   // close dropdown on outside click
   const boxRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
       // Small delay to ensure the button click is processed first
       setTimeout(() => {
         if (
@@ -49,20 +62,10 @@ export const Dropdown = ({
       }, 250);
     };
 
-    const handleKeyEvents = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        e.stopPropagation();
-        e.preventDefault();
-        onClose?.();
-      }
-    };
-
     document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyEvents);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyEvents);
     };
   }, [isOpen, onClose]);
 

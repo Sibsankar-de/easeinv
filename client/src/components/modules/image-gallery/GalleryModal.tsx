@@ -88,6 +88,9 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
 
   // Debounce search input
   useEffect(() => {
+    if (searchTerm === debouncedSearchTerm) {
+      return;
+    }
     const delay = getTableSearchDebounceTime(searchTerm, debounceCtx.current);
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -96,7 +99,7 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [searchTerm, dispatch]);
+  }, [searchTerm, debouncedSearchTerm, dispatch]);
 
   // Fetch gallery images
   useEffect(() => {
