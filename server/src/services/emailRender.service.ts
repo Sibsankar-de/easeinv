@@ -3,11 +3,14 @@ import path from "path";
 import Handlebars from "handlebars";
 import mjml2html from "mjml";
 import { createModuleLogger } from "../utils/logger";
+import { env } from "../configs/env";
+import { clientAssets } from "../constants/client.constant";
+
 
 const log = createModuleLogger(import.meta.url);
 
 // Options for rendering email
-interface RenderEmailOptions<T = Record<string, any>> {
+interface RenderEmailOptions<T = Record<string, unknown>> {
   templateName: string;
   data: T;
 }
@@ -57,7 +60,13 @@ export const renderEmail = async <T>({
   const templatePath = getTemplatePath(templateName);
   const source = await loadTemplate(templatePath);
 
-  const mjmlWithData = compileTemplate(source, data);
+  const mergedContext = {
+    clientUrl: env.CLIENT_URL || "http://localhost:3000",
+    logoFullUrl: clientAssets.LOGO_FULL,
+    ...(data as Record<string, unknown>),
+  };
+
+  const mjmlWithData = compileTemplate(source, mergedContext);
 
   const html = await convertToHtml(mjmlWithData);
 

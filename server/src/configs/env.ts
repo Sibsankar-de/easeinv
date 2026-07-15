@@ -12,7 +12,7 @@ export const env = {
   APP_DEBUG: parseBoolean(process.env.APP_DEBUG),
 
   CORS_ORIGIN: process.env.CORS_ORIGIN || "http://localhost:3000",
-  CLIENT_URL: process.env.CLIENT_URL || "http://localhost:3000",
+  CLIENT_URL: process.env.CLIENT_URL || "https:easeinv.app",
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || "localhost",
 
   MONGO_CONNECTION_URI: process.env.MONGO_CONNECTION_URI || "",
