@@ -1,9 +1,8 @@
 import { OAuth2Client } from "google-auth-library";
-import { User } from "../models/user.model";
-import { generateAccessAndRefrehToken } from "./user.service";
+import { prisma } from "../lib/prisma";
+import { generateTokenPair, hashPassword } from "./auth.service";
 import { randomBytes } from "crypto";
 import { StatusCodes } from "http-status-codes";
-import mongoose from "mongoose";
 import { env } from "../configs/env";
 import { clientPages } from "../constants/client.constant";
 import { ApiError } from "../utils/ApiError";
@@ -33,14 +32,11 @@ export interface GoogleUserInfo {
 export function generatePassword(length: number = 12): string {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
-
   const bytes = randomBytes(length);
   let password = "";
-
   for (let i = 0; i < length; i++) {
     password += chars[bytes[i] % chars.length];
   }
-
   return password;
 }
 
@@ -65,31 +61,29 @@ export const handleGoogleCallback = async (code: string) => {
   });
 
   const userinfo = userinfoResponse.data as GoogleUserInfo;
-
   if (!userinfo) {
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, "Unable to get user");
   }
 
   const password = generatePassword(16);
 
-  let user = await User.findOne({ email: userinfo.email });
+  let user = await prisma.user.findUnique({ where: { email: userinfo.email } });
 
   if (!user) {
-    user = await User.create({
-      userName: userinfo.name,
-      email: userinfo.email,
-      authBy: "google",
-      password,
+    user = await prisma.user.create({
+      data: {
+        userName: userinfo.name,
+        email: userinfo.email,
+        authBy: "google",
+        password: await hashPassword(password),
+      },
     });
   }
 
   if (!user) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Google log in failed");
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Google login failed");
   }
 
-  const { accessToken, refreshToken } = await generateAccessAndRefrehToken(
-    user._id as mongoose.Types.ObjectId,
-  );
-
+  const { accessToken, refreshToken } = await generateTokenPair(user.id);
   return { user, accessToken, refreshToken };
 };

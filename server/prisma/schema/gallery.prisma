@@ -1,0 +1,22 @@
+model GalleryImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  storeId   String   @db.Uuid
+  userId    String   @db.Uuid
+  url       String
+  publicId  String?
+  hash      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  store         Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id])
+  productImages ProductImage[]
+  thumbnailFor  Product[]      @relation("ProductThumbnail")
+
+  @@index([storeId])
+  @@index([storeId, hash])
+  @@index([storeId, name])
+  @@map("gallery_images")
+}

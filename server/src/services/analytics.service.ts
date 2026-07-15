@@ -1,7 +1,4 @@
-import mongoose from "mongoose";
-import { Invoice } from "../models/invoice.model";
-import { Product } from "../models/product.model";
-import { Customer } from "../models/customer.model";
+import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
 import {
@@ -18,7 +15,7 @@ const periodWindows: Record<AnalyticsPeriod, number> = {
   monthly: 12,
 };
 
-const getPeriodStartDate = (period: AnalyticsPeriod) => {
+const getPeriodStartDate = (period: AnalyticsPeriod): Date => {
   const start = new Date();
   if (period === "daily") {
     start.setDate(start.getDate() - (periodWindows.daily - 1));
@@ -31,47 +28,49 @@ const getPeriodStartDate = (period: AnalyticsPeriod) => {
   return start;
 };
 
-const getTrendGroupStage = (period: AnalyticsPeriod) => {
-  if (period === "daily") {
-    return {
-      key: { $dateToString: { format: "%Y-%m-%d", date: "$issueDate" } },
-      label: { $dateToString: { format: "%d %b", date: "$issueDate" } },
-    };
-  }
+const toNumber = (value: unknown): number =>
+  typeof value === "number" && Number.isFinite(value) ? value : 0;
 
-  if (period === "weekly") {
-    return {
-      key: {
-        $concat: [
-          { $toString: { $isoWeekYear: "$issueDate" } },
-          "-W",
-          { $toString: { $isoWeek: "$issueDate" } },
-        ],
-      },
-      label: {
-        $concat: [
-          "W",
-          { $toString: { $isoWeek: "$issueDate" } },
-          " ",
-          { $toString: { $isoWeekYear: "$issueDate" } },
-        ],
-      },
-    };
-  }
-
-  return {
-    key: { $dateToString: { format: "%Y-%m", date: "$issueDate" } },
-    label: { $dateToString: { format: "%b %Y", date: "$issueDate" } },
-  };
+type TrendRow = {
+  key: string;
+  label: string;
+  revenue: string | number;
+  paid: string | number;
+  due: string | number;
+  invoices: string | number;
+  profit: string | number;
 };
 
-const toNumber = (value: unknown) =>
-  typeof value === "number" && Number.isFinite(value) ? value : 0;
+type ProductRow = {
+  productid: string | null;
+  name: string | null;
+  sku: string | null;
+  quantitysold: string | number;
+  revenue: string | number;
+  profit: string | number;
+};
+
+type CategoryRow = {
+  categoryid: string | null;
+  name: string | null;
+  quantitysold: string | number;
+  revenue: string | number;
+};
+
+type CustomerRow = {
+  customerid: string | null;
+  name: string | null;
+  phonenumber: string | null;
+  invoicecount: string | number;
+  totalbilled: string | number;
+  totalpaid: string | number;
+  totaldue: string | number;
+};
 
 export const getDashboardAnalytics = async (
   storeId: string,
   requestedPeriod: string,
-) => {
+): Promise<DashboardAnalytics> => {
   if (!allowedPeriods.includes(requestedPeriod as AnalyticsPeriod)) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -80,296 +79,217 @@ export const getDashboardAnalytics = async (
   }
 
   const period = requestedPeriod as AnalyticsPeriod;
-  const storeObjectId = new mongoose.Types.ObjectId(storeId);
   const startDate = getPeriodStartDate(period);
-  const trendGroup = getTrendGroupStage(period);
+
+  // Build date format strings for PostgreSQL
+  const keyFormat =
+    period === "daily"
+      ? "YYYY-MM-DD"
+      : period === "weekly"
+        ? "IYYY-IW"
+        : "YYYY-MM";
+  const labelFormat =
+    period === "daily"
+      ? "DD Mon"
+      : period === "weekly"
+        ? '"W"IW IYYY'
+        : "Mon YYYY";
 
   const [
     kpiAgg,
-    trendAgg,
-    productAgg,
-    categoryAgg,
+    trendRows,
+    productRows,
+    categoryRows,
     billingStatusAgg,
-    customerAgg,
+    customerRows,
     recentInvoices,
     totalProducts,
     totalCustomers,
   ] = await Promise.all([
-    Invoice.aggregate([
-      { $match: { storeId: storeObjectId } },
-      {
-        $group: {
-          _id: null,
-          totalRevenue: { $sum: "$total" },
-          totalPaid: { $sum: "$paidAmount" },
-          totalDue: { $sum: "$dueAmount" },
-          totalInvoices: { $sum: 1 },
-          totalProfit: { $sum: { $toDouble: "$totalProfit" } },
-          totalProductsSold: { $sum: { $sum: "$billItems.netQuantity" } },
-        },
+    // KPIs
+    prisma.invoice.aggregate({
+      where: { storeId },
+      _sum: {
+        total: true,
+        paidAmount: true,
+        dueAmount: true,
+        totalProfit: true,
       },
-    ]),
-    Invoice.aggregate([
-      { $match: { storeId: storeObjectId, issueDate: { $gte: startDate } } },
-      {
-        $group: {
-          _id: trendGroup.key,
-          label: { $first: trendGroup.label },
-          revenue: { $sum: "$total" },
-          paid: { $sum: "$paidAmount" },
-          due: { $sum: "$dueAmount" },
-          invoices: { $sum: 1 },
-          productsSold: { $sum: { $sum: "$billItems.netQuantity" } },
-          profit: { $sum: { $toDouble: "$totalProfit" } },
-        },
+      _count: { id: true },
+    }),
+
+    // Sales trend via raw SQL
+    prisma.$queryRaw<TrendRow[]>`
+      SELECT
+        TO_CHAR("issueDate" AT TIME ZONE 'UTC', ${keyFormat}) AS key,
+        TO_CHAR("issueDate" AT TIME ZONE 'UTC', ${labelFormat}) AS label,
+        COALESCE(SUM(total), 0) AS revenue,
+        COALESCE(SUM("paidAmount"), 0) AS paid,
+        COALESCE(SUM("dueAmount"), 0) AS due,
+        COUNT(*)::int AS invoices,
+        COALESCE(SUM("totalProfit"), 0) AS profit
+      FROM invoices
+      WHERE "storeId" = ${storeId}::uuid
+        AND "issueDate" >= ${startDate}
+      GROUP BY 1, 2
+      ORDER BY 1 ASC
+    `,
+
+    // Top products via raw SQL (joins with invoice_items)
+    prisma.$queryRaw<ProductRow[]>`
+      SELECT
+        ii."productId" AS productid,
+        ii."productName" AS name,
+        ii."productSku" AS sku,
+        COALESCE(SUM(ii."netQuantity"), 0) AS quantitysold,
+        COALESCE(SUM(ii."totalPrice"), 0) AS revenue,
+        COALESCE(SUM(ii."totalProfit"), 0) AS profit
+      FROM invoice_items ii
+      INNER JOIN invoices inv ON inv.id = ii."invoiceId"
+      WHERE inv."storeId" = ${storeId}::uuid
+      GROUP BY ii."productId", ii."productName", ii."productSku"
+      ORDER BY revenue DESC
+      LIMIT 8
+    `,
+
+    // Category sales via raw SQL
+    prisma.$queryRaw<CategoryRow[]>`
+      SELECT
+        COALESCE(c.id::text, 'uncategorized') AS categoryid,
+        COALESCE(c.name, 'Uncategorized') AS name,
+        COALESCE(SUM(ii."netQuantity"), 0) AS quantitysold,
+        COALESCE(SUM(ii."totalPrice"), 0) AS revenue
+      FROM invoice_items ii
+      INNER JOIN invoices inv ON inv.id = ii."invoiceId"
+      LEFT JOIN product_categories pc ON pc."productId" = ii."productId"
+      LEFT JOIN categories c ON c.id = pc."categoryId"
+      WHERE inv."storeId" = ${storeId}::uuid
+      GROUP BY c.id, c.name
+      ORDER BY revenue DESC
+      LIMIT 6
+    `,
+
+    // Billing status breakdown
+    prisma.$queryRaw<{ paid: number; partial: number; unpaid: number }[]>`
+      SELECT
+        COALESCE(SUM(CASE WHEN "dueAmount" <= 0 THEN 1 ELSE 0 END), 0)::int AS paid,
+        COALESCE(SUM(CASE WHEN "dueAmount" > 0 AND "paidAmount" > 0 THEN 1 ELSE 0 END), 0)::int AS partial,
+        COALESCE(SUM(CASE WHEN "dueAmount" > 0 AND "paidAmount" <= 0 THEN 1 ELSE 0 END), 0)::int AS unpaid
+      FROM invoices
+      WHERE "storeId" = ${storeId}::uuid
+    `,
+
+    // Top customers via raw SQL
+    prisma.$queryRaw<CustomerRow[]>`
+      SELECT
+        COALESCE(c.id::text, 'walk-in') AS customerid,
+        COALESCE(c.name, 'Walk-in customer') AS name,
+        c."phoneNumber" AS phonenumber,
+        COUNT(inv.id)::int AS invoicecount,
+        COALESCE(SUM(inv.total), 0) AS totalbilled,
+        COALESCE(SUM(inv."paidAmount"), 0) AS totalpaid,
+        COALESCE(SUM(inv."dueAmount"), 0) AS totaldue
+      FROM invoices inv
+      LEFT JOIN customers c ON c.id = inv."customerId"
+      WHERE inv."storeId" = ${storeId}::uuid
+      GROUP BY c.id, c.name, c."phoneNumber"
+      ORDER BY totalbilled DESC
+      LIMIT 8
+    `,
+
+    // Recent invoices
+    prisma.invoice.findMany({
+      where: { storeId },
+      orderBy: [{ issueDate: "desc" }, { createdAt: "desc" }],
+      take: 6,
+      include: {
+        customer: { select: { id: true, name: true } },
       },
-      { $sort: { _id: 1 } },
-    ]),
-    Invoice.aggregate([
-      { $match: { storeId: storeObjectId } },
-      { $unwind: "$billItems" },
-      {
-        $group: {
-          _id: "$billItems.product.id",
-          name: { $first: "$billItems.product.name" },
-          sku: { $first: "$billItems.product.sku" },
-          quantitySold: { $sum: "$billItems.netQuantity" },
-          revenue: { $sum: "$billItems.totalPrice" },
-          profit: { $sum: "$billItems.totalProfit" },
-        },
-      },
-      { $sort: { revenue: -1 } },
-      { $limit: 8 },
-    ]),
-    Invoice.aggregate([
-      { $match: { storeId: storeObjectId } },
-      { $unwind: "$billItems" },
-      {
-        $lookup: {
-          from: "products",
-          localField: "billItems.product.id",
-          foreignField: "_id",
-          as: "productDetails",
-        },
-      },
-      {
-        $unwind: {
-          path: "$productDetails",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $unwind: {
-          path: "$productDetails.categories",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $lookup: {
-          from: "categories",
-          localField: "productDetails.categories",
-          foreignField: "_id",
-          as: "categoryDetails",
-        },
-      },
-      {
-        $unwind: {
-          path: "$categoryDetails",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $group: {
-          _id: { $ifNull: ["$categoryDetails._id", "uncategorized"] },
-          name: {
-            $first: { $ifNull: ["$categoryDetails.name", "Uncategorized"] },
-          },
-          quantitySold: { $sum: "$billItems.netQuantity" },
-          revenue: { $sum: "$billItems.totalPrice" },
-        },
-      },
-      { $sort: { revenue: -1 } },
-      { $limit: 6 },
-    ]),
-    Invoice.aggregate([
-      { $match: { storeId: storeObjectId } },
-      {
-        $group: {
-          _id: null,
-          paid: {
-            $sum: {
-              $cond: [{ $lte: ["$dueAmount", 0] }, 1, 0],
-            },
-          },
-          partial: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    { $gt: ["$dueAmount", 0] },
-                    { $gt: ["$paidAmount", 0] },
-                  ],
-                },
-                1,
-                0,
-              ],
-            },
-          },
-          unpaid: {
-            $sum: {
-              $cond: [
-                {
-                  $and: [
-                    { $gt: ["$dueAmount", 0] },
-                    { $lte: ["$paidAmount", 0] },
-                  ],
-                },
-                1,
-                0,
-              ],
-            },
-          },
-        },
-      },
-    ]),
-    Invoice.aggregate([
-      { $match: { storeId: storeObjectId } },
-      {
-        $group: {
-          _id: "$customerId",
-          invoiceCount: { $sum: 1 },
-          totalBilled: { $sum: "$total" },
-          totalPaid: { $sum: "$paidAmount" },
-          totalDue: { $sum: "$dueAmount" },
-        },
-      },
-      { $sort: { totalBilled: -1 } },
-      { $limit: 8 },
-      {
-        $lookup: {
-          from: "customers",
-          localField: "_id",
-          foreignField: "_id",
-          as: "customerDetails",
-        },
-      },
-      {
-        $unwind: {
-          path: "$customerDetails",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $project: {
-          invoiceCount: 1,
-          totalBilled: 1,
-          totalPaid: 1,
-          totalDue: 1,
-          name: { $ifNull: ["$customerDetails.name", "Walk-in customer"] },
-          phoneNumber: "$customerDetails.phoneNumber",
-        },
-      },
-    ]),
-    Invoice.aggregate([
-      { $match: { storeId: storeObjectId } },
-      { $sort: { issueDate: -1, createdAt: -1 } },
-      { $limit: 6 },
-      {
-        $lookup: {
-          from: "customers",
-          localField: "customerId",
-          foreignField: "_id",
-          as: "customerDetails",
-        },
-      },
-      {
-        $unwind: {
-          path: "$customerDetails",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $project: {
-          invoiceNumber: 1,
-          total: 1,
-          paidAmount: 1,
-          dueAmount: 1,
-          issueDate: 1,
-          status: 1,
-          customerName: {
-            $ifNull: ["$customerDetails.name", "Walk-in customer"],
-          },
-        },
-      },
-    ]),
-    Product.countDocuments({ storeId: storeObjectId }),
-    Customer.countDocuments({ storeId: storeObjectId }),
+    }),
+
+    // Counts
+    prisma.product.count({ where: { storeId } }),
+    prisma.customer.count({ where: { storeId } }),
   ]);
 
-  const kpis = kpiAgg[0] || {};
-  const billingStatus = billingStatusAgg[0] || {};
+  const kpis = kpiAgg;
+  const billingStatus = billingStatusAgg[0] ?? {
+    paid: 0,
+    partial: 0,
+    unpaid: 0,
+  };
+
+  // Compute totalProductsSold from invoice_items separately
+  const productsSoldAgg = await prisma.$queryRaw<{ total: string | number }[]>`
+    SELECT COALESCE(SUM(ii."netQuantity"), 0) AS total
+    FROM invoice_items ii
+    INNER JOIN invoices inv ON inv.id = ii."invoiceId"
+    WHERE inv."storeId" = ${storeId}::uuid
+  `;
+  const totalProductsSold = toNumber(Number(productsSoldAgg[0]?.total ?? 0));
 
   const payload: DashboardAnalytics = {
     period,
     generatedAt: new Date().toISOString(),
     kpis: {
-      totalRevenue: toNumber(kpis.totalRevenue),
-      totalPaid: toNumber(kpis.totalPaid),
-      totalDue: toNumber(kpis.totalDue),
-      totalInvoices: toNumber(kpis.totalInvoices),
-      totalProductsSold: toNumber(kpis.totalProductsSold),
-      totalProfit: toNumber(kpis.totalProfit),
+      totalRevenue: toNumber(kpis._sum.total),
+      totalPaid: toNumber(kpis._sum.paidAmount),
+      totalDue: toNumber(kpis._sum.dueAmount),
+      totalInvoices: toNumber(kpis._count.id),
+      totalProductsSold,
+      totalProfit: toNumber(kpis._sum.totalProfit),
       totalProducts,
       totalCustomers,
     },
-    salesTrend: trendAgg.map(
+    salesTrend: trendRows.map(
       (point): DashboardTrendPoint => ({
-        key: point._id,
+        key: point.key,
         label: point.label,
-        revenue: toNumber(point.revenue),
-        paid: toNumber(point.paid),
-        due: toNumber(point.due),
-        invoices: toNumber(point.invoices),
-        productsSold: toNumber(point.productsSold),
-        profit: toNumber(point.profit),
+        revenue: toNumber(Number(point.revenue)),
+        paid: toNumber(Number(point.paid)),
+        due: toNumber(Number(point.due)),
+        invoices: toNumber(Number(point.invoices)),
+        productsSold: 0,
+        profit: toNumber(Number(point.profit)),
       }),
     ),
-    topProducts: productAgg.map((product) => ({
-      productId: product._id?.toString() || "unknown",
-      name: product.name || "Unknown product",
-      sku: product.sku,
-      quantitySold: toNumber(product.quantitySold),
-      revenue: toNumber(product.revenue),
-      profit: toNumber(product.profit),
+    topProducts: productRows.map((p) => ({
+      productId: p.productid ?? "unknown",
+      name: p.name ?? "Unknown product",
+      sku: p.sku ?? "",
+      quantitySold: toNumber(Number(p.quantitysold)),
+      revenue: toNumber(Number(p.revenue)),
+      profit: toNumber(Number(p.profit)),
     })),
-    categorySales: categoryAgg.map((category) => ({
-      categoryId: category._id?.toString() || "uncategorized",
-      name: category.name || "Uncategorized",
-      quantitySold: toNumber(category.quantitySold),
-      revenue: toNumber(category.revenue),
+    categorySales: categoryRows.map((c) => ({
+      categoryId: c.categoryid ?? "uncategorized",
+      name: c.name ?? "Uncategorized",
+      quantitySold: toNumber(Number(c.quantitysold)),
+      revenue: toNumber(Number(c.revenue)),
     })),
     billingStatus: {
       paid: toNumber(billingStatus.paid),
       partial: toNumber(billingStatus.partial),
       unpaid: toNumber(billingStatus.unpaid),
     },
-    topCustomers: customerAgg.map((customer) => ({
-      customerId: customer._id?.toString() || "walk-in",
-      name: customer.name || "Walk-in customer",
-      phoneNumber: customer.phoneNumber,
-      invoiceCount: toNumber(customer.invoiceCount),
-      totalBilled: toNumber(customer.totalBilled),
-      totalPaid: toNumber(customer.totalPaid),
-      totalDue: toNumber(customer.totalDue),
+    topCustomers: customerRows.map((c) => ({
+      customerId: c.customerid ?? "walk-in",
+      name: c.name ?? "Walk-in customer",
+      phoneNumber: c.phonenumber ?? undefined,
+      invoiceCount: toNumber(Number(c.invoicecount)),
+      totalBilled: toNumber(Number(c.totalbilled)),
+      totalPaid: toNumber(Number(c.totalpaid)),
+      totalDue: toNumber(Number(c.totaldue)),
     })),
     recentInvoices: recentInvoices.map((invoice) => ({
-      _id: invoice._id.toString(),
+      _id: invoice.id,
       invoiceNumber: invoice.invoiceNumber,
-      customerName: invoice.customerName,
+      customerName: invoice.customer?.name ?? "Walk-in customer",
       total: toNumber(invoice.total),
       paidAmount: toNumber(invoice.paidAmount),
       dueAmount: toNumber(invoice.dueAmount),
-      issueDate: invoice.issueDate?.toISOString?.() || invoice.issueDate,
+      issueDate:
+        invoice.issueDate?.toISOString?.() ?? String(invoice.issueDate),
       status: invoice.status,
     })),
   };

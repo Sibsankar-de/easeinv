@@ -12,7 +12,7 @@ import {
 } from "../schemas/store.schema";
 
 export const createStore = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user?._id;
+  const userId = req.user?.id;
   
   const validatedBody = validateBody(createStoreSchema, req.body);
 
@@ -111,7 +111,7 @@ export const uploadInvoicePaymentQrCode = asyncHandler(
 
 export const getStoreList = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = req.user?._id;
+    const userId = req.user?.id;
 
     const storeList = await storeService.getStoreList(userId!);
 
@@ -146,7 +146,7 @@ export const getProductsByStore = asyncHandler(
     const limit = parseInt((req.query.limit as string) || "20");
     const query = (req.query.query as string) || "";
     const sortBy = (req.query.sortBy as string) || "createdAt";
-    const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
+    const sortOrder = req.query.sortOrder === "desc" ? "desc" : "asc";
 
     const productList = await storeService.getProductsByStore({
       storeId,

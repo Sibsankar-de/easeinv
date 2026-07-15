@@ -1,0 +1,59 @@
+enum InvoiceStatus {
+  PRINTED
+  DRAFTED
+}
+
+model Invoice {
+  id             String        @id @default(uuid()) @db.Uuid
+  creatorId      String        @db.Uuid
+  storeId        String        @db.Uuid
+  customerId     String?       @db.Uuid
+  invoiceNumber  String
+  issueDate      DateTime
+  subTotal       Float
+  total          Float
+  discountAmount Float         @default(0)
+  dueAmount      Float         @default(0)
+  paidAmount     Float         @default(0)
+  taxAmount      Float         @default(0)
+  taxRate        Float         @default(0)
+  totalProfit    Float         @default(0)
+  roundupTotal   Boolean       @default(false)
+  note           String?
+  status         InvoiceStatus @default(DRAFTED)
+  extraData      Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  creator   User         @relation(fields: [creatorId], references: [id])
+  store     Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer  Customer?    @relation(fields: [customerId], references: [id])
+  billItems InvoiceItem[]
+
+  @@index([storeId])
+  @@index([invoiceNumber])
+  @@index([storeId, status])
+  @@index([storeId, customerId])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  invoiceId   String  @db.Uuid
+  sortOrder   Int     @default(1)
+  productId   String? @db.Uuid
+  productName String?
+  productSku  String?
+  pricePerQty Json?
+  netQuantity Float
+  totalPrice  Float
+  stockUnit   String?
+  totalProfit Float   @default(0)
+
+  // Relations
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_items")
+}

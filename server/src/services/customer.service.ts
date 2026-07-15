@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
-import { Customer } from "../models/customer.model";
+import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
+import { paginate } from "../utils/paginate";
 import {
   CreateCustomerDTO,
   UpdateCustomerDTO,
@@ -12,51 +12,30 @@ export const getCustomers = async (params: {
   page: number;
   limit: number;
   sortBy: string;
-  sortOrder: 1 | -1;
+  sortOrder: "asc" | "desc";
 }) => {
   const { storeId, page, limit, sortBy, sortOrder } = params;
 
-  const pipeline = [
-    { $match: { storeId: new mongoose.Types.ObjectId(storeId) } },
-    {
-      $lookup: {
-        from: "invoices",
-        localField: "_id",
-        foreignField: "customerId",
-        as: "invoices",
-      },
-    },
-    {
-      $addFields: {
-        totalInvoices: { $size: "$invoices" },
-        dueCount: {
-          $size: {
-            $filter: {
-              input: "$invoices",
-              as: "inv",
-              cond: { $gt: ["$$inv.dueAmount", 0] },
-            },
-          },
-        },
-      },
-    },
-    {
-      $project: {
-        invoices: 0,
-      },
-    },
-  ];
-
-  const paginatedList = await (Customer as any).aggregatePaginate(
-    Customer.aggregate(pipeline),
-    {
-      page,
-      limit,
-      sort: { [sortBy]: sortOrder },
-    },
+  const customers = await paginate(
+    prisma.customer,
+    { storeId },
+    { [sortBy]: sortOrder },
+    { page, limit },
+    { invoices: { select: { id: true, dueAmount: true } } },
   );
 
-  return paginatedList;
+  // Augment with computed stats
+  const docs = customers.docs.map((c: any) => {
+    const invoices: any[] = c.invoices ?? [];
+    return {
+      ...c,
+      invoices: undefined,
+      totalInvoices: invoices.length,
+      dueCount: invoices.filter((inv) => inv.dueAmount > 0).length,
+    };
+  });
+
+  return { ...customers, docs };
 };
 
 export const searchCustomers = async (params: {
@@ -65,7 +44,7 @@ export const searchCustomers = async (params: {
   page: number;
   limit: number;
   sortBy: string;
-  sortOrder: 1 | -1;
+  sortOrder: "asc" | "desc";
 }) => {
   const { storeId, query, page, limit, sortBy, sortOrder } = params;
 
@@ -73,51 +52,22 @@ export const searchCustomers = async (params: {
     throw new ApiError(StatusCodes.BAD_REQUEST, "storeId is required");
   }
 
-  const lowerTerm = decodeURIComponent(query).toLowerCase();
-  const safeTerm = lowerTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(`^${safeTerm}`, "i");
+  const term = decodeURIComponent(query);
 
-  const pipeline = [
-    {
-      $match: {
-        storeId: new mongoose.Types.ObjectId(storeId),
-        $or: [{ name: { $regex: regex } }, { phoneNumber: { $regex: regex } }],
-      },
-    },
-    {
-      $addFields: {
-        searchScore: {
-          $add: [
-            {
-              $cond: [
-                { $regexMatch: { input: "$name", regex: regex } },
-                100,
-                0,
-              ],
-            },
-            {
-              $cond: [
-                { $regexMatch: { input: "$phoneNumber", regex: regex } },
-                50,
-                0,
-              ],
-            },
-          ],
-        },
-      },
-    },
-  ];
+  const where: any = {
+    storeId,
+    OR: [
+      { name: { contains: term, mode: "insensitive" } },
+      { phoneNumber: { contains: term, mode: "insensitive" } },
+    ],
+  };
 
-  const results = await (Customer as any).aggregatePaginate(
-    Customer.aggregate(pipeline),
-    {
-      page,
-      limit,
-      sort: { [sortBy]: sortOrder, name: 1 },
-    },
+  return paginate(
+    prisma.customer,
+    where,
+    [{ [sortBy]: sortOrder }, { name: "asc" }],
+    { page, limit },
   );
-
-  return results;
 };
 
 export const getCustomerById = async (storeId: string, customerId: string) => {
@@ -125,49 +75,23 @@ export const getCustomerById = async (storeId: string, customerId: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "customerId is required");
   }
 
-  const pipeline = [
-    {
-      $match: {
-        _id: new mongoose.Types.ObjectId(customerId),
-        storeId: new mongoose.Types.ObjectId(storeId),
-      },
+  const customer = await prisma.customer.findFirst({
+    where: { id: customerId, storeId },
+    include: {
+      invoices: { select: { id: true, dueAmount: true } },
     },
-    {
-      $lookup: {
-        from: "invoices",
-        localField: "_id",
-        foreignField: "customerId",
-        as: "invoices",
-      },
-    },
-    {
-      $addFields: {
-        totalInvoices: { $size: "$invoices" },
-        dueCount: {
-          $size: {
-            $filter: {
-              input: "$invoices",
-              as: "inv",
-              cond: { $gt: ["$$inv.dueAmount", 0] },
-            },
-          },
-        },
-      },
-    },
-    {
-      $project: {
-        invoices: 0,
-      },
-    },
-  ];
+  });
 
-  const customerData = await Customer.aggregate(pipeline);
-
-  if (!customerData || customerData.length === 0) {
+  if (!customer) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Customer not found");
   }
 
-  return customerData[0];
+  const { invoices, ...rest } = customer;
+  return {
+    ...rest,
+    totalInvoices: invoices.length,
+    dueCount: invoices.filter((inv) => inv.dueAmount > 0).length,
+  };
 };
 
 export const deleteCustomer = async (storeId: string, customerId: string) => {
@@ -175,15 +99,14 @@ export const deleteCustomer = async (storeId: string, customerId: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "customerId is required");
   }
 
-  const deleted = await Customer.findOneAndDelete({
-    _id: customerId,
-    storeId,
+  const customer = await prisma.customer.findFirst({
+    where: { id: customerId, storeId },
   });
-
-  if (!deleted) {
+  if (!customer) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Customer not found");
   }
 
+  await prisma.customer.delete({ where: { id: customerId } });
   return null;
 };
 
@@ -198,21 +121,21 @@ export const updateCustomer = async (
 
   const { name, phoneNumber, email, address } = customerData;
 
-  const updatedCustomer = await Customer.findOneAndUpdate(
-    { _id: customerId, storeId },
-    { $set: { name, phoneNumber, email, address } },
-    { new: true },
-  );
-
-  if (!updatedCustomer) {
+  const customer = await prisma.customer.findFirst({
+    where: { id: customerId, storeId },
+  });
+  if (!customer) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Customer not found");
   }
 
-  return updatedCustomer;
+  return prisma.customer.update({
+    where: { id: customerId },
+    data: { name, phoneNumber, email, address },
+  });
 };
 
 export const createCustomer = async (
-  storeId: string | mongoose.Types.ObjectId,
+  storeId: string,
   customerData: CreateCustomerDTO,
 ) => {
   const { name, phoneNumber, email, address } = customerData;
@@ -224,13 +147,7 @@ export const createCustomer = async (
     );
   }
 
-  const customer = await Customer.create({
-    name,
-    phoneNumber,
-    email,
-    address,
-    storeId,
+  return prisma.customer.create({
+    data: { name, phoneNumber, email, address, storeId },
   });
-
-  return customer;
 };

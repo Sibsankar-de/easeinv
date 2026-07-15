@@ -1,0 +1,34 @@
+enum AuthProvider {
+  email
+  google
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+model User {
+  id              String       @id @default(uuid()) @db.Uuid
+  userName        String
+  email           String       @unique
+  password        String
+  avatar          String?
+  authBy          AuthProvider @default(email)
+  isEmailVerified Boolean      @default(false)
+  role            UserRole     @default(USER)
+  refreshToken    String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Relations
+  ownedStores     Store[]        @relation("StoreOwner")
+  storeUsers      StoreUser[]
+  galleryImages   GalleryImage[]
+  apiKeys         ApiKey[]
+  invoices        Invoice[]
+  createdProducts Product[]
+
+  @@index([email])
+  @@map("users")
+}

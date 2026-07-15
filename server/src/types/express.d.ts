@@ -1,11 +1,10 @@
-import { UserModelType } from "../models/user.model";
-import { StoreModelType } from "../models/store.model";
+import type { Store, SafeUser } from "./model";
 
 declare global {
   namespace Express {
     interface Request {
-      user?: UserModelType;
-      store?: StoreModelType;
+      user?: SafeUser;
+      store?: Store;
     }
   }
 }

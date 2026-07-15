@@ -1,0 +1,29 @@
+enum ApiKeyStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+model ApiKey {
+  id                 String       @id @default(uuid()) @db.Uuid
+  key                String       @unique
+  storeId            String       @db.Uuid
+  userId             String       @db.Uuid
+  name               String
+  allowClientRequest Boolean      @default(false)
+  whitelistedOrigins String[]     @default([])
+  scopes             String[]     @default([])
+  expiresAt          DateTime?
+  status             ApiKeyStatus @default(ACTIVE)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  // Relations
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([key, storeId])
+  @@index([storeId])
+  @@index([storeId, name])
+  @@map("api_keys")
+}

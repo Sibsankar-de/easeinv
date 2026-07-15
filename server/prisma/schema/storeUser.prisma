@@ -1,0 +1,43 @@
+enum StoreUserRole {
+  OWNER
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+model StoreUser {
+  id        String        @id @default(uuid()) @db.Uuid
+  storeId   String        @db.Uuid
+  userId    String        @db.Uuid
+  role      StoreUserRole
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Relations
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, userId])
+  @@index([storeId])
+  @@index([userId])
+  @@map("store_users")
+}
+
+model StoreUserInvite {
+  id        String        @id @default(uuid()) @db.Uuid
+  storeId   String        @db.Uuid
+  email     String
+  role      StoreUserRole
+  token     String        @unique
+  expiresAt DateTime
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  // Relations
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, email])
+  @@index([token])
+  @@index([storeId, email])
+  @@map("store_user_invites")
+}

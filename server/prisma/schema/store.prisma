@@ -1,0 +1,55 @@
+model Store {
+  id                 String   @id @default(uuid()) @db.Uuid
+  name               String
+  ownerId            String   @db.Uuid
+  businessType       String   @default("")
+  address            String   @default("")
+  contactNo          String?
+  contactEmail       String?
+  currencyCode       String
+  registrationNumber String?
+  website            String?
+  logoUrl            String?
+  lastInvoiceNumber  String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  owner         User              @relation("StoreOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  settings      StoreSettings?
+  storeUsers    StoreUser[]
+  invites       StoreUserInvite[]
+  products      Product[]
+  customers     Customer[]
+  categories    Category[]
+  galleryImages GalleryImage[]
+  apiKeys       ApiKey[]
+  invoices      Invoice[]
+
+  @@index([ownerId])
+  @@map("stores")
+}
+
+model StoreSettings {
+  id                      String   @id @default(uuid()) @db.Uuid
+  storeId                 String   @unique @db.Uuid
+  invoiceStoreName        String   @default("")
+  invoiceStoreAddress     String   @default("")
+  invoiceFooterNote       String   @default("")
+  invoiceStoreLogoUrl     String   @default("")
+  enableInventoryTracking Boolean  @default(false)
+  roundupInvoiceTotal     Boolean  @default(false)
+  defaultDiscountRate     Float    @default(0)
+  defaultTaxRate          Float    @default(0)
+  invoiceNumberPrefix     String   @default("INV")
+  invoiceBankDetails      Json?
+  invoicePaymentQrCode    String   @default("")
+  customUnits             Json     @default("[]")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Relations
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@map("store_settings")
+}

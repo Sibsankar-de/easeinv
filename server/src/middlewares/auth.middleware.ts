@@ -1,9 +1,14 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
-import { User } from "../models/user.model";
+import type { JwtPayload } from "jsonwebtoken";
+import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
-import { env } from "../configs/env";
+import {
+  verifyAccessToken,
+  verifyRefreshToken,
+  signAccessToken,
+  signRefreshToken,
+} from "../services/jwt.service";
 import {
   accessTokenCookieOptions,
   refreshTokenCookieOptions,
@@ -22,49 +27,41 @@ export const verifyAuth = async (
       throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorised request");
     }
 
-    let verifiedToken;
+    let verifiedToken: JwtPayload;
+
     try {
       if (!accessToken) throw new Error("No access token");
-      verifiedToken = jwt.verify(accessToken, env.ACCESS_TOKEN_SECRET);
+      verifiedToken = verifyAccessToken(accessToken);
     } catch (_error) {
-      if (refreshToken) {
-        // Attempt to refresh
-        try {
-          const decodedRefresh = jwt.verify(
-            refreshToken,
-            env.REFRESH_TOKEN_SECRET,
-          ) as jwt.JwtPayload;
-
-          const user = await User.findById(decodedRefresh._id);
-          if (!user || user.refreshToken !== refreshToken) {
-            throw new ApiError(
-              StatusCodes.UNAUTHORIZED,
-              "Invalid refresh token",
-            );
-          }
-
-          const newAccessToken = await user.getAccessToken();
-          const newRefreshToken = await user.getRefreshToken();
-
-          user.refreshToken = newRefreshToken;
-          await user.save({ validateBeforeSave: false });
-
-          res.cookie("accessToken", newAccessToken, accessTokenCookieOptions);
-          res.cookie(
-            "refreshToken",
-            newRefreshToken,
-            refreshTokenCookieOptions,
-          );
-
-          verifiedToken = jwt.verify(
-            newAccessToken,
-            env.ACCESS_TOKEN_SECRET as string,
-          );
-        } catch (_refreshError) {
-          throw new ApiError(StatusCodes.UNAUTHORIZED, "Session expired");
-        }
-      } else {
+      if (!refreshToken) {
         throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid access token");
+      }
+
+      // Attempt silent refresh
+      try {
+        const decodedRefresh = verifyRefreshToken(refreshToken) as JwtPayload;
+
+        const user = await prisma.user.findUnique({
+          where: { id: decodedRefresh.id },
+        });
+        if (!user || user.refreshToken !== refreshToken) {
+          throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid refresh token");
+        }
+
+        const newAccessToken = signAccessToken(user);
+        const newRefreshToken = signRefreshToken(user);
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { refreshToken: newRefreshToken },
+        });
+
+        res.cookie("accessToken", newAccessToken, accessTokenCookieOptions);
+        res.cookie("refreshToken", newRefreshToken, refreshTokenCookieOptions);
+
+        verifiedToken = verifyAccessToken(newAccessToken);
+      } catch (_refreshError) {
+        throw new ApiError(StatusCodes.UNAUTHORIZED, "Session expired");
       }
     }
 
@@ -72,9 +69,10 @@ export const verifyAuth = async (
       throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid token");
     }
 
-    const user = await User.findById(
-      (verifiedToken as jwt.JwtPayload)._id,
-    ).select("-password -refreshToken");
+    const user = await prisma.user.findUnique({
+      where: { id: (verifiedToken as JwtPayload).id },
+      omit: { password: true, refreshToken: true },
+    });
     if (!user) {
       throw new ApiError(StatusCodes.UNAUTHORIZED, "User not found");
     }

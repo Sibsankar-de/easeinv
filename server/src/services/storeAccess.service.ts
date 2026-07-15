@@ -1,8 +1,4 @@
-import mongoose from "mongoose";
-import { StoreUser } from "../models/storeUser.model";
-import { User } from "../models/user.model";
-import { Store } from "../models/store.model";
-import { StoreUserInvite } from "../models/storeUserInvite.model";
+import { prisma } from "../lib/prisma";
 import { userRoles } from "../enums/store.enum";
 import { generateSecureToken } from "../utils/token-generator";
 import { clientPages } from "../constants/client.constant";
@@ -18,36 +14,22 @@ import {
 } from "../schemas/storeAccess.schema";
 
 export const getStoreUsers = async (storeId: string) => {
-  const accessorsList = await StoreUser.aggregate([
-    {
-      $match: {
-        storeId: new mongoose.Types.ObjectId(storeId),
+  const storeUsers = await prisma.storeUser.findMany({
+    where: { storeId },
+    include: {
+      user: {
+        select: { id: true, userName: true, email: true },
       },
     },
-    {
-      $lookup: {
-        from: "users",
-        localField: "userId",
-        foreignField: "_id",
-        as: "userDetails",
-      },
-    },
-    {
-      $unwind: "$userDetails",
-    },
-    {
-      $project: {
-        _id: 0,
-        storeId: 1,
-        userId: 1,
-        role: 1,
-        userName: "$userDetails.userName",
-        email: "$userDetails.email",
-      },
-    },
-  ]);
+  });
 
-  return accessorsList;
+  return storeUsers.map((su) => ({
+    storeId: su.storeId,
+    userId: su.userId,
+    role: su.role,
+    userName: su.user.userName,
+    email: su.user.email,
+  }));
 };
 
 export const inviteStoreUser = async (
@@ -66,7 +48,7 @@ export const inviteStoreUser = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid role.");
   }
 
-  const user = await User.findOne({ email });
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,
@@ -74,9 +56,8 @@ export const inviteStoreUser = async (
     );
   }
 
-  const existingStoreUser = await StoreUser.findOne({
-    storeId,
-    userId: user._id,
+  const existingStoreUser = await prisma.storeUser.findFirst({
+    where: { storeId, userId: user.id },
   });
   if (existingStoreUser) {
     throw new ApiError(
@@ -85,11 +66,9 @@ export const inviteStoreUser = async (
     );
   }
 
-  const existingInvite = await StoreUserInvite.findOne({
-    storeId,
-    email,
+  const existingInvite = await prisma.storeUserInvite.findFirst({
+    where: { storeId, email },
   });
-
   if (existingInvite) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -99,18 +78,19 @@ export const inviteStoreUser = async (
 
   const invitationToken = generateSecureToken(256);
   const invitationLink = clientPages.getStoreInvitePage(invitationToken);
-
   const expiresAt = addDays(
     new Date(),
     dateConstants.STORE_USER_INVITE_EXPIRY_DAYS,
   );
 
-  await StoreUserInvite.create({
-    storeId,
-    email,
-    role,
-    token: invitationToken,
-    expiresAt,
+  await prisma.storeUserInvite.create({
+    data: {
+      storeId,
+      email,
+      role: role as any,
+      token: invitationToken,
+      expiresAt,
+    },
   });
 
   publishEmailJob(
@@ -128,25 +108,27 @@ export const getStoreUserInvite = async (token: string, user: any) => {
     );
   }
 
-  const invite = await StoreUserInvite.findOne({ email: user.email, token });
-  if (!invite || invite.isExpired()) {
+  const invite = await prisma.storeUserInvite.findFirst({
+    where: { email: user.email, token },
+  });
+  if (!invite || new Date() > invite.expiresAt) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       "Invalid or expired invitation token.",
     );
   }
 
-  const store = await Store.findById(invite.storeId);
+  const store = await prisma.store.findUnique({
+    where: { id: invite.storeId },
+  });
 
-  const inviteDetails = {
+  return {
     storeId: invite.storeId,
     storeName: store ? store.name : "Unknown Store",
     email: invite.email,
     role: invite.role,
     expiresAt: invite.expiresAt,
   };
-
-  return inviteDetails;
 };
 
 export const acceptStoreUserInvite = async (token: string, user: any) => {
@@ -157,21 +139,25 @@ export const acceptStoreUserInvite = async (token: string, user: any) => {
     );
   }
 
-  const invite = await StoreUserInvite.findOne({ token, email: user.email });
-  if (!invite || invite.isExpired()) {
+  const invite = await prisma.storeUserInvite.findFirst({
+    where: { token, email: user.email },
+  });
+  if (!invite || new Date() > invite.expiresAt) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       "Invalid or expired invitation token.",
     );
   }
 
-  await StoreUser.create({
-    storeId: invite.storeId,
-    userId: user._id,
-    role: invite.role,
+  await prisma.storeUser.create({
+    data: {
+      storeId: invite.storeId,
+      userId: user.id,
+      role: invite.role,
+    },
   });
 
-  await invite.deleteOne();
+  await prisma.storeUserInvite.delete({ where: { id: invite.id } });
 
   return { storeId: invite.storeId };
 };
@@ -192,47 +178,44 @@ export const updateStoreUserRole = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid role.");
   }
 
-  const storeUser = await StoreUser.findOne({
-    storeId,
-    userId: targetUserId,
+  const storeUser = await prisma.storeUser.findFirst({
+    where: { storeId, userId: targetUserId },
   });
   if (!storeUser) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Store user not found.");
   }
 
-  if (storeUser.role === userRoles.OWNER) {
+  if (storeUser.role === "OWNER") {
     throw new ApiError(
       StatusCodes.FORBIDDEN,
       "Cannot change the OWNER's role.",
     );
   }
 
-  storeUser.role = role as any;
-  await storeUser.save();
-
-  return storeUser;
+  return prisma.storeUser.update({
+    where: { id: storeUser.id },
+    data: { role: role as any },
+  });
 };
 
 export const removeStoreUser = async (
   storeId: string,
   targetUserId: string,
 ) => {
-  const storeUser = await StoreUser.findOne({
-    storeId,
-    userId: targetUserId,
+  const storeUser = await prisma.storeUser.findFirst({
+    where: { storeId, userId: targetUserId },
   });
   if (!storeUser) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Store user not found.");
   }
 
-  if (storeUser.role === userRoles.OWNER) {
+  if (storeUser.role === "OWNER") {
     throw new ApiError(
       StatusCodes.FORBIDDEN,
       "Cannot remove the OWNER from the store.",
     );
   }
 
-  await StoreUser.findByIdAndDelete(storeUser._id);
-
+  await prisma.storeUser.delete({ where: { id: storeUser.id } });
   return { userId: targetUserId };
 };

@@ -1,21 +1,20 @@
-import mongoose from "mongoose";
 import { createHash } from "crypto";
-import { GalleryImage } from "../models/galleryImage.model";
-import { ProductImage } from "../models/productImage.model";
+import { prisma } from "../lib/prisma";
 import { uploadToCloudinary } from "./cloudinary.service";
 import { cloudinaryFolders } from "../constants/cloudinary.constant";
 import { uploadSizeLimits } from "../constants/limits.constants";
 import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { UpdateImageNameDTO } from "../schemas/galleryImage.schema";
+import { paginate } from "../utils/paginate";
 
 export function createFileHash(file: Express.Multer.File): string {
   return createHash("sha256").update(file.buffer).digest("hex");
 }
 
 export const uploadGalleryImage = async (params: {
-  storeId: string | mongoose.Types.ObjectId;
-  userId: string | mongoose.Types.ObjectId;
+  storeId: string;
+  userId: string;
   file?: Express.Multer.File;
 }) => {
   const { storeId, userId, file } = params;
@@ -29,7 +28,9 @@ export const uploadGalleryImage = async (params: {
   }
 
   const hash = createFileHash(file);
-  const existedImage = await GalleryImage.findOne({ storeId, hash });
+  const existedImage = await prisma.galleryImage.findFirst({
+    where: { storeId, hash },
+  });
   if (existedImage) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Image already uploaded.");
   }
@@ -39,7 +40,6 @@ export const uploadGalleryImage = async (params: {
     file.originalname,
     cloudinaryFolders.GALLERY_IMAGES,
   );
-
   if (!uploadData) {
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,
@@ -47,16 +47,16 @@ export const uploadGalleryImage = async (params: {
     );
   }
 
-  const newImage = await GalleryImage.create({
-    storeId,
-    userId,
-    url: uploadData.url,
-    publicId: uploadData.public_id,
-    hash,
-    name: file.originalname,
+  return prisma.galleryImage.create({
+    data: {
+      storeId,
+      userId,
+      url: uploadData.url,
+      publicId: uploadData.public_id,
+      hash,
+      name: file.originalname,
+    },
   });
-
-  return newImage;
 };
 
 export const updateImageName = async (
@@ -71,17 +71,10 @@ export const updateImageName = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, "Name is Required.");
   }
 
-  const image = await GalleryImage.findOneAndUpdate(
-    { _id: imageId, storeId },
-    {
-      $set: {
-        name,
-      },
-    },
-    { new: true },
-  );
-
-  return image;
+  return prisma.galleryImage.updateMany({
+    where: { id: imageId, storeId },
+    data: { name },
+  });
 };
 
 export const deleteImage = async (params: {
@@ -90,47 +83,34 @@ export const deleteImage = async (params: {
 }) => {
   const { imageId, storeId } = params;
 
-  const image = await GalleryImage.findOne({ _id: imageId, storeId });
+  const image = await prisma.galleryImage.findFirst({
+    where: { id: imageId, storeId },
+  });
   if (!image) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Image not found.");
   }
 
-  await Promise.all([image.deleteOne(), ProductImage.deleteMany({ imageId })]);
-
+  await prisma.galleryImage.delete({ where: { id: imageId } });
   return null;
 };
 
 export const getGalleryImages = async (params: {
-  storeId: string | mongoose.Types.ObjectId;
+  storeId: string;
   page: number;
   limit: number;
   query: string;
 }) => {
   const { storeId, page, limit, query } = params;
 
-  const match: any = {
-    storeId: new mongoose.Types.ObjectId(storeId as string),
-  };
-
+  const where: any = { storeId };
   if (query) {
-    const safeTerm = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    match.name = { $regex: new RegExp(safeTerm, "i") };
+    where.name = { contains: query, mode: "insensitive" };
   }
 
-  const images = await (GalleryImage as any).aggregatePaginate(
-    GalleryImage.aggregate([
-      {
-        $match: match,
-      },
-      {
-        $sort: { createdAt: -1 },
-      },
-    ]),
-    {
-      page,
-      limit,
-    },
+  return paginate(
+    prisma.galleryImage,
+    where,
+    { createdAt: "desc" },
+    { page, limit },
   );
-
-  return images;
 };

@@ -12,7 +12,7 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
   const limit = parseInt((req.query.limit as string) || "20");
   const query = (req.query.query as string) || "";
   const sortBy = (req.query.sortBy as string) || "createdAt";
-  const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
+  const sortOrder = req.query.sortOrder === "desc" ? "desc" : "asc";
 
   const productList = await productService.getProducts({
     storeId,
@@ -29,7 +29,7 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const createProduct = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user?._id;
+  const userId = req.user?.id;
 
   const validatedBody = validateBody(createProductSchema, req.body);
 
