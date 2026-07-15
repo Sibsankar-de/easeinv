@@ -37,7 +37,7 @@ const CustomerActions = ({ customer }: { customer: CustomerDto }) => {
         variant="outline"
         className="p-2"
         tooltip="View customer"
-        onClick={() => navigate(`/customers/${customer._id}`)}
+        onClick={() => navigate(`/customers/${customer.id}`)}
       >
         <Eye className="w-4 h-4" />
       </Button>

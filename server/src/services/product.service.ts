@@ -1,57 +1,67 @@
-import mongoose from "mongoose";
-import { Product, ProductDocument } from "../models/product.model";
-import { ProductImage } from "../models/productImage.model";
-import { Category } from "../models/category.model";
-import { GalleryImageDocument } from "../models/galleryImage.model";
-import { generateGTIN } from "../utils/gtin-generator";
+import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
+import { generateGTIN } from "../utils/gtin-generator";
 import { productLimits } from "../constants/limits.constants";
+import { paginate } from "../utils/paginate";
 import { CreateProductDTO, UpdateProductDTO } from "../schemas/product.schema";
 
 export const getOrCreateCategory = async (
   categoryName: string,
   storeId: string,
-) => {
-  let category = await Category.findOne({ name: categoryName, storeId });
+): Promise<string> => {
+  let category = await prisma.category.findFirst({
+    where: { name: { equals: categoryName, mode: "insensitive" }, storeId },
+  });
   if (!category) {
-    category = await Category.create({ name: categoryName, storeId });
+    category = await prisma.category.create({
+      data: { name: categoryName, storeId },
+    });
   }
-  return category._id;
+  return category.id;
 };
 
 export const getProductImages = async (productId: string) => {
-  const images = await ProductImage.find({ productId })
-    .sort({ priority: 1 })
-    .populate("imageId");
-
-  return images.map((img) => {
-    const imageData = img.imageId as any as GalleryImageDocument;
-    return {
-      _id: img._id,
-      priority: img.priority,
-      imageId: imageData._id,
-      url: imageData.url,
-      name: imageData.name,
-    };
+  const images = await prisma.productImage.findMany({
+    where: { productId },
+    orderBy: { priority: "asc" },
+    include: {
+      image: { select: { id: true, url: true, name: true } },
+    },
   });
+
+  return images.map((img) => ({
+    id: img.id,
+    priority: img.priority,
+    imageId: img.imageId,
+    url: img.image.url,
+    name: img.image.name,
+  }));
 };
 
-export const getPopulatedProductData = async (product: ProductDocument) => {
-  const categories = await Category.find({
-    _id: { $in: product.categories },
+export const getPopulatedProductData = async (productId: string) => {
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    include: {
+      categories: {
+        include: { category: { select: { id: true, name: true, storeId: true } } },
+      },
+    },
   });
-  const productImages = await getProductImages(product._id.toString());
+
+  if (!product) throw new ApiError(StatusCodes.NOT_FOUND, "Product not found");
+
+  const images = await getProductImages(productId);
 
   return {
-    ...product.toObject(),
-    categories,
-    images: productImages,
+    ...product,
+    categories: product.categories.map((pc) => pc.category),
+    images,
   };
 };
 
 export const addOrRemoveProductImages = async (
-  product: ProductDocument,
+  productId: string,
   imageIds: string[],
 ) => {
   if (imageIds.length > productLimits.MAX_IMAGES) {
@@ -61,48 +71,39 @@ export const addOrRemoveProductImages = async (
     );
   }
 
-  const productId = product._id.toString();
-  const existingImages = await ProductImage.find({ productId });
-  const existingImageIds = existingImages.map((img) => img.imageId.toString());
+  const existingImages = await prisma.productImage.findMany({ where: { productId } });
+  const existingImageIds = existingImages.map((img) => img.imageId);
 
-  const imagesToRemove = existingImageIds.filter(
-    (id) => !imageIds.includes(id),
-  );
+  const imagesToRemove = existingImageIds.filter((id) => !imageIds.includes(id));
   const imagesToAdd = imageIds.filter((id) => !existingImageIds.includes(id));
 
   if (imagesToRemove.length > 0) {
-    await ProductImage.deleteMany({
-      productId,
-      imageId: { $in: imagesToRemove },
+    await prisma.productImage.deleteMany({
+      where: { productId, imageId: { in: imagesToRemove } },
     });
   }
 
   if (imagesToAdd.length > 0) {
-    await ProductImage.insertMany(
-      imagesToAdd.map((imageId) => {
-        const index = imageIds.indexOf(imageId);
-        return {
-          productId,
-          imageId,
-          priority: index !== -1 ? index + 1 : 1,
-        };
-      }),
-    );
+    await prisma.productImage.createMany({
+      data: imagesToAdd.map((imageId) => ({
+        productId,
+        imageId,
+        priority: imageIds.indexOf(imageId) + 1,
+      })),
+    });
   }
 
+  // Update thumbnail
   if (imageIds.length > 0) {
     const thumbnailImageId = imageIds[0];
-    if (
-      mongoose.Types.ObjectId.isValid(thumbnailImageId) &&
-      thumbnailImageId !== product.thumbnailImageId?.toString()
-    ) {
-      await Product.findByIdAndUpdate(productId, {
-        thumbnailImageId,
-      });
-    }
+    await prisma.product.update({
+      where: { id: productId },
+      data: { thumbnailImageId },
+    });
   } else {
-    await Product.findByIdAndUpdate(productId, {
-      thumbnailImageId: null,
+    await prisma.product.update({
+      where: { id: productId },
+      data: { thumbnailImageId: null },
     });
   }
 };
@@ -113,94 +114,53 @@ export const getProducts = async (params: {
   limit: number;
   query: string;
   sortBy: string;
-  sortOrder: 1 | -1;
+  sortOrder: "asc" | "desc";
 }) => {
   const { storeId, page, limit, query, sortBy, sortOrder } = params;
 
-  const match: any = {
-    storeId: new mongoose.Types.ObjectId(storeId),
-  };
-
+  const where: any = { storeId };
   if (query) {
-    const safeTerm = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(`^${safeTerm}`, "i");
-    match.$or = [
-      { name: { $regex: regex } },
-      { sku: { $regex: regex } },
-      { gtin: { $regex: regex } },
+    where.OR = [
+      { name: { contains: query, mode: "insensitive" } },
+      { sku: { contains: query, mode: "insensitive" } },
+      { gtin: { contains: query, mode: "insensitive" } },
     ];
   }
 
-  const productList = await (Product as any).aggregatePaginate(
-    Product.aggregate([
-      {
-        $match: match,
-      },
-      {
-        $lookup: {
-          from: "categories",
-          let: { catIds: "$categories" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $in: ["$_id", "$$catIds"] },
-              },
-            },
-            {
-              $project: { _id: 1, name: 1, storeId: 1 },
-            },
-          ],
-          as: "categories",
-        },
-      },
-      {
-        $lookup: {
-          from: "productimages",
-          let: { productId: "$_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $eq: ["$productId", "$$productId"] },
-              },
-            },
-            {
-              $sort: { priority: 1 },
-            },
-            {
-              $lookup: {
-                from: "galleryimages",
-                localField: "imageId",
-                foreignField: "_id",
-                as: "image",
-              },
-            },
-            {
-              $unwind: "$image",
-            },
-            {
-              $replaceRoot: { newRoot: "$image" },
-            },
-          ],
-          as: "images",
-        },
-      },
-    ]),
+  const result = await paginate(
+    prisma.product,
+    where,
+    { [sortBy]: sortOrder },
+    { page, limit },
     {
-      page,
-      limit,
-      sort: { [sortBy]: sortOrder },
+      categories: {
+        include: { category: { select: { id: true, name: true, storeId: true } } },
+      },
+      images: {
+        include: { image: { select: { id: true, url: true, name: true } } },
+        orderBy: { priority: "asc" as const },
+      },
     },
   );
 
-  if (!productList) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to get list");
-  }
+  // Flatten category/image relations
+  const docs = (result.docs as any[]).map((p) => ({
+    ...p,
+    categories: p.categories.map((pc: any) => pc.category),
+    images: p.images.map((pi: any) => ({
+      id: pi.id,
+      priority: pi.priority,
+      imageId: pi.imageId,
+      url: pi.image.url,
+      name: pi.image.name,
+    })),
+  }));
 
-  return productList;
+  return { ...result, docs };
 };
 
 export const createProduct = async (
-  userId: string | mongoose.Types.ObjectId,
+  userId: string,
   productData: CreateProductDTO,
 ) => {
   const {
@@ -215,56 +175,58 @@ export const createProduct = async (
     pricePerQuantity,
     categories,
     imageIds,
+    description,
   } = productData;
 
   if (
-    [
-      storeId,
-      name,
-      sku,
-      buyingPricePerQuantity,
-      stockUnit,
-      pricePerQuantity,
-    ].some((e) => !e) ||
+    [storeId, name, sku, buyingPricePerQuantity, stockUnit, pricePerQuantity].some(
+      (e) => !e,
+    ) ||
     (enableInventoryTracking && !totalStock)
   ) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Fill all the stared fields.");
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Fill all the required fields.");
   }
 
-  if (pricePerQuantity.length === 0) {
+  if ((pricePerQuantity as any[]).length === 0) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       "Price per quantity is required.",
     );
   }
 
+  // Resolve categories
   const categoryIds: string[] = [];
   if (categories && categories.length > 0) {
     for (const category of categories) {
       const categoryId = await getOrCreateCategory(category?.name, storeId);
-      categoryIds.push(categoryId.toString());
+      categoryIds.push(categoryId);
     }
   }
 
-  const product = await Product.create({
-    creatorId: userId,
-    ...productData,
-    gtin: gtin || generateGTIN(),
-    categories: categoryIds,
+  const product = await prisma.product.create({
+    data: {
+      creatorId: userId,
+      storeId,
+      name,
+      sku,
+      gtin: gtin || generateGTIN(),
+      description,
+      buyingPricePerQuantity,
+      enabledInventoryTracking: enableInventoryTracking ?? false,
+      totalStock,
+      stockUnit,
+      pricePerQuantity: pricePerQuantity as any,
+      categories: {
+        create: categoryIds.map((categoryId) => ({ categoryId })),
+      },
+    },
   });
 
-  if (!product) {
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      "Failed to create product",
-    );
-  }
-
   if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
-    await addOrRemoveProductImages(product, imageIds);
+    await addOrRemoveProductImages(product.id, imageIds);
   }
 
-  return getPopulatedProductData(product);
+  return getPopulatedProductData(product.id);
 };
 
 export const updateProduct = async (
@@ -283,69 +245,67 @@ export const updateProduct = async (
     pricePerQuantity,
     categories,
     imageIds,
+    description,
   } = productData;
 
   if (
-    [
-      storeId,
-      name,
-      sku,
-      buyingPricePerQuantity,
-      stockUnit,
-      pricePerQuantity,
-    ].some((e) => !e) ||
+    [storeId, name, sku, buyingPricePerQuantity, stockUnit, pricePerQuantity].some(
+      (e) => !e,
+    ) ||
     (enableInventoryTracking && !totalStock)
   ) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "All fields are required.");
   }
 
+  // Resolve categories
   const categoryIds: string[] = [];
   if (categories && categories.length > 0) {
     for (const category of categories) {
       const categoryId = await getOrCreateCategory(category?.name, storeId);
-      categoryIds.push(categoryId.toString());
+      categoryIds.push(categoryId);
     }
   }
 
-  const updatedProduct = await Product.findByIdAndUpdate(
-    productId,
-    {
-      $set: {
-        ...productData,
-        categories: categoryIds,
+  // Update product + replace category relations
+  await prisma.$transaction([
+    prisma.productCategory.deleteMany({ where: { productId } }),
+    prisma.product.update({
+      where: { id: productId },
+      data: {
+        name,
+        sku,
         gtin: gtin || generateGTIN(),
+        description,
+        buyingPricePerQuantity,
+        enabledInventoryTracking: enableInventoryTracking ?? false,
+        totalStock,
+        stockUnit,
+        pricePerQuantity: pricePerQuantity as any,
+        categories: {
+          create: categoryIds.map((categoryId) => ({ categoryId })),
+        },
       },
-    },
-    { new: true },
-  );
-
-  if (!updatedProduct) {
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      "Failed to update product",
-    );
-  }
+    }),
+  ]);
 
   if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
-    await addOrRemoveProductImages(updatedProduct, imageIds);
+    await addOrRemoveProductImages(productId, imageIds);
   }
 
-  return getPopulatedProductData(updatedProduct);
+  return getPopulatedProductData(productId);
 };
 
 export const getProductById = async (productId: string) => {
-  const product = await Product.findById(productId);
+  const product = await prisma.product.findUnique({ where: { id: productId } });
   if (!product) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid product id");
   }
-  return getPopulatedProductData(product);
+  return getPopulatedProductData(productId);
 };
 
 export const deleteProduct = async (productId: string) => {
-  await Promise.all([
-    Product.findByIdAndDelete(productId),
-    ProductImage.deleteMany({ productId }),
-  ]);
+  // ProductImage cascades via schema; delete product
+  await prisma.product.delete({ where: { id: productId } });
   return { productId };
 };
 
@@ -360,33 +320,23 @@ export const rearrangeProductImages = async (
     );
   }
 
-  if (!mongoose.Types.ObjectId.isValid(productId)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid product id.");
-  }
+  await Promise.all(
+    Object.entries(imagePriorities).map(([imageId, priority]) =>
+      prisma.productImage.updateMany({
+        where: { productId, imageId },
+        data: { priority: Number(priority) },
+      }),
+    ),
+  );
 
-  const bulkOps = Object.entries(imagePriorities)
-    .filter(([imageId]) => mongoose.Types.ObjectId.isValid(imageId))
-    .map(([imageId, priority]) => ({
-      updateOne: {
-        filter: {
-          productId: new mongoose.Types.ObjectId(productId),
-          imageId: new mongoose.Types.ObjectId(imageId),
-        },
-        update: { $set: { priority: Number(priority) } },
-      },
-    }));
-
-  if (bulkOps.length > 0) {
-    await ProductImage.bulkWrite(bulkOps);
-  }
-
+  // Set thumbnail to priority=1 image
   const thumbnailImageId = Object.keys(imagePriorities).find(
     (key) => imagePriorities[key] === 1,
   );
-
-  if (thumbnailImageId && mongoose.Types.ObjectId.isValid(thumbnailImageId)) {
-    await Product.findByIdAndUpdate(productId, {
-      thumbnailImageId: thumbnailImageId,
+  if (thumbnailImageId) {
+    await prisma.product.update({
+      where: { id: productId },
+      data: { thumbnailImageId },
     });
   }
 
@@ -398,49 +348,36 @@ export const searchProducts = async (storeId: string, query: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "storeId is required");
   }
 
-  const lowerTerm = decodeURIComponent(query).toLowerCase();
-  const safeTerm = lowerTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(`^${safeTerm}`, "i");
+  const term = decodeURIComponent(query);
 
-  const searchResults = await Product.aggregate([
-    {
-      $match: {
-        storeId: new mongoose.Types.ObjectId(storeId),
-        $or: [
-          { name: { $regex: regex } },
-          { sku: { $regex: regex } },
-          { gtin: { $regex: regex } },
-        ],
+  const results = await prisma.product.findMany({
+    where: {
+      storeId,
+      OR: [
+        { name: { contains: term, mode: "insensitive" } },
+        { sku: { contains: term, mode: "insensitive" } },
+        { gtin: { contains: term, mode: "insensitive" } },
+      ],
+    },
+    take: 10,
+    include: {
+      categories: {
+        include: { category: { select: { id: true, name: true } } },
       },
     },
-    {
-      $addFields: {
-        searchScore: {
-          $add: [
-            {
-              $cond: [
-                { $regexMatch: { input: "$gtin", regex: regex } },
-                100,
-                0,
-              ],
-            },
-            {
-              $cond: [{ $regexMatch: { input: "$sku", regex: regex } }, 50, 0],
-            },
-            {
-              $cond: [{ $regexMatch: { input: "$name", regex: regex } }, 10, 0],
-            },
-          ],
-        },
-      },
-    },
-    {
-      $sort: { searchScore: -1, name: 1 },
-    },
-    {
-      $limit: 10,
-    },
-  ]).collation({ locale: "en", strength: 2 });
+  });
 
-  return searchResults;
+  // Apply search score sorting in-memory
+  const scored = results
+    .map((p) => {
+      const lower = term.toLowerCase();
+      let score = 0;
+      if (p.gtin?.toLowerCase().startsWith(lower)) score += 100;
+      if (p.sku?.toLowerCase().startsWith(lower)) score += 50;
+      if (p.name?.toLowerCase().startsWith(lower)) score += 10;
+      return { ...p, searchScore: score };
+    })
+    .sort((a, b) => b.searchScore - a.searchScore || a.name.localeCompare(b.name));
+
+  return scored;
 };

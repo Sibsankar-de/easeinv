@@ -1,0 +1,73 @@
+model Category {
+  id        String   @id @default(uuid()) @db.Uuid
+  storeId   String   @db.Uuid
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  store    Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products ProductCategory[]
+
+  @@index([storeId])
+  @@index([storeId, name])
+  @@map("categories")
+}
+
+model Product {
+  id                      String   @id @default(uuid()) @db.Uuid
+  creatorId               String   @db.Uuid
+  storeId                 String   @db.Uuid
+  name                    String
+  sku                     String
+  gtin                    String?  @unique
+  description             String?
+  thumbnailImageId        String?  @db.Uuid
+  buyingPricePerQuantity  Float
+  totalStock              Float?
+  enabledInventoryTracking Boolean @default(false)
+  stockUnit               String
+  pricePerQuantity        Json     @default("[]")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Relations
+  creator        User              @relation(fields: [creatorId], references: [id])
+  store          Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  thumbnailImage GalleryImage?     @relation("ProductThumbnail", fields: [thumbnailImageId], references: [id])
+  categories     ProductCategory[]
+  images         ProductImage[]
+
+  @@index([storeId])
+  @@index([storeId, name])
+  @@index([storeId, sku])
+  @@map("products")
+}
+
+model ProductCategory {
+  productId  String @db.Uuid
+  categoryId String @db.Uuid
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@map("product_categories")
+}
+
+model ProductImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @db.Uuid
+  imageId   String   @db.Uuid
+  priority  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  product Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  image   GalleryImage @relation(fields: [imageId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, imageId])
+  @@index([productId])
+  @@map("product_images")
+}

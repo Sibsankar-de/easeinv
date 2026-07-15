@@ -8,8 +8,8 @@ import { updateImageNameSchema } from "../schemas/galleryImage.schema";
 
 export const uploadGalleryImage = asyncHandler(
   async (req: Request, res: Response) => {
-    const storeId = req.store!._id;
-    const userId = req.user!._id;
+    const storeId = req.store!.id;
+    const userId = req.user!.id;
     const file = req.file;
 
     const newImage = await galleryImageService.uploadGalleryImage({
@@ -54,7 +54,7 @@ export const deleteImage = asyncHandler(async (req: Request, res: Response) => {
 
 export const getGalleryImages = asyncHandler(
   async (req: Request, res: Response) => {
-    const storeId = req.store!._id;
+    const storeId = req.store!.id;
     const page = parseInt((req.query.page as string) || "1");
     const limit = parseInt((req.query.limit as string) || "20");
     const query = (req.query.query as string) || "";

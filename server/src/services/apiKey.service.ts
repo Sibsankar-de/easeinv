@@ -1,20 +1,27 @@
-import mongoose from "mongoose";
-import { ApiKey } from "../models/apiKey.model";
+import { ApiKeyStatus } from "../types/model";
+import { prisma } from "../lib/prisma";
 import { generateSecureToken } from "../utils/token-generator";
-import { apiKeyStatus } from "../enums/apiKey.enum";
 import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { CreateUpdateApiKeyDTO } from "../schemas/apiKey.schema";
 import { apiKeyLimits } from "../constants/limits.constants";
 
-const generateApiKey = () => {
-  return "sk_inv_" + generateSecureToken(256);
+const generateApiKey = () => "sk_inv_" + generateSecureToken(256);
+
+const enforceMaxApiKeysLimit = async (storeId: string) => {
+  const apiKeyCount = await prisma.apiKey.count({ where: { storeId } });
+  if (apiKeyCount >= apiKeyLimits.MAX_API_KEYS) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "Maximum number of API keys reached.",
+    );
+  }
 };
 
 export const createApiKey = async (
   params: CreateUpdateApiKeyDTO & {
-    storeId: string | mongoose.Types.ObjectId;
-    userId: string | mongoose.Types.ObjectId;
+    storeId: string;
+    userId: string;
   },
 ) => {
   const {
@@ -28,7 +35,7 @@ export const createApiKey = async (
     allowClientRequest,
   } = params;
 
-  enforceMaxApiKeysLimit(storeId);
+  await enforceMaxApiKeysLimit(storeId);
 
   if (!name) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Name is required.");
@@ -53,43 +60,26 @@ export const createApiKey = async (
 
   const newKey = generateApiKey();
 
-  const newApiKey = await ApiKey.create({
-    key: newKey,
-    storeId,
-    userId,
-    name,
-    scopes,
-    expiresAt,
-    allowClientRequest,
-    whitelistedOrigins,
-    status,
+  const newApiKey = await prisma.apiKey.create({
+    data: {
+      key: newKey,
+      storeId,
+      userId,
+      name,
+      scopes: scopes ?? [],
+      expiresAt: expiresAt ?? null,
+      allowClientRequest: allowClientRequest ?? false,
+      whitelistedOrigins: whitelistedOrigins ?? [],
+      status: (status as ApiKeyStatus) ?? "ACTIVE",
+    },
   });
-
-  if (!newApiKey) {
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      "Failed to create Api key",
-    );
-  }
 
   return newApiKey;
 };
 
-const enforceMaxApiKeysLimit = async (
-  storeId: string | mongoose.Types.ObjectId,
-) => {
-  const apiKeyCount = await ApiKey.countDocuments({ storeId });
-  if (apiKeyCount >= apiKeyLimits.MAX_API_KEYS) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Maximum number of API keys reached.",
-    );
-  }
-};
-
 export const updateApiKey = async (
   params: CreateUpdateApiKeyDTO & {
-    storeId: string | mongoose.Types.ObjectId;
+    storeId: string;
     keyId: string;
   },
 ) => {
@@ -99,7 +89,7 @@ export const updateApiKey = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, "Key id is required.");
   }
 
-  const key = await ApiKey.findOne({ _id: keyId, storeId });
+  const key = await prisma.apiKey.findFirst({ where: { id: keyId, storeId } });
   if (!key) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Api key not found.");
   }
@@ -121,20 +111,21 @@ export const updateApiKey = async (
     );
   }
 
-  key.status = params.status;
-  key.name = params.name;
-  key.scopes = params.scopes;
-  key.expiresAt = params.expiresAt;
-  key.whitelistedOrigins = params.whitelistedOrigins;
-  key.allowClientRequest = params.allowClientRequest;
-
-  await key.save({ validateBeforeSave: false });
-
-  return key;
+  return prisma.apiKey.update({
+    where: { id: keyId },
+    data: {
+      status: params.status as ApiKeyStatus,
+      name: params.name,
+      scopes: params.scopes ?? [],
+      expiresAt: params.expiresAt ?? null,
+      whitelistedOrigins: params.whitelistedOrigins ?? [],
+      allowClientRequest: params.allowClientRequest ?? false,
+    },
+  });
 };
 
 export const removeApiKey = async (params: {
-  storeId: string | mongoose.Types.ObjectId;
+  storeId: string;
   keyId: string;
 }) => {
   const { storeId, keyId } = params;
@@ -143,17 +134,17 @@ export const removeApiKey = async (params: {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Key id is required.");
   }
 
-  const key = await ApiKey.findOne({ _id: keyId, storeId });
+  const key = await prisma.apiKey.findFirst({ where: { id: keyId, storeId } });
   if (!key) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Api key not found.");
   }
 
-  await key.deleteOne();
+  await prisma.apiKey.delete({ where: { id: keyId } });
 };
 
-export const getAllApiKeys = async (
-  storeId: string | mongoose.Types.ObjectId,
-) => {
-  const apiKeys = await ApiKey.find({ storeId }).sort({ status: 1 });
-  return apiKeys;
+export const getAllApiKeys = async (storeId: string) => {
+  return prisma.apiKey.findMany({
+    where: { storeId },
+    orderBy: { status: "asc" },
+  });
 };

@@ -22,9 +22,9 @@ export const RemoveApiKeyModal = ({
   const { deleteStatus } = useSelector(selectApiKeyState);
 
   const handleDelete = () => {
-    if (!storeId || !apiKey._id) return;
+    if (!storeId || !apiKey.id) return;
 
-    dispatch(deleteApiKeyThunk({ storeId, keyId: apiKey._id }))
+    dispatch(deleteApiKeyThunk({ storeId, keyId: apiKey.id }))
       .unwrap()
       .then(() => {
         toast.success("Api key deleted.");

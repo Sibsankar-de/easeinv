@@ -6,8 +6,8 @@ import { validateBody } from "../utils/validate.utils";
 import { createUpdateApiKeySchema } from "../schemas/apiKey.schema";
 
 export const createApiKey = asyncHandler(async (req, res) => {
-  const storeId = req.store?._id;
-  const userId = req.user?._id;
+  const storeId = req.store?.id;
+  const userId = req.user?.id;
 
   const validatedBody = validateBody(createUpdateApiKeySchema, req.body);
 
@@ -23,7 +23,7 @@ export const createApiKey = asyncHandler(async (req, res) => {
 });
 
 export const updateApiKey = asyncHandler(async (req, res) => {
-  const storeId = req.store?._id;
+  const storeId = req.store?.id;
   const { keyId } = req.params as { keyId: string };
 
   const validatedBody = validateBody(createUpdateApiKeySchema, req.body);
@@ -40,7 +40,7 @@ export const updateApiKey = asyncHandler(async (req, res) => {
 });
 
 export const removeApiKey = asyncHandler(async (req, res) => {
-  const storeId = req.store?._id;
+  const storeId = req.store?.id;
   const { keyId } = req.params as { keyId: string };
 
   await apiKeyService.removeApiKey({
@@ -54,7 +54,7 @@ export const removeApiKey = asyncHandler(async (req, res) => {
 });
 
 export const getAllApiKeys = asyncHandler(async (req, res) => {
-  const storeId = req.store?._id;
+  const storeId = req.store?.id;
 
   const apiKeys = await apiKeyService.getAllApiKeys(storeId!);
 

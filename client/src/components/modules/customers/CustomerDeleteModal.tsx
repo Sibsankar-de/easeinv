@@ -40,7 +40,7 @@ export function CustomerDeleteModal({
       return;
     }
 
-    dispatch(deleteCustomerThunk({ customerId: customer?._id, storeId }))
+    dispatch(deleteCustomerThunk({ customerId: customer?.id, storeId }))
       .unwrap()
       .then(() => {
         toast.success("Customer removed successfully!");

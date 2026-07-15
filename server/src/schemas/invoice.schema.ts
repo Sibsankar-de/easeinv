@@ -22,10 +22,11 @@ const billItemSchema = z.object({
 });
 
 const customerDetailsSchema = z.object({
-  _id: z.string().optional(),
+  id: z.string().optional(),
   name: z.string().trim().min(1, "Customer name is required"),
   phoneNumber: z.string().trim().optional(),
   address: z.string().trim().optional(),
+  email: z.string().trim().email().optional(),
 });
 
 export const createInvoiceSchema = z.object({
@@ -38,6 +39,13 @@ export const createInvoiceSchema = z.object({
   total: z.number().min(0, "Total must be non-negative"),
   paidAmount: z.number().min(0, "Paid amount must be non-negative"),
   dueAmount: z.number().min(0, "Due amount must be non-negative"),
+  discountAmount: z.number().optional().default(0),
+  taxAmount: z.number().optional().default(0),
+  taxRate: z.number().optional().default(0),
+  totalProfit: z.number().optional().default(0),
+  roundupTotal: z.boolean().optional().default(false),
+  note: z.string().optional(),
+  status: z.enum(["PRINTED", "DRAFTED"]).optional().default("DRAFTED"),
   billItems: z
     .array(billItemSchema)
     .min(1, "At least one bill item is required"),

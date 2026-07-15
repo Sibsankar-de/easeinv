@@ -39,7 +39,7 @@ export type CategoryAnalytics = {
 };
 
 export type RecentInvoiceAnalytics = {
-  _id: string;
+  id: string;
   invoiceNumber: string;
   customerName: string;
   total: number;

@@ -78,7 +78,7 @@ export function CustomerCreateEditModal({
     dispatch(
       updateCustomerThunk({
         storeId,
-        customerId: customer._id,
+        customerId: customer.id,
         data: formData,
       }),
     )

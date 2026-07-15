@@ -2,17 +2,17 @@ version: "3.9"
 
 services:
   db:
-    image: mongo:7
-    container_name: easeinv-mongo
+    image: postgres:16-alpine
+    container_name: easeinv-postgres
     restart: always
     ports:
-      - "27017:27017"
+      - "5432:5432"
     volumes:
-      - easeinv_mongo:/data/db
+      - easeinv_postgres:/var/lib/postgresql/data
     environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: root
-      MONGO_INITDB_DATABASE: testdb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: easeinv
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -28,5 +28,5 @@ services:
       - rabbitmq_data:/var/lib/rabbitmq
 
 volumes:
-  easeinv_mongo:
+  easeinv_postgres:
   rabbitmq_data:

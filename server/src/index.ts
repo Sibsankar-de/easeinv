@@ -1,6 +1,6 @@
 import { app } from "./app";
 import { env } from "./configs/env";
-import { connectMongo } from "./lib/db";
+import { connectDB } from "./lib/prisma";
 import { startWorker } from "./services/emailPublisher.service";
 import { createModuleLogger } from "./utils/logger";
 
@@ -8,7 +8,7 @@ const log = createModuleLogger(import.meta.url);
 
 let server: any;
 
-connectMongo().then(() => {
+connectDB().then(() => {
   server = app.listen(env.PORT, () => {
     log.info(`Server is running at port ${env.PORT}`);
   });

@@ -82,7 +82,7 @@ const invoiceSlice = createSlice({
       const pageData = state.data.invoiceListData.pages[page];
       if (pageData) {
         const invoiceIndex = pageData.docs.findIndex(
-          (inv) => inv._id === invoiceId,
+          (inv) => inv.id === invoiceId,
         );
         if (invoiceIndex !== -1) {
           pageData.docs[invoiceIndex].dueAmount = newDueAmount;

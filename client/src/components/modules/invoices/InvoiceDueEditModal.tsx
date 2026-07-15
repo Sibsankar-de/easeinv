@@ -31,7 +31,7 @@ export const InvoiceDueEditModal = ({
   const [input, setInput] = useState(String(invoice.dueAmount));
 
   const handleUpdate = () => {
-    if (!storeId || !invoice._id || !input.trim()) return;
+    if (!storeId || !invoice.id || !input.trim()) return;
     const num_input = Number(input);
     if (num_input > invoice.dueAmount) {
       toast.warn("You can not pay more than due.");
@@ -41,7 +41,7 @@ export const InvoiceDueEditModal = ({
     dispatch(
       updateInvoiceDueThunk({
         storeId,
-        invoiceId: invoice._id,
+        invoiceId: invoice.id,
         paidAmount: num_input,
       }),
     )
@@ -51,7 +51,7 @@ export const InvoiceDueEditModal = ({
         dispatch(
           updateInvoiceDue({
             page,
-            invoiceId: invoice._id,
+            invoiceId: invoice.id,
             newDueAmount: invoice.dueAmount - num_input,
           }),
         );

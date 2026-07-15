@@ -17,6 +17,7 @@ export const createProductSchema = z
     name: z.string().trim().min(1, "Product name is required"),
     sku: z.string().trim().min(1, "SKU is required"),
     gtin: z.string().trim().optional(),
+    description: z.string().trim().optional(),
     buyingPricePerQuantity: z
       .number()
       .min(0, "Buying price must be non-negative"),
@@ -51,6 +52,7 @@ export const updateProductSchema = z
     name: z.string().trim().min(1, "Product name is required"),
     sku: z.string().trim().min(1, "SKU is required"),
     gtin: z.string().trim().optional(),
+    description: z.string().trim().optional(),
     buyingPricePerQuantity: z
       .number()
       .min(0, "Buying price must be non-negative"),

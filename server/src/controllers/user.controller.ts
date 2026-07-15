@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { ApiResponse } from "../utils/ApiResponse";
 import { StatusCodes } from "http-status-codes";
 import * as userService from "../services/user.service";
+import * as authService from "../services/auth.service";
 import { validateBody } from "../utils/validate.utils";
 import {
   createUserSchema,
@@ -19,7 +20,7 @@ import {
 
 export const createUser = asyncHandler(async (req: Request, res: Response) => {
   const validatedBody = validateBody(createUserSchema, req.body);
-  const result = await userService.createUser(validatedBody);
+  const result = await authService.registerUser(validatedBody);
   return res
     .status(StatusCodes.CREATED)
     .json(new ApiResponse(StatusCodes.CREATED, result, "User created"));
@@ -28,7 +29,7 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
 export const loginUser = asyncHandler(async (req: Request, res: Response) => {
   const validatedBody = validateBody(loginUserSchema, req.body);
   const { accessToken, refreshToken } =
-    await userService.loginUser(validatedBody);
+    await authService.loginUser(validatedBody);
 
   return res
     .status(StatusCodes.OK)
@@ -38,7 +39,7 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
-  await userService.logoutUser(req.user!._id);
+  await authService.logoutUser(req.user!.id);
 
   return res
     .status(StatusCodes.OK)
@@ -51,7 +52,7 @@ export const refreshAccessToken = asyncHandler(
   async (req: Request, res: Response) => {
     const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
     const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-      await userService.refreshAccessToken(refreshToken);
+      await authService.refreshAccessToken(refreshToken);
 
     return res
       .status(StatusCodes.OK)
@@ -68,7 +69,7 @@ export const refreshAccessToken = asyncHandler(
 );
 
 export const checkAuth = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user?._id;
+  const userId = req.user?.id;
   const isAuthenticated = !!userId;
 
   return res
@@ -83,7 +84,7 @@ export const checkAuth = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updateUser = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user?._id;
+  const userId = req.user?.id;
 
   const validatedBody = validateBody(updateUserSchema, req.body);
 
@@ -99,7 +100,7 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
 
 export const updatePassword = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = req.user?._id;
+    const userId = req.user?.id;
 
     const validatedBody = validateBody(updatePasswordSchema, req.body);
 
@@ -113,7 +114,7 @@ export const updatePassword = asyncHandler(
 
 export const updateAvatar = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = req.user?._id;
+    const userId = req.user?.id;
     const file = req.file;
 
     const user = await userService.updateAvatar(userId!, file);
@@ -131,7 +132,7 @@ export const validateAndResetPassword = asyncHandler(
       req.body,
     );
 
-    await userService.validateAndResetPassword(validatedBody);
+    await authService.validateAndResetPassword(validatedBody);
 
     return res
       .status(StatusCodes.OK)
@@ -141,7 +142,7 @@ export const validateAndResetPassword = asyncHandler(
 
 export const getCurrentUser = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = req.user?._id;
+    const userId = req.user?.id;
 
     const user = await userService.getCurrentUser(userId!);
 

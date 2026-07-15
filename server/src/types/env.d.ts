@@ -4,11 +4,11 @@ declare namespace NodeJS {
     CORS_ORIGIN: string;
     CLIENT_URL: string;
     COOKIE_DOMAIN: string;
-    MONGO_CONNECTION_URI: string;
-    MONGO_USER: string;
-    MONGO_PASS: string;
+    DB_HOST: string;
+    DB_PORT: string;
+    DB_USER: string;
+    DB_PASSWORD: string;
     DB_NAME: string;
-    MONGO_REPLICA_SET: string;
     ACCESS_TOKEN_SECRET: string;
     REFRESH_TOKEN_SECRET: string;
     ACCESS_TOKEN_EXPIRY: any;

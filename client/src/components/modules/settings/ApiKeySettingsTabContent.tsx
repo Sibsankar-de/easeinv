@@ -47,7 +47,7 @@ const ApiKeyTableActions = ({ apiKey }: { apiKey: ApiKeyDto }) => {
       </Button>
 
       <ApiKeyCreateUpdateModal
-        key={`${apiKey._id}-${updateModalOpen}`}
+        key={`${apiKey.id}-${updateModalOpen}`}
         isOpen={updateModalOpen}
         mode="edit"
         apiKey={apiKey}
@@ -79,9 +79,9 @@ const KeyCopyButton = ({ apiKey }: { apiKey: ApiKeyDto }) => {
       variant="outline"
       className="p-1.5 border-none"
       tooltip="Copy API Key"
-      onClick={() => handleCopyKey(apiKey.key, apiKey._id)}
+      onClick={() => handleCopyKey(apiKey.key, apiKey.id)}
     >
-      {copiedMap[apiKey._id] ? (
+      {copiedMap[apiKey.id] ? (
         <Check className="w-3.5 h-3.5 text-green-600" />
       ) : (
         <Copy className="w-3.5 h-3.5 text-gray-400" />

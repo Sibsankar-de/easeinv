@@ -86,9 +86,9 @@ export const ProductImageSection = ({
 
   const handleImageSelect = (images: GalleryImageDto[]) => {
     const productImages: ProductImageType[] = images.map((img, index) => ({
-      ...(selectedImages.find((selected) => selected.imageId === img._id) || {
-        _id: "",
-        imageId: img._id,
+      ...(selectedImages.find((selected) => selected.imageId === img.id) || {
+        id: "",
+        imageId: img.id,
         priority: index + 1,
         url: img.url,
         name: img.name,

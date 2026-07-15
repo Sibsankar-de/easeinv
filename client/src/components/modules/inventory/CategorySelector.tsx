@@ -44,7 +44,7 @@ export const CategorySelector = ({
   };
 
   const handleRemoveCategory = (id: string) => {
-    onChange(value.filter((cat) => cat._id !== id));
+    onChange(value.filter((cat) => cat.id !== id));
   };
 
   const searchRule: SearchRule<CategoryDto>[] = [
@@ -62,7 +62,7 @@ export const CategorySelector = ({
           placeholder="Type a category..."
           getLabel={(c) => c.name}
           onSelect={(item) => {
-            if (!value.some((e) => e._id === item._id)) {
+            if (!value.some((e) => e.id === item.id)) {
               onChange([...value, item]);
               setInputValue("");
             }
@@ -70,7 +70,7 @@ export const CategorySelector = ({
           onChange={setInputValue}
         >
           {(p, i) => (
-            <SelectableItem key={p._id} item={p} index={i}>
+            <SelectableItem key={p.id} item={p} index={i}>
               <p>{p.name}</p>
             </SelectableItem>
           )}
@@ -96,7 +96,7 @@ export const CategorySelector = ({
               <X
                 size={15}
                 className="cursor-pointer"
-                onClick={() => handleRemoveCategory(category._id)}
+                onClick={() => handleRemoveCategory(category.id)}
               />
             </li>
           ))}

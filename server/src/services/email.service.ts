@@ -1,12 +1,11 @@
+import { User, Store } from "../types/model";
 import { emailTemplates } from "../constants/emailTemplates";
-import { StoreModelType } from "../models/store.model";
-import { UserModelType } from "../models/user.model";
 import { renderEmail } from "./emailRender.service";
 import { EmailJob } from "../types/email";
 
 export const getStoreUserInviteEmail = async (
-  user: UserModelType,
-  store: StoreModelType,
+  user: User,
+  store: Store,
   role: string,
   joinLink: string,
 ): Promise<EmailJob> => {
@@ -33,7 +32,7 @@ export const getStoreUserInviteEmail = async (
 };
 
 export const getEmailVerificationEmail = async (
-  user: UserModelType,
+  user: User,
   verificationLink: string,
 ): Promise<EmailJob> => {
   const data = {
@@ -56,7 +55,7 @@ export const getEmailVerificationEmail = async (
 };
 
 export const getWelcomeEmail = async (
-  user: UserModelType,
+  user: User,
   dashboardLink: string,
 ): Promise<EmailJob> => {
   const data = {
@@ -77,4 +76,3 @@ export const getWelcomeEmail = async (
 
   return emailJob;
 };
-

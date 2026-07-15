@@ -8,7 +8,7 @@ import { createInvoiceSchema, updateInvoiceDueSchema } from "../schemas/invoice.
 
 export const createInvoice = asyncHandler(
   async (req: Request, res: Response) => {
-    const userId = req.user?._id;
+    const userId = req.user?.id;
     const { storeId } = req.params as { storeId: string };
 
     const validatedBody = validateBody(createInvoiceSchema, req.body);
@@ -51,7 +51,7 @@ export const searchInvoice = asyncHandler(
     const customerPrefix = req.query.customerPrefix as string;
     const customerId = req.query.customerId as string;
     const sortBy = (req.query.sortBy as string) || "createdAt";
-    const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
+    const sortOrder = req.query.sortOrder === "desc" ? "desc" : "asc";
 
     const result = await invoiceService.searchInvoice({
       storeId,

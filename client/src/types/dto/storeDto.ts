@@ -24,7 +24,7 @@ export type StoreSettingsDto = {
 };
 
 export type StoreDto = {
-  _id: string;
+  id: string;
   role: string;
   name: string;
   owner?: string;

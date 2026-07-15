@@ -1,31 +1,17 @@
-import mongoose from "mongoose";
-import { Store } from "../models/store.model";
-import { StoreSettings } from "../models/storeSettings.model";
-import { StoreUser } from "../models/storeUser.model";
-import { Product } from "../models/product.model";
-import { Customer } from "../models/customer.model";
-import { Category } from "../models/category.model";
+import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { uploadToCloudinary } from "./cloudinary.service";
 import { cloudinaryFolders } from "../constants/cloudinary.constant";
 import { userRoles } from "../enums/store.enum";
+import { paginate } from "../utils/paginate";
 import {
   CreateStoreDTO,
   UpdateStoreDTO,
   UpdateStoreSettingsDTO,
 } from "../schemas/store.schema";
 
-export const populateStoreSettings = async (store: any) => {
-  if (!store.settingsId) return store.toObject();
-  const storeSettings = await StoreSettings.findById(store.settingsId);
-  return { ...store.toObject(), storeSettings };
-};
-
-export const createStore = async (
-  userId: string | mongoose.Types.ObjectId,
-  storeData: CreateStoreDTO,
-) => {
+export const createStore = async (userId: string, storeData: CreateStoreDTO) => {
   const { name, businessType, address, contactEmail, contactNo, currencyCode } =
     storeData;
 
@@ -36,32 +22,37 @@ export const createStore = async (
     );
   }
 
-  const store = await Store.create({
-    name,
-    owner: userId,
-    businessType,
-    address,
-    contactEmail,
-    contactNo,
-    currencyCode,
+  const store = await prisma.store.create({
+    data: {
+      name,
+      ownerId: userId,
+      businessType,
+      address,
+      contactEmail,
+      contactNo,
+      currencyCode,
+    },
   });
 
-  await StoreUser.create({
-    storeId: store._id,
-    userId,
-    role: userRoles.OWNER,
+  // Create StoreUser entry for owner
+  await prisma.storeUser.create({
+    data: {
+      storeId: store.id,
+      userId,
+      role: userRoles.OWNER as any,
+    },
   });
 
-  const storeSettings = await StoreSettings.create({
-    storeId: store._id,
-    invoiceStoreName: store.name,
-    invoiceStoreAddress: store.address,
+  // Create StoreSettings
+  const storeSettings = await prisma.storeSettings.create({
+    data: {
+      storeId: store.id,
+      invoiceStoreName: store.name,
+      invoiceStoreAddress: store.address,
+    },
   });
 
-  store.settingsId = storeSettings._id as mongoose.Types.ObjectId;
-  await store.save();
-
-  return store;
+  return { ...store, settings: storeSettings };
 };
 
 export const updateStore = async (
@@ -79,7 +70,8 @@ export const updateStore = async (
     );
   }
 
-  let logoUrl, qrCodeUrl;
+  let logoUrl: string | undefined;
+  let qrCodeUrl: string | undefined;
 
   if (files) {
     if (files.logo && files.logo[0]) {
@@ -100,40 +92,33 @@ export const updateStore = async (
     }
   }
 
-  const updatedStore = await Store.findByIdAndUpdate(
-    storeId,
-    {
-      ...updateData,
-    },
-    { new: true },
-  ).select("-accessList");
+  const updatedStore = await prisma.store.update({
+    where: { id: storeId },
+    data: { ...updateData },
+  });
 
   if (logoUrl || qrCodeUrl) {
     const settingsUpdate: any = {};
     if (logoUrl) settingsUpdate.invoiceStoreLogoUrl = logoUrl;
     if (qrCodeUrl) settingsUpdate.invoicePaymentQrCode = qrCodeUrl;
 
-    await StoreSettings.findOneAndUpdate({ storeId }, { $set: settingsUpdate });
+    await prisma.storeSettings.updateMany({
+      where: { storeId },
+      data: settingsUpdate,
+    });
   }
 
   return updatedStore;
 };
 
 export const deleteStore = async (storeId: string) => {
-  const store = await Store.findById(storeId);
+  const store = await prisma.store.findUnique({ where: { id: storeId } });
   if (!store) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Store not found");
   }
 
-  await Promise.all([
-    Store.findByIdAndDelete(storeId),
-    StoreUser.deleteMany({ storeId }),
-    StoreSettings.deleteMany({ storeId }),
-    Product.deleteMany({ storeId }),
-    Customer.deleteMany({ storeId }),
-    Category.deleteMany({ storeId }),
-  ]);
-
+  // Cascade deletes are handled by Prisma schema onDelete: Cascade
+  await prisma.store.delete({ where: { id: storeId } });
   return null;
 };
 
@@ -145,34 +130,22 @@ export const updateStoreSettings = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, "Data is required");
   }
 
-  const updatedStoreSettings = await StoreSettings.findOneAndUpdate(
-    { storeId },
-    {
-      $set: {
-        ...updateData,
-      },
-    },
-    { new: true },
-  );
-
-  return updatedStoreSettings;
+  return prisma.storeSettings.update({
+    where: { storeId },
+    data: { ...updateData },
+  });
 };
 
-export const uploadStoreLogo = async (
-  storeId: string,
-  file?: Express.Multer.File,
-) => {
+export const uploadStoreLogo = async (storeId: string, file?: Express.Multer.File) => {
   if (!file) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Store logo file is required");
   }
 
-  const buffer = file.buffer;
   const uploadData = await uploadToCloudinary(
-    buffer,
+    file.buffer,
     file.originalname,
     cloudinaryFolders.STORE_LOGO,
   );
-
   if (!uploadData) {
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,
@@ -181,16 +154,10 @@ export const uploadStoreLogo = async (
   }
 
   const logoUrl = uploadData.url;
-
-  await StoreSettings.findOneAndUpdate(
-    { storeId },
-    {
-      $set: {
-        invoiceStoreLogoUrl: logoUrl,
-      },
-    },
-    { new: true },
-  );
+  await prisma.storeSettings.updateMany({
+    where: { storeId },
+    data: { invoiceStoreLogoUrl: logoUrl },
+  });
 
   return logoUrl;
 };
@@ -203,13 +170,11 @@ export const uploadInvoicePaymentQrCode = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, "QR code file is required");
   }
 
-  const buffer = file.buffer;
   const uploadData = await uploadToCloudinary(
-    buffer,
+    file.buffer,
     file.originalname,
     cloudinaryFolders.PAYMENT_QR,
   );
-
   if (!uploadData) {
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,
@@ -218,69 +183,46 @@ export const uploadInvoicePaymentQrCode = async (
   }
 
   const qrCodeUrl = uploadData.url;
-
-  await StoreSettings.findOneAndUpdate(
-    { storeId },
-    {
-      $set: {
-        invoicePaymentQrCode: qrCodeUrl,
-      },
-    },
-    { new: true },
-  );
+  await prisma.storeSettings.updateMany({
+    where: { storeId },
+    data: { invoicePaymentQrCode: qrCodeUrl },
+  });
 
   return qrCodeUrl;
 };
 
-export const getStoreList = async (
-  userId: string | mongoose.Types.ObjectId,
-) => {
-  const storeList = await StoreUser.aggregate([
-    {
-      $match: {
-        userId: new mongoose.Types.ObjectId(userId as any),
+export const getStoreList = async (userId: string) => {
+  const storeUsers = await prisma.storeUser.findMany({
+    where: { userId },
+    include: {
+      store: {
+        select: {
+          id: true,
+          name: true,
+          businessType: true,
+          address: true,
+          contactEmail: true,
+          contactNo: true,
+          createdAt: true,
+        },
       },
     },
-    {
-      $lookup: {
-        from: "stores",
-        localField: "storeId",
-        foreignField: "_id",
-        as: "storeDetails",
-      },
-    },
-    {
-      $unwind: "$storeDetails",
-    },
-    {
-      $project: {
-        _id: "$storeDetails._id",
-        role: 1,
-        name: "$storeDetails.name",
-        businessType: "$storeDetails.businessType",
-        address: "$storeDetails.address",
-        contactEmail: "$storeDetails.contactEmail",
-        contactNo: "$storeDetails.contactNo",
-        createdAt: "$storeDetails.createdAt",
-      },
-    },
-  ]);
+  });
 
-  if (!storeList) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to get list");
-  }
-
-  return storeList;
+  return storeUsers.map((su) => ({ ...su.store, role: su.role }));
 };
 
 export const getStoreDetails = async (storeId: string) => {
-  const store = await Store.findById(storeId).select("-accessList");
+  const store = await prisma.store.findUnique({
+    where: { id: storeId },
+    include: { settings: true },
+  });
 
   if (!store) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to get store");
   }
 
-  return populateStoreSettings(store);
+  return store;
 };
 
 export const getProductsByStore = async (params: {
@@ -289,59 +231,29 @@ export const getProductsByStore = async (params: {
   limit: number;
   query: string;
   sortBy: string;
-  sortOrder: 1 | -1;
+  sortOrder: "asc" | "desc";
 }) => {
   const { storeId, page, limit, query, sortBy, sortOrder } = params;
 
-  const match: any = {
-    storeId: new mongoose.Types.ObjectId(storeId),
-  };
-
+  const where: any = { storeId };
   if (query) {
-    const safeTerm = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const regex = new RegExp(`^${safeTerm}`, "i");
-    match.$or = [
-      { name: { $regex: regex } },
-      { sku: { $regex: regex } },
-      { gtin: { $regex: regex } },
+    where.OR = [
+      { name: { contains: query, mode: "insensitive" } },
+      { sku: { contains: query, mode: "insensitive" } },
+      { gtin: { contains: query, mode: "insensitive" } },
     ];
   }
 
-  const productList = await (Product as any).aggregatePaginate(
-    Product.aggregate([
-      {
-        $match: match,
-      },
-      {
-        $lookup: {
-          from: "categories",
-          let: { catIds: "$categories" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $in: ["$_id", "$$catIds"] },
-              },
-            },
-            {
-              $project: { _id: 1, name: 1, storeId: 1 },
-            },
-          ],
-          as: "categories",
-        },
-      },
-    ]),
+  return paginate(
+    prisma.product,
+    where,
+    { [sortBy]: sortOrder },
+    { page, limit },
     {
-      page,
-      limit,
-      sort: { [sortBy]: sortOrder },
+      categories: { include: { category: { select: { id: true, name: true, storeId: true } } } },
+      images: { include: { image: { select: { id: true, url: true, name: true } } }, orderBy: { priority: "asc" } },
     },
   );
-
-  if (!productList) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to get list");
-  }
-
-  return productList;
 };
 
 export const createCategory = async (storeId: string, name: string) => {
@@ -349,7 +261,9 @@ export const createCategory = async (storeId: string, name: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Category name is required");
   }
 
-  const existingCategory = await Category.findOne({ name, storeId });
+  const existingCategory = await prisma.category.findFirst({
+    where: { name: { equals: name, mode: "insensitive" }, storeId },
+  });
   if (existingCategory) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -357,17 +271,12 @@ export const createCategory = async (storeId: string, name: string) => {
     );
   }
 
-  const category = await Category.create({
-    name,
-    storeId,
-  });
-
-  return category;
+  return prisma.category.create({ data: { name, storeId } });
 };
 
 export const getCategoriesByStore = async (storeId: string) => {
-  const categories = await Category.find({ storeId }).select(
-    "_id name storeId",
-  );
-  return categories;
+  return prisma.category.findMany({
+    where: { storeId },
+    select: { id: true, name: true, storeId: true },
+  });
 };

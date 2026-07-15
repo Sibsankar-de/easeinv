@@ -15,11 +15,11 @@ export const env = {
   CLIENT_URL: process.env.CLIENT_URL || "https:easeinv.app",
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN || "localhost",
 
-  MONGO_CONNECTION_URI: process.env.MONGO_CONNECTION_URI || "",
-  MONGO_USER: process.env.MONGO_USER || "root",
-  MONGO_PASS: process.env.MONGO_PASS || "admin",
+  DB_HOST: process.env.DB_HOST || "localhost",
+  DB_PORT: Number(process.env.DB_PORT || 5432),
+  DB_USER: process.env.DB_USER || "admin",
+  DB_PASSWORD: process.env.DB_PASSWORD || "root",
   DB_NAME: process.env.DB_NAME || "easeinv",
-  MONGO_REPLICA_SET: process.env.MONGO_REPLICA_SET || undefined,
 
   ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
   ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY,

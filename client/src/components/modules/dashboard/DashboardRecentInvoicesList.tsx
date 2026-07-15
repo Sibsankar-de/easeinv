@@ -41,7 +41,7 @@ export const RecentInvoicesList = ({
 
           return (
             <div
-              key={invoice._id}
+              key={invoice.id}
               className="rounded-lg border border-border bg-background px-4 py-3 transition-colors hover:bg-muted/30"
             >
               <div className="flex items-start justify-between gap-4">

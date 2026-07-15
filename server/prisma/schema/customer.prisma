@@ -1,0 +1,34 @@
+enum PaymentBehaviour {
+  ADVANCE
+  OVERDUE
+}
+
+enum CustomerMark {
+  REGULAR
+  BLACKLISTED
+  INACTIVE
+}
+
+model Customer {
+  id               String            @id @default(uuid()) @db.Uuid
+  storeId          String            @db.Uuid
+  name             String
+  phoneNumber      String?
+  email            String?
+  address          String?
+  totalDue         Float             @default(0)
+  advance          Float             @default(0)
+  paymentBehaviour PaymentBehaviour?
+  mark             CustomerMark?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  // Relations
+  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+
+  @@index([storeId])
+  @@index([storeId, name])
+  @@index([storeId, phoneNumber])
+  @@map("customers")
+}

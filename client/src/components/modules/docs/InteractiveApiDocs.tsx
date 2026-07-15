@@ -301,9 +301,9 @@ export function InteractiveApiDocs() {
     if (isAuthenticated) {
       dispatch(fetchStoreList())
         .unwrap()
-        .then((stores: Array<{ _id: string }>) => {
+        .then((stores: Array<{ id: string }>) => {
           if (stores && stores.length > 0) {
-            dispatch(fetchApiKeyListThunk(stores[0]._id));
+            dispatch(fetchApiKeyListThunk(stores[0].id));
           }
         });
     }

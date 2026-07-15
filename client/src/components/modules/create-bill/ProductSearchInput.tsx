@@ -77,7 +77,7 @@ export function ProductSearchInput({
       {(items) =>
         items.map((p, i) => (
           <SelectableItem
-            key={p._id}
+            key={p.id}
             item={p}
             index={i}
             className="flex justify-between"

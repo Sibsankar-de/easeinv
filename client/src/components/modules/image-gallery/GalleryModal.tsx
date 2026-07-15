@@ -65,7 +65,7 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
         const initialSelected = selectedImages.map(
           (img) =>
             ({
-              _id: img.imageId,
+              id: img.imageId,
               url: img.url,
               name: img.name,
             }) as GalleryImageDto,
@@ -126,8 +126,8 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
   const handleImageSelect = (image: GalleryImageDto) => {
     if (multiSelect) {
       setLocalSelectedImages((prev) =>
-        prev.find((img) => img._id === image._id)
-          ? prev.filter((img) => img._id !== image._id)
+        prev.find((img) => img.id === image.id)
+          ? prev.filter((img) => img.id !== image.id)
           : [...prev, image],
       );
     } else {
@@ -191,10 +191,10 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
                 ))
               : pageData.map((image) => (
                   <GalleryItem
-                    key={image._id}
+                    key={image.id}
                     image={image}
                     isSelected={
-                      localSelectedImages.find((img) => img._id === image._id)
+                      localSelectedImages.find((img) => img.id === image.id)
                         ? true
                         : false
                     }

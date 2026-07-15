@@ -79,7 +79,7 @@ const apiKeySlice = createSlice({
         state.renameStatus = "success";
         state.error = null;
         state.data.apiKeyList = state.data.apiKeyList.map((item) =>
-          item._id === action.payload._id ? action.payload : item,
+          item.id === action.payload.id ? action.payload : item,
         );
       })
       .addCase(deleteApiKeyThunk.pending, (state, action) =>
@@ -92,7 +92,7 @@ const apiKeySlice = createSlice({
         state.deleteStatus = "success";
         state.error = null;
         state.data.apiKeyList = state.data.apiKeyList.filter(
-          (item) => item._id !== action.meta.arg.keyId,
+          (item) => item.id !== action.meta.arg.keyId,
         );
       });
   },
