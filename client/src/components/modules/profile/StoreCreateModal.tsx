@@ -13,7 +13,7 @@ import {
 } from "@/store/features/storeSlice";
 import { StoreType } from "@/types/dto/storeDto";
 import { getNames as getCountryNames } from "country-list";
-import { Store } from "lucide-react";
+import { Mail, Phone, Store } from "lucide-react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
@@ -47,8 +47,10 @@ export const StoreCreateModal = ({
   }));
 
   const storeTypeOptions = [
+    { key: StoreType.RETAIL, value: "Retail" },
+    { key: StoreType.WHOLESALE, value: "Wholesale" },
     { key: StoreType.ONLINE, value: "Online" },
-    { key: StoreType.OFFLINE, value: "Offline" },
+    { key: StoreType.FRANCHISE, value: "Franchise" },
     { key: StoreType.HYBRID, value: "Hybrid" },
   ];
 
@@ -128,19 +130,6 @@ export const StoreCreateModal = ({
             />
           </div>
 
-          <div className="space-y-1.5 md:col-span-2">
-            <Label htmlFor="businessType" required>
-              Business Type
-            </Label>
-            <Input
-              id="businessType"
-              value={formData.businessType}
-              onChange={(e) => handleFormData("businessType", e)}
-              placeholder="e.g., Retail, Technology, Food & Beverage"
-              disabled={isLoading}
-            />
-          </div>
-
           {/* Section: Contact Details */}
           <Separator text="Contact details" className="col-span-2" />
 
@@ -153,6 +142,7 @@ export const StoreCreateModal = ({
               onChange={(e) => handleFormData("contactEmail", e)}
               placeholder="Enter business email or personal"
               disabled={isLoading}
+              icon={<Mail size={18} />}
             />
           </div>
 
@@ -164,6 +154,7 @@ export const StoreCreateModal = ({
               onChange={(e) => handleFormData("contactNo", e)}
               placeholder="Enter contact phone number"
               disabled={isLoading}
+              icon={<Phone size={18} />}
             />
           </div>
 

@@ -1,6 +1,8 @@
 export enum StoreType {
+  RETAIL = "RETAIL",
+  WHOLESALE = "WHOLESALE",
   ONLINE = "ONLINE",
-  OFFLINE = "OFFLINE",
+  FRANCHISE = "FRANCHISE",
   HYBRID = "HYBRID",
 }
 
@@ -38,7 +40,7 @@ export type StoreDto = {
   address?: string;
   contactNo?: string;
   contactEmail?: string;
-  businessType?: string;
+  type?: string;
   registrationNumber?: string;
   website?: string;
   taxRate?: number;
