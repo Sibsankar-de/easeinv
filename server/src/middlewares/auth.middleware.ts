@@ -3,16 +3,15 @@ import type { JwtPayload } from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
-import {
-  verifyAccessToken,
-  verifyRefreshToken,
-  signAccessToken,
-  signRefreshToken,
-} from "../services/jwt.service";
+import { verifyAccessToken, signAccessToken } from "../services/jwt.service";
 import {
   accessTokenCookieOptions,
   refreshTokenCookieOptions,
 } from "../utils/cookie-utils";
+import { hashStringSha } from "../utils/hash-utils";
+import { generateSecureToken } from "../utils/token-generator";
+import { env } from "../configs/env";
+import { addDays } from "../utils/date-utils";
 
 export const verifyAuth = async (
   req: Request,
@@ -27,52 +26,36 @@ export const verifyAuth = async (
       throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorised request");
     }
 
-    let verifiedToken: JwtPayload;
+    let user = null;
 
     try {
-      if (!accessToken) throw new Error("No access token");
-      verifiedToken = verifyAccessToken(accessToken);
+      if (!accessToken) throw new Error("No access token.");
+      const verifiedToken = verifyAccessToken(accessToken);
+
+      if (!verifiedToken || typeof verifiedToken !== "object") {
+        throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid token");
+      }
+
+      user = await prisma.user.findUnique({
+        where: { id: (verifiedToken as JwtPayload).id },
+      });
     } catch (_error) {
       if (!refreshToken) {
         throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid access token");
       }
-
       // Attempt silent refresh
-      try {
-        const decodedRefresh = verifyRefreshToken(refreshToken) as JwtPayload;
+      const {
+        newAccessToken,
+        newRefreshToken,
+        user: _user,
+      } = await refreshAccessToken(refreshToken);
 
-        const user = await prisma.user.findUnique({
-          where: { id: decodedRefresh.id },
-        });
-        if (!user || user.refreshToken !== refreshToken) {
-          throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid refresh token");
-        }
+      res.cookie("accessToken", newAccessToken, accessTokenCookieOptions);
+      res.cookie("refreshToken", newRefreshToken, refreshTokenCookieOptions);
 
-        const newAccessToken = signAccessToken(user);
-        const newRefreshToken = signRefreshToken(user);
-
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { refreshToken: newRefreshToken },
-        });
-
-        res.cookie("accessToken", newAccessToken, accessTokenCookieOptions);
-        res.cookie("refreshToken", newRefreshToken, refreshTokenCookieOptions);
-
-        verifiedToken = verifyAccessToken(newAccessToken);
-      } catch (_refreshError) {
-        throw new ApiError(StatusCodes.UNAUTHORIZED, "Session expired");
-      }
+      user = _user;
     }
 
-    if (!verifiedToken || typeof verifiedToken !== "object") {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid token");
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: (verifiedToken as JwtPayload).id },
-      omit: { password: true, refreshToken: true },
-    });
     if (!user) {
       throw new ApiError(StatusCodes.UNAUTHORIZED, "User not found");
     }
@@ -82,4 +65,44 @@ export const verifyAuth = async (
   } catch (error) {
     next(error);
   }
+};
+
+const refreshAccessToken = async (refreshToken: string) => {
+  const refreshTokenHash = hashStringSha(refreshToken);
+  const refreshTokenData = await prisma.refreshToken.findFirst({
+    where: {
+      token: refreshTokenHash,
+      revoked: false,
+      expiresAt: { gt: new Date() },
+    },
+  });
+
+  if (!refreshTokenData) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "Session expired.");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: refreshTokenData.userId },
+  });
+
+  if (!user) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid refresh token");
+  }
+
+  const newAccessToken = signAccessToken(user, 1);
+
+  const newRefreshToken = generateSecureToken(128);
+  const newRefreshTokenHash = hashStringSha(newRefreshToken);
+
+  // rotate the refresh token
+  await prisma.refreshToken.update({
+    where: { id: refreshTokenData.id },
+    data: {
+      token: newRefreshTokenHash,
+      lastSeenAt: new Date(),
+      expiresAt: addDays(new Date(), env.REFRESH_TOKEN_EXPIRY),
+    },
+  });
+
+  return { newAccessToken, newRefreshToken, user };
 };

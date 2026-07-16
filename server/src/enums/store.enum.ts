@@ -1,11 +1,22 @@
-export const userRoles = {
-  ADMIN: "ADMIN",
-  OWNER: "OWNER",
-  MANAGER: "MANAGER",
-  EMPLOYEE: "EMPLOYEE",
-};
+import { StoreType, StoreUserRole } from "@prisma/client";
 
-export const storeEnums = {
-  STOCK_UNIT: ["KG", "LITRE", "PCS"],
-  USER_ROLES: Object.values(userRoles),
-};
+export const storeTypeList = Object.values(StoreType);
+
+export enum StoreStatus {
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
+  SUSPENDED = "SUSPENDED",
+}
+
+export const storeStatusList = Object.values(StoreStatus) as [
+  string,
+  ...string[],
+];
+
+export const storeUserRoleList = Object.values(StoreUserRole);
+
+export enum StockUnit {
+  KG = "KG",
+  LITRE = "LITRE",
+  PCS = "PCS",
+}

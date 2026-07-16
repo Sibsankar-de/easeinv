@@ -1,6 +1,6 @@
 enum AuthProvider {
-  email
-  google
+  LOCAL
+  GOOGLE
 }
 
 enum UserRole {
@@ -14,20 +14,21 @@ model User {
   email           String       @unique
   password        String
   avatar          String?
-  authBy          AuthProvider @default(email)
+  authBy          AuthProvider @default(LOCAL)
   isEmailVerified Boolean      @default(false)
   role            UserRole     @default(USER)
-  refreshToken    String?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
   // Relations
-  ownedStores     Store[]        @relation("StoreOwner")
-  storeUsers      StoreUser[]
-  galleryImages   GalleryImage[]
-  apiKeys         ApiKey[]
-  invoices        Invoice[]
-  createdProducts Product[]
+  ownedStores        Store[]             @relation("StoreOwner")
+  storeUsers         StoreUser[]
+  galleryImages      GalleryImage[]
+  apiKeys            ApiKey[]
+  invoices           Invoice[]
+  createdProducts    Product[]
+  verificationTokens VerificationToken[]
+  refreshToken       RefreshToken[]
 
   @@index([email])
   @@map("users")

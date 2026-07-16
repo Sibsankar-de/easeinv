@@ -1,3 +1,5 @@
-export const invoiceEnums = {
-  invoiceStatus: ["PRINTED", "DRAFTED"],
-};
+export enum InvoiceStatus {
+  PRINTED = "PRINTED",
+  DRAFTED = "DRAFTED",
+}
+

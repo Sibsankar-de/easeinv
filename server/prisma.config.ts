@@ -14,6 +14,9 @@ const connectionUrl = `postgresql://${encodedUser}:${encodedPassword}@${host}:${
 
 export default defineConfig({
   schema: "prisma/schema",
+  migrations: {
+    path: "prisma/migrations",
+  },
   datasource: {
     url: connectionUrl,
   },

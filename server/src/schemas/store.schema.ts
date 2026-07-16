@@ -1,21 +1,33 @@
 import { z } from "zod";
+import { storeTypeList } from "../enums/store.enum";
 
 export const createStoreSchema = z.object({
   name: z.string().trim().min(1, "Store name is required"),
   currencyCode: z.string().trim().min(1, "Currency code is required"),
-  businessType: z.string().trim().optional(),
-  address: z.string().trim().optional(),
+  type: z.enum(storeTypeList),
+
   contactEmail: z.email("Invalid email").or(z.literal("")).optional(),
   contactNo: z.string().trim().optional(),
+
+  addressLine: z.string().trim().optional(),
+  city: z.string().trim().optional(),
+  state: z.string().trim().optional(),
+  zipCode: z.string().trim().optional(),
+  country: z.string().trim(),
 });
 
 export const updateStoreSchema = z.object({
   name: z.string().trim().min(1, "Store name is required"),
   currencyCode: z.string().trim().min(1, "Currency code is required"),
-  businessType: z.string().trim().optional(),
-  address: z.string().trim().optional(),
+  type: z.enum(storeTypeList),
   contactEmail: z.email("Invalid email").or(z.literal("")).optional(),
   contactNo: z.string().trim().optional(),
+
+  addressLine: z.string().trim().optional(),
+  city: z.string().trim().optional(),
+  state: z.string().trim().optional(),
+  zipCode: z.string().trim().optional(),
+  country: z.string().trim(),
 });
 
 export const updateStoreSettingsSchema = z

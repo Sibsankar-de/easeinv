@@ -39,7 +39,8 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
-  await authService.logoutUser(req.user!.id);
+  const refreshToken = req.cookies.refreshToken;
+  await authService.logoutUser(req.user!.id, refreshToken);
 
   return res
     .status(StatusCodes.OK)
@@ -47,26 +48,6 @@ export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
     .clearCookie("refreshToken", cookieOptions)
     .json(new ApiResponse(StatusCodes.OK, {}, "User logged out"));
 });
-
-export const refreshAccessToken = asyncHandler(
-  async (req: Request, res: Response) => {
-    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
-    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-      await authService.refreshAccessToken(refreshToken);
-
-    return res
-      .status(StatusCodes.OK)
-      .cookie("accessToken", newAccessToken, cookieOptions)
-      .cookie("refreshToken", newRefreshToken, cookieOptions)
-      .json(
-        new ApiResponse(
-          StatusCodes.OK,
-          { accessToken: newAccessToken },
-          "Access token refreshed",
-        ),
-      );
-  },
-);
 
 export const checkAuth = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.id;
@@ -88,10 +69,7 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
 
   const validatedBody = validateBody(updateUserSchema, req.body);
 
-  const updatedUser = await userService.updateUser(
-    userId!,
-    validatedBody,
-  );
+  const updatedUser = await userService.updateUser(userId!, validatedBody);
 
   return res
     .status(StatusCodes.OK)

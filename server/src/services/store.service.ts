@@ -3,34 +3,44 @@ import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
 import { uploadToCloudinary } from "./cloudinary.service";
 import { cloudinaryFolders } from "../constants/cloudinary.constant";
-import { userRoles } from "../enums/store.enum";
 import { paginate } from "../utils/paginate";
 import {
   CreateStoreDTO,
   UpdateStoreDTO,
   UpdateStoreSettingsDTO,
 } from "../schemas/store.schema";
+import { StoreUserRole } from "@prisma/client";
 
-export const createStore = async (userId: string, storeData: CreateStoreDTO) => {
-  const { name, businessType, address, contactEmail, contactNo, currencyCode } =
-    storeData;
-
-  if (!name || !currencyCode) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Store name and currency is required.",
-    );
-  }
+export const createStore = async (
+  userId: string,
+  storeData: CreateStoreDTO,
+) => {
+  const {
+    name,
+    type,
+    addressLine,
+    country,
+    state,
+    city,
+    zipCode,
+    contactEmail,
+    contactNo,
+    currencyCode,
+  } = storeData;
 
   const store = await prisma.store.create({
     data: {
       name,
       ownerId: userId,
-      businessType,
-      address,
+      type,
       contactEmail,
       contactNo,
       currencyCode,
+      addressLine,
+      city,
+      state,
+      zipCode,
+      country,
     },
   });
 
@@ -39,7 +49,7 @@ export const createStore = async (userId: string, storeData: CreateStoreDTO) => 
     data: {
       storeId: store.id,
       userId,
-      role: userRoles.OWNER as any,
+      role: StoreUserRole.OWNER,
     },
   });
 
@@ -48,7 +58,7 @@ export const createStore = async (userId: string, storeData: CreateStoreDTO) => 
     data: {
       storeId: store.id,
       invoiceStoreName: store.name,
-      invoiceStoreAddress: store.address,
+      invoiceStoreAddress: store.addressLine,
     },
   });
 
@@ -136,7 +146,10 @@ export const updateStoreSettings = async (
   });
 };
 
-export const uploadStoreLogo = async (storeId: string, file?: Express.Multer.File) => {
+export const uploadStoreLogo = async (
+  storeId: string,
+  file?: Express.Multer.File,
+) => {
   if (!file) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Store logo file is required");
   }
@@ -250,8 +263,15 @@ export const getProductsByStore = async (params: {
     { [sortBy]: sortOrder },
     { page, limit },
     {
-      categories: { include: { category: { select: { id: true, name: true, storeId: true } } } },
-      images: { include: { image: { select: { id: true, url: true, name: true } } }, orderBy: { priority: "asc" } },
+      categories: {
+        include: {
+          category: { select: { id: true, name: true, storeId: true } },
+        },
+      },
+      images: {
+        include: { image: { select: { id: true, url: true, name: true } } },
+        orderBy: { priority: "asc" },
+      },
     },
   );
 };

@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { apiKeyLimits } from "../constants/limits.constants";
-import { apiKeyScopeList, apiKeyStatus } from "../enums/apiKey.enum";
+import { apiKeyScopeList, ApiKeyStatus } from "../enums/apiKey.enum";
 
 export const createUpdateApiKeySchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   status: z
-    .enum([apiKeyStatus.ACTIVE, apiKeyStatus.INACTIVE])
-    .default(apiKeyStatus.ACTIVE),
+    .enum([ApiKeyStatus.ACTIVE, ApiKeyStatus.INACTIVE])
+    .default(ApiKeyStatus.ACTIVE),
   scopes: z.array(z.enum(apiKeyScopeList)).default([]),
   allowClientRequest: z.boolean().default(false),
   whitelistedOrigins: z

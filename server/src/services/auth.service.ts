@@ -1,42 +1,43 @@
-import bcrypt from "bcrypt";
 import type { JwtPayload } from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/ApiError";
 import { StatusCodes } from "http-status-codes";
-import {
-  signAccessToken,
-  signRefreshToken,
-  verifyRefreshToken,
-  verifyPasswordResetToken,
-} from "./jwt.service";
+import { signAccessToken, verifyPasswordResetToken } from "./jwt.service";
 import type {
   CreateUserDTO,
   LoginUserDTO,
   ValidateAndResetPasswordDTO,
 } from "../schemas/user.schema";
-
-// Password helpers
-
-export const hashPassword = (password: string): Promise<string> =>
-  bcrypt.hash(password, 10);
-
-export const comparePassword = (
-  plain: string,
-  hash: string,
-): Promise<boolean> => bcrypt.compare(plain, hash);
+import { AuthProvider, User } from "@prisma/client";
+import { generateSecureToken } from "../utils/token-generator";
+import { clientPages } from "../constants/client.constant";
+import { VerificationTokenType } from "../enums/verificationToken.enum";
+import { sendEmailVerificationEmail } from "./transactionalEmail.service";
+import { env } from "../configs/env";
+import {
+  comparePassword,
+  hashPassword,
+  hashStringSha,
+} from "../utils/hash-utils";
+import { addDays } from "../utils/date-utils";
 
 // Token pair helper
 
-export const generateTokenPair = async (userId: string) => {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+export const generateTokenPair = async (user: User) => {
   if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
 
-  const accessToken = signAccessToken(user);
-  const refreshToken = signRefreshToken(user);
+  const accessToken = signAccessToken(user, 1);
+  const refreshToken = generateSecureToken(128);
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { refreshToken },
+  const hashedRefreshToken = hashStringSha(refreshToken);
+
+  // Store the refresh token
+  await prisma.refreshToken.create({
+    data: {
+      userId: user.id,
+      token: hashedRefreshToken,
+      expiresAt: addDays(new Date(), env.REFRESH_TOKEN_EXPIRY),
+    },
   });
 
   return { accessToken, refreshToken };
@@ -56,16 +57,36 @@ export const registerUser = async (userData: CreateUserDTO) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User already exists");
   }
 
-  await prisma.user.create({
+  const hashedPassword = await hashPassword(password);
+
+  const user = await prisma.user.create({
     data: {
       userName,
       email,
-      password: await hashPassword(password),
-      authBy: "email",
+      password: hashedPassword,
+      authBy: AuthProvider.LOCAL,
     },
   });
 
+  sendVerificationEmail(user);
+
   return {};
+};
+
+const sendVerificationEmail = async (user: User) => {
+  const token = generateSecureToken(128);
+  const verificationLink = clientPages.constructEmailVerificationPageUrl(token);
+
+  await prisma.verificationToken.create({
+    data: {
+      userId: user.id,
+      token,
+      type: VerificationTokenType.EMAIL_VERIFICATION_TOKEN,
+      expiresAt: new Date(Date.now() + env.EMAIL_VERIFICATION_TOKEN_EXPIRY),
+    },
+  });
+
+  sendEmailVerificationEmail(user, verificationLink);
 };
 
 export const loginUser = async (credentials: LoginUserDTO) => {
@@ -76,47 +97,22 @@ export const loginUser = async (credentials: LoginUserDTO) => {
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+  if (!user)
+    throw new ApiError(StatusCodes.FORBIDDEN, "Credentials mismatched.");
 
   const isValid = await comparePassword(password, user.password);
-  if (!isValid) throw new ApiError(StatusCodes.FORBIDDEN, "Invalid password");
+  if (!isValid)
+    throw new ApiError(StatusCodes.FORBIDDEN, "Invalid Credentials");
 
-  const tokens = await generateTokenPair(user.id);
+  const tokens = await generateTokenPair(user);
   return { user, ...tokens };
 };
 
-export const logoutUser = async (userId: string) => {
-  await prisma.user.update({
-    where: { id: userId },
-    data: { refreshToken: null },
+export const logoutUser = async (userId: string, refreshToken: string) => {
+  const hashedRefreshToken = hashStringSha(refreshToken);
+  await prisma.refreshToken.delete({
+    where: { userId, token: hashedRefreshToken },
   });
-};
-
-export const refreshAccessToken = async (refreshToken: string) => {
-  if (!refreshToken) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid request");
-  }
-
-  let decoded: JwtPayload;
-  try {
-    decoded = verifyRefreshToken(refreshToken) as JwtPayload;
-  } catch (error: any) {
-    if (error?.name === "TokenExpiredError") {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, "Session expired");
-    }
-    throw error;
-  }
-
-  if (!decoded || !decoded.id) {
-    throw new ApiError(StatusCodes.UNAUTHORIZED, "Session expired");
-  }
-
-  const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-  if (!user || user.refreshToken !== refreshToken) {
-    throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid token");
-  }
-
-  return generateTokenPair(user.id);
 };
 
 export const validateAndResetPassword = async (

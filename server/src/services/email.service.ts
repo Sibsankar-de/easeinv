@@ -2,6 +2,7 @@ import { User, Store } from "../types/model";
 import { emailTemplates } from "../constants/emailTemplates";
 import { renderEmail } from "./emailRender.service";
 import { EmailJob } from "../types/email";
+import { clientPages } from "../constants/client.constant";
 
 export const getStoreUserInviteEmail = async (
   user: User,
@@ -54,13 +55,10 @@ export const getEmailVerificationEmail = async (
   return emailJob;
 };
 
-export const getWelcomeEmail = async (
-  user: User,
-  dashboardLink: string,
-): Promise<EmailJob> => {
+export const getWelcomeEmail = async (user: User): Promise<EmailJob> => {
   const data = {
     recipientName: user.userName,
-    dashboardLink,
+    dashboardLink: clientPages.PROFILE_PAGE,
   };
 
   const body = await renderEmail({
@@ -71,6 +69,31 @@ export const getWelcomeEmail = async (
   const emailJob: EmailJob = {
     to: user.email,
     subject: "Welcome to EaseInv!",
+    html: body,
+  };
+
+  return emailJob;
+};
+
+export const getStoreCreatedEmail = async (
+  user: User,
+  store: Store,
+  dashboardLink: string,
+): Promise<EmailJob> => {
+  const data = {
+    recipientName: user.userName,
+    storeName: store.name,
+    dashboardLink,
+  };
+
+  const body = await renderEmail({
+    templateName: emailTemplates.STORE_CREATED_EMAIL_TEMPLATE,
+    data,
+  });
+
+  const emailJob: EmailJob = {
+    to: user.email,
+    subject: `Your store ${data.storeName} has been created!`,
     html: body,
   };
 

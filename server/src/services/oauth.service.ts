@@ -1,11 +1,13 @@
 import { OAuth2Client } from "google-auth-library";
 import { prisma } from "../lib/prisma";
-import { generateTokenPair, hashPassword } from "./auth.service";
+import { generateTokenPair } from "./auth.service";
 import { randomBytes } from "crypto";
 import { StatusCodes } from "http-status-codes";
 import { env } from "../configs/env";
 import { clientPages } from "../constants/client.constant";
 import { ApiError } from "../utils/ApiError";
+import { AuthProvider } from "@prisma/client";
+import { hashPassword } from "../utils/hash-utils";
 
 const client_secret = env.GOOGLE_CLIENT_SECRET;
 const client_id = env.GOOGLE_CLIENT_ID;
@@ -70,12 +72,13 @@ export const handleGoogleCallback = async (code: string) => {
   let user = await prisma.user.findUnique({ where: { email: userinfo.email } });
 
   if (!user) {
+    const hashedPassword = await hashPassword(password);
     user = await prisma.user.create({
       data: {
         userName: userinfo.name,
         email: userinfo.email,
-        authBy: "google",
-        password: await hashPassword(password),
+        authBy: AuthProvider.GOOGLE,
+        password: hashedPassword,
       },
     });
   }
@@ -84,6 +87,6 @@ export const handleGoogleCallback = async (code: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Google login failed");
   }
 
-  const { accessToken, refreshToken } = await generateTokenPair(user.id);
+  const { accessToken, refreshToken } = await generateTokenPair(user);
   return { user, accessToken, refreshToken };
 };
