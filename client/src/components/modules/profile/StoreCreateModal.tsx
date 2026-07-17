@@ -28,8 +28,7 @@ export const StoreCreateModal = ({
   const [formData, setFormData] = useState({
     name: "",
     currencyCode: "INR",
-    businessType: "",
-    storeType: StoreType.ONLINE,
+    type: StoreType.ONLINE,
     contactEmail: "",
     contactNo: "",
     registrationNumber: "",
@@ -66,7 +65,12 @@ export const StoreCreateModal = ({
   const isLoading = createStatus === "loading";
 
   const handleCreateStore = () => {
-    if (!formData.name || !formData.businessType) {
+    if (
+      !formData.name ||
+      !formData.type ||
+      !formData.country ||
+      !formData.currencyCode
+    ) {
       toast.error("Stared fields are required!");
       return;
     }
@@ -111,8 +115,8 @@ export const StoreCreateModal = ({
             </Label>
             <Select
               id="storeType"
-              value={formData.storeType}
-              onChange={(val) => handleFormData("storeType", val)}
+              value={formData.type}
+              onChange={(val) => handleFormData("type", val)}
               options={storeTypeOptions}
               disabled={isLoading}
             />

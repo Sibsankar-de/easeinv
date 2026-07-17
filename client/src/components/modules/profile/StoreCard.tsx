@@ -30,14 +30,14 @@ export const StoreCard = ({ store }: { store: StoreDto }) => {
             <h3 className="text-gray-900">{store.name}</h3>
             <Badge variant={RoleBadgeVarient[store.role]}>{store.role}</Badge>
           </div>
-          <p className="text-sm text-gray-600 mb-1">{store.businessType}</p>
+          <p className="text-sm text-gray-600 mb-1">{store.type}</p>
           <div className="flex items-center gap-1 text-xs text-gray-500">
             <ConditionalDiv
               className="flex items-center gap-1"
-              condition={store.address}
+              condition={store.addressLine}
             >
               <MapPin className="w-3 h-3" />
-              {store.address}
+              {store.addressLine}
               <Dot size={15} />
             </ConditionalDiv>
             <div>Since {formatDateStr(store?.createdAt || "").dateStr}</div>

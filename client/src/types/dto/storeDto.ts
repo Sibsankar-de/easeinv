@@ -37,7 +37,7 @@ export type StoreDto = {
   name: string;
   owner?: string;
   currencyCode: string;
-  address?: string;
+  addressLine?: string;
   contactNo?: string;
   contactEmail?: string;
   type?: string;
