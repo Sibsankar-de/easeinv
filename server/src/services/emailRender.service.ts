@@ -6,7 +6,6 @@ import { createModuleLogger } from "../utils/logger";
 import { env } from "../configs/env";
 import { clientAssets } from "../constants/client.constant";
 
-
 const log = createModuleLogger(import.meta.url);
 
 // Register Handlebars helper for current year

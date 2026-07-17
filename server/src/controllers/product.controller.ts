@@ -4,7 +4,11 @@ import { ApiResponse } from "../utils/ApiResponse";
 import { StatusCodes } from "http-status-codes";
 import * as productService from "../services/product.service";
 import { validateBody } from "../utils/validate.utils";
-import { createProductSchema, updateProductSchema, rearrangeImagesSchema } from "../schemas/product.schema";
+import {
+  createProductSchema,
+  updateProductSchema,
+  rearrangeImagesSchema,
+} from "../schemas/product.schema";
 
 export const getProducts = asyncHandler(async (req: Request, res: Response) => {
   const { storeId } = req.params as { storeId: string };
@@ -28,78 +32,93 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
     .json(new ApiResponse(StatusCodes.OK, productList, "Products fetched"));
 });
 
-export const createProduct = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user?.id;
+export const createProduct = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.id;
 
-  const validatedBody = validateBody(createProductSchema, req.body);
+    const validatedBody = validateBody(createProductSchema, req.body);
 
-  const product = await productService.createProduct(userId!, validatedBody);
+    const product = await productService.createProduct(userId!, validatedBody);
 
-  return res
-    .status(StatusCodes.OK)
-    .json(new ApiResponse(StatusCodes.OK, product, "Product created"));
-});
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(StatusCodes.OK, product, "Product created"));
+  },
+);
 
-export const updateProduct = asyncHandler(async (req: Request, res: Response) => {
-  const { productId } = req.params as { productId: string };
+export const updateProduct = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { productId } = req.params as { productId: string };
 
-  const validatedBody = validateBody(updateProductSchema, req.body);
+    const validatedBody = validateBody(updateProductSchema, req.body);
 
-  const product = await productService.updateProduct(productId, validatedBody);
-
-  return res
-    .status(StatusCodes.OK)
-    .json(new ApiResponse(StatusCodes.OK, product, "Product updated"));
-});
-
-export const getProductById = asyncHandler(async (req: Request, res: Response) => {
-  const { productId } = req.params as { productId: string };
-
-  const product = await productService.getProductById(productId);
-
-  return res
-    .status(StatusCodes.OK)
-    .json(new ApiResponse(StatusCodes.OK, product, "Product fetched"));
-});
-
-export const deleteProduct = asyncHandler(async (req: Request, res: Response) => {
-  const { productId } = req.params as { productId: string };
-
-  const result = await productService.deleteProduct(productId);
-
-  return res
-    .status(StatusCodes.OK)
-    .json(new ApiResponse(StatusCodes.OK, result, "Product deleted"));
-});
-
-export const rearrangeProductImages = asyncHandler(async (req: Request, res: Response) => {
-  const { productId } = req.params as { productId: string };
-  
-  const validatedBody = validateBody(rearrangeImagesSchema, req.body);
-
-  const productImages = await productService.rearrangeProductImages(
-    productId,
-    validatedBody.imagePriorities,
-  );
-
-  return res
-    .status(StatusCodes.OK)
-    .json(
-      new ApiResponse(
-        StatusCodes.OK,
-        productImages,
-        "Images rearranged successfully",
-      ),
+    const product = await productService.updateProduct(
+      productId,
+      validatedBody,
     );
-});
 
-export const searchProducts = asyncHandler(async (req: Request, res: Response) => {
-  const { storeId } = req.params as { storeId: string };
-  const query = (req.query.query as string) || "";
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(StatusCodes.OK, product, "Product updated"));
+  },
+);
 
-  const searchResults = await productService.searchProducts(storeId, query);
+export const getProductById = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { productId } = req.params as { productId: string };
 
-  return res
-    .status(StatusCodes.OK)
-    .json(new ApiResponse(StatusCodes.OK, searchResults, "Products fetched"));
-});
+    const product = await productService.getProductById(productId);
+
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(StatusCodes.OK, product, "Product fetched"));
+  },
+);
+
+export const deleteProduct = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { productId } = req.params as { productId: string };
+
+    const result = await productService.deleteProduct(productId);
+
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(StatusCodes.OK, result, "Product deleted"));
+  },
+);
+
+export const rearrangeProductImages = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { productId } = req.params as { productId: string };
+
+    const validatedBody = validateBody(rearrangeImagesSchema, req.body);
+
+    const productImages = await productService.rearrangeProductImages(
+      productId,
+      validatedBody.imagePriorities,
+    );
+
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        new ApiResponse(
+          StatusCodes.OK,
+          productImages,
+          "Images rearranged successfully",
+        ),
+      );
+  },
+);
+
+export const searchProducts = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { storeId } = req.params as { storeId: string };
+    const query = (req.query.query as string) || "";
+
+    const searchResults = await productService.searchProducts(storeId, query);
+
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(StatusCodes.OK, searchResults, "Products fetched"));
+  },
+);

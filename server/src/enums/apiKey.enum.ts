@@ -4,7 +4,10 @@ export enum ApiKeyStatus {
   EXPIRED = "EXPIRED",
 }
 
-export const apiKeyStatusList = Object.values(ApiKeyStatus) as [string, ...string[]];
+export const apiKeyStatusList = Object.values(ApiKeyStatus) as [
+  string,
+  ...string[],
+];
 
 export enum ApiKeyScope {
   READ = "read",
@@ -25,5 +28,7 @@ export enum ApiKeyScope {
   ADMIN = "admin",
 }
 
-export const apiKeyScopeList = Object.values(ApiKeyScope) as [string, ...string[]];
-
+export const apiKeyScopeList = Object.values(ApiKeyScope) as [
+  string,
+  ...string[],
+];

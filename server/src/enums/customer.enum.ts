@@ -8,4 +8,3 @@ export enum Marks {
   BLACKLISTED = "BLACKLISTED",
   INACTIVE = "INACTIVE",
 }
-

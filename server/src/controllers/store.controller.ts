@@ -13,7 +13,7 @@ import {
 
 export const createStore = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.id;
-  
+
   const validatedBody = validateBody(createStoreSchema, req.body);
 
   const store = await storeService.createStore(userId!, validatedBody);
@@ -31,7 +31,11 @@ export const updateStore = asyncHandler(async (req: Request, res: Response) => {
 
   const validatedBody = validateBody(updateStoreSchema, req.body);
 
-  const updatedStore = await storeService.updateStore(storeId, validatedBody, files);
+  const updatedStore = await storeService.updateStore(
+    storeId,
+    validatedBody,
+    files,
+  );
 
   return res
     .status(StatusCodes.OK)
@@ -51,7 +55,7 @@ export const deleteStore = asyncHandler(async (req: Request, res: Response) => {
 export const updateStoreSettings = asyncHandler(
   async (req: Request, res: Response) => {
     const { storeId } = req.params as { storeId: string };
-    
+
     const validatedBody = validateBody(updateStoreSettingsSchema, req.body);
 
     const updatedStoreSettings = await storeService.updateStoreSettings(
@@ -95,7 +99,10 @@ export const uploadInvoicePaymentQrCode = asyncHandler(
     const { storeId } = req.params as { storeId: string };
     const file = req.file;
 
-    const qrCodeUrl = await storeService.uploadInvoicePaymentQrCode(storeId, file);
+    const qrCodeUrl = await storeService.uploadInvoicePaymentQrCode(
+      storeId,
+      file,
+    );
 
     return res
       .status(StatusCodes.OK)
@@ -129,13 +136,7 @@ export const getStoreDetails = asyncHandler(
 
     return res
       .status(StatusCodes.OK)
-      .json(
-        new ApiResponse(
-          StatusCodes.OK,
-          storeDetails,
-          "Store fetched",
-        ),
-      );
+      .json(new ApiResponse(StatusCodes.OK, storeDetails, "Store fetched"));
   },
 );
 
@@ -166,10 +167,13 @@ export const getProductsByStore = asyncHandler(
 export const createCategory = asyncHandler(
   async (req: Request, res: Response) => {
     const { storeId } = req.params as { storeId: string };
-    
+
     const validatedBody = validateBody(createCategorySchema, req.body);
 
-    const category = await storeService.createCategory(storeId, validatedBody.name);
+    const category = await storeService.createCategory(
+      storeId,
+      validatedBody.name,
+    );
 
     return res
       .status(StatusCodes.OK)

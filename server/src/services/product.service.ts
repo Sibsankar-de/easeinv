@@ -44,7 +44,9 @@ export const getPopulatedProductData = async (productId: string) => {
     where: { id: productId },
     include: {
       categories: {
-        include: { category: { select: { id: true, name: true, storeId: true } } },
+        include: {
+          category: { select: { id: true, name: true, storeId: true } },
+        },
       },
     },
   });
@@ -71,10 +73,14 @@ export const addOrRemoveProductImages = async (
     );
   }
 
-  const existingImages = await prisma.productImage.findMany({ where: { productId } });
+  const existingImages = await prisma.productImage.findMany({
+    where: { productId },
+  });
   const existingImageIds = existingImages.map((img) => img.imageId);
 
-  const imagesToRemove = existingImageIds.filter((id) => !imageIds.includes(id));
+  const imagesToRemove = existingImageIds.filter(
+    (id) => !imageIds.includes(id),
+  );
   const imagesToAdd = imageIds.filter((id) => !existingImageIds.includes(id));
 
   if (imagesToRemove.length > 0) {
@@ -134,7 +140,9 @@ export const getProducts = async (params: {
     { page, limit },
     {
       categories: {
-        include: { category: { select: { id: true, name: true, storeId: true } } },
+        include: {
+          category: { select: { id: true, name: true, storeId: true } },
+        },
       },
       images: {
         include: { image: { select: { id: true, url: true, name: true } } },
@@ -179,12 +187,20 @@ export const createProduct = async (
   } = productData;
 
   if (
-    [storeId, name, sku, buyingPricePerQuantity, stockUnit, pricePerQuantity].some(
-      (e) => !e,
-    ) ||
+    [
+      storeId,
+      name,
+      sku,
+      buyingPricePerQuantity,
+      stockUnit,
+      pricePerQuantity,
+    ].some((e) => !e) ||
     (enableInventoryTracking && !totalStock)
   ) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Fill all the required fields.");
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "Fill all the required fields.",
+    );
   }
 
   if ((pricePerQuantity as any[]).length === 0) {
@@ -249,9 +265,14 @@ export const updateProduct = async (
   } = productData;
 
   if (
-    [storeId, name, sku, buyingPricePerQuantity, stockUnit, pricePerQuantity].some(
-      (e) => !e,
-    ) ||
+    [
+      storeId,
+      name,
+      sku,
+      buyingPricePerQuantity,
+      stockUnit,
+      pricePerQuantity,
+    ].some((e) => !e) ||
     (enableInventoryTracking && !totalStock)
   ) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "All fields are required.");
@@ -377,7 +398,9 @@ export const searchProducts = async (storeId: string, query: string) => {
       if (p.name?.toLowerCase().startsWith(lower)) score += 10;
       return { ...p, searchScore: score };
     })
-    .sort((a, b) => b.searchScore - a.searchScore || a.name.localeCompare(b.name));
+    .sort(
+      (a, b) => b.searchScore - a.searchScore || a.name.localeCompare(b.name),
+    );
 
   return scored;
 };
