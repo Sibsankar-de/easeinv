@@ -212,8 +212,9 @@ export const getStoreList = async (userId: string) => {
         select: {
           id: true,
           name: true,
-          businessType: true,
-          address: true,
+          type: true,
+          currencyCode: true,
+          country: true,
           contactEmail: true,
           contactNo: true,
           createdAt: true,

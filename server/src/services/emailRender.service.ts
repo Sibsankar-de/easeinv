@@ -9,6 +9,11 @@ import { clientAssets } from "../constants/client.constant";
 
 const log = createModuleLogger(import.meta.url);
 
+// Register Handlebars helper for current year
+Handlebars.registerHelper("currentYear", () => {
+  return new Date().getFullYear().toString();
+});
+
 // Options for rendering email
 interface RenderEmailOptions<T = Record<string, unknown>> {
   templateName: string;

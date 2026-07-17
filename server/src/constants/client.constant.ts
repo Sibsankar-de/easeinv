@@ -15,7 +15,7 @@ export const clientPages = {
     `${FRONTEND_URL}/stores/${storeId}${path}`,
 
   constructEmailVerificationPageUrl: (token: string) =>
-    `${FRONTEND_URL}/auth/verify-email?token=${token}`,
+    `${FRONTEND_URL}/verify-email?token=${token}`,
 } as const;
 
 export const clientAssets = {

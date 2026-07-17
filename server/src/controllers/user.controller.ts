@@ -17,6 +17,7 @@ import {
   cookieOptions,
   refreshTokenCookieOptions,
 } from "../utils/cookie-utils";
+import { ApiError } from "../utils/ApiError";
 
 export const createUser = asyncHandler(async (req: Request, res: Response) => {
   const validatedBody = validateBody(createUserSchema, req.body);
@@ -25,6 +26,21 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
     .status(StatusCodes.CREATED)
     .json(new ApiResponse(StatusCodes.CREATED, result, "User created"));
 });
+
+export const verifyUserEmail = asyncHandler(
+  async (req: Request, res: Response) => {
+    const token = req.query.token;
+    if (!token) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid token.");
+    }
+
+    await authService.verifyEmail(token as string);
+
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(StatusCodes.OK, null, "Email verified."));
+  },
+);
 
 export const loginUser = asyncHandler(async (req: Request, res: Response) => {
   const validatedBody = validateBody(loginUserSchema, req.body);

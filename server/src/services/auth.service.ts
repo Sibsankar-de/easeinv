@@ -12,14 +12,17 @@ import { AuthProvider, User } from "@prisma/client";
 import { generateSecureToken } from "../utils/token-generator";
 import { clientPages } from "../constants/client.constant";
 import { VerificationTokenType } from "../enums/verificationToken.enum";
-import { sendEmailVerificationEmail } from "./transactionalEmail.service";
+import {
+  sendEmailVerificationEmail,
+  sendWelcomeEmail,
+} from "./transactionalEmail.service";
 import { env } from "../configs/env";
 import {
   comparePassword,
   hashPassword,
   hashStringSha,
 } from "../utils/hash-utils";
-import { addDays } from "../utils/date-utils";
+import { addDays, addHours, addMinutes } from "../utils/date-utils";
 
 // Token pair helper
 
@@ -70,7 +73,7 @@ export const registerUser = async (userData: CreateUserDTO) => {
 
   sendVerificationEmail(user);
 
-  return {};
+  return null;
 };
 
 const sendVerificationEmail = async (user: User) => {
@@ -82,11 +85,47 @@ const sendVerificationEmail = async (user: User) => {
       userId: user.id,
       token,
       type: VerificationTokenType.EMAIL_VERIFICATION_TOKEN,
-      expiresAt: new Date(Date.now() + env.EMAIL_VERIFICATION_TOKEN_EXPIRY),
+      expiresAt: addHours(new Date(), env.EMAIL_VERIFICATION_TOKEN_EXPIRY),
     },
   });
 
   sendEmailVerificationEmail(user, verificationLink);
+};
+
+export const verifyEmail = async (token: string) => {
+  const verificationToken = await prisma.verificationToken.findFirst({
+    where: {
+      token,
+      type: VerificationTokenType.EMAIL_VERIFICATION_TOKEN,
+      expiresAt: {
+        gte: new Date(),
+      },
+    },
+  });
+
+  if (!verificationToken) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid token.");
+  }
+
+  // mark as verified
+  const user = await prisma.user.update({
+    where: {
+      id: verificationToken.userId,
+    },
+    data: {
+      isEmailVerified: true,
+    },
+  });
+
+  // delete token
+  await prisma.verificationToken.delete({
+    where: { id: verificationToken.id },
+  });
+
+  // send welcome email
+  sendWelcomeEmail(user);
+
+  return null;
 };
 
 export const loginUser = async (credentials: LoginUserDTO) => {

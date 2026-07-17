@@ -51,5 +51,5 @@ export const env = {
   RABBITMQ_CONNECTION_URI: process.env.RABBITMQ_CONNECTION_URI,
   RABBITMQ_EMAIL_QUEUE: process.env.RABBITMQ_EMAIL_QUEUE || "email_queue",
 
-  EMAIL_VERIFICATION_TOKEN_EXPIRY: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+  EMAIL_VERIFICATION_TOKEN_EXPIRY: 10, // in hours
 } as const;

@@ -83,7 +83,9 @@ export const getStoreCreatedEmail = async (
   const data = {
     recipientName: user.userName,
     storeName: store.name,
-    dashboardLink,
+    type: store.type,
+    currencyCode: store.currencyCode,
+    storeLink: dashboardLink,
   };
 
   const body = await renderEmail({

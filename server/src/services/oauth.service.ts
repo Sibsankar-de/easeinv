@@ -8,6 +8,8 @@ import { clientPages } from "../constants/client.constant";
 import { ApiError } from "../utils/ApiError";
 import { AuthProvider } from "@prisma/client";
 import { hashPassword } from "../utils/hash-utils";
+import { sendWelcomeEmail } from "./transactionalEmail.service";
+import { generateSecureToken } from "../utils/token-generator";
 
 const client_secret = env.GOOGLE_CLIENT_SECRET;
 const client_id = env.GOOGLE_CLIENT_ID;
@@ -29,17 +31,6 @@ export interface GoogleUserInfo {
   family_name: string;
   picture: string;
   locale: string;
-}
-
-export function generatePassword(length: number = 12): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
-  const bytes = randomBytes(length);
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    password += chars[bytes[i] % chars.length];
-  }
-  return password;
 }
 
 export const getGoogleAuthUrl = (redirect?: string) => {
@@ -67,11 +58,10 @@ export const handleGoogleCallback = async (code: string) => {
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, "Unable to get user");
   }
 
-  const password = generatePassword(16);
-
   let user = await prisma.user.findUnique({ where: { email: userinfo.email } });
 
   if (!user) {
+    const password = generateSecureToken(64);
     const hashedPassword = await hashPassword(password);
     user = await prisma.user.create({
       data: {
@@ -85,6 +75,17 @@ export const handleGoogleCallback = async (code: string) => {
 
   if (!user) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Google login failed");
+  }
+
+  // verify email if not verified
+  if (!user.isEmailVerified) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { isEmailVerified: true },
+    });
+
+    // send welcome email
+    sendWelcomeEmail(user);
   }
 
   const { accessToken, refreshToken } = await generateTokenPair(user);
