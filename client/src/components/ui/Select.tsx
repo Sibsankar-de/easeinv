@@ -149,7 +149,7 @@ export const Select = ({
     <div className="relative cursor-pointer" ref={ref} onKeyDown={onKeyDown}>
       <div
         className={clsx(
-          "w-full pl-3 pr-4 py-2 border border-gray-300 rounded-lg h-fit",
+          "w-full pl-3 pr-4 py-1.5 border border-gray-300 rounded-lg h-fit",
           "flex items-center justify-between gap-2 relative",
           "transition-all duration-200 focus-within:ring-primary focus-within:ring-2",
           isFocused && "ring-primary ring-2",

@@ -14,7 +14,7 @@ export const Label = ({
   props?: React.ComponentProps<"label">;
 }) => {
   return (
-    <label className={cn("block text-gray-600 mb-1.5", className)} {...props}>
+    <label className={cn("block text-gray-600 mb-1.5 w-fit text-sm", className)} {...props}>
       {children} {required && <span className="text-red-400">*</span>}
     </label>
   );

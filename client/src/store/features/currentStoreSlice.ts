@@ -103,7 +103,7 @@ const currentStoreSlice = createSlice({
       .addCase(fetchCurrentStore.fulfilled, (state, action) => {
         state.status = "success";
         state.data.currentStore = action.payload;
-        state.data.storeSettings = action.payload.storeSettings;
+        state.data.storeSettings = action.payload.settings;
         state.data.currencySymbol =
           getSymbolFromCurrency(action.payload.currencyCode) || "";
         state.error = null;

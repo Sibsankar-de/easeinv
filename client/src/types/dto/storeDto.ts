@@ -41,6 +41,7 @@ export type StoreDto = {
   contactNo?: string;
   contactEmail?: string;
   type?: string;
+  country?: string;
   registrationNumber?: string;
   website?: string;
   taxRate?: number;
