@@ -111,7 +111,7 @@ export const PriceBreakdownInput = ({
             />
             {index === priceBreakdowns.length - 1 ? (
               <Button className="py-2" onClick={handleAddNewBreakdown}>
-                <Plus />
+                <Plus size={18} />
               </Button>
             ) : (
               <Button
@@ -123,7 +123,7 @@ export const PriceBreakdownInput = ({
                   )
                 }
               >
-                <Trash2 />
+                <Trash2 size={18} />
               </Button>
             )}
           </div>
@@ -213,7 +213,8 @@ function BreakdownItem({
       {item.profitMargin !== undefined && (
         <div
           className={cn(
-            "flex flex-col text-[0.8em] text-center px-3 bg-gray-100 border border-gray-300 rounded-lg text-gray-700",
+            "flex flex-col text-[0.8em] text-center px-3",
+            "bg-gray-100 border border-gray-300 rounded-lg text-gray-700",
           )}
         >
           <span>Margin</span>

@@ -81,7 +81,7 @@ export const CategorySelector = ({
           disabled={inputValue.trim() === "" || categoryStatus === "loading"}
           loading={categoryStatus === "loading"}
         >
-          <Plus />
+          <Plus size={18}/>
         </Button>
       </div>
 

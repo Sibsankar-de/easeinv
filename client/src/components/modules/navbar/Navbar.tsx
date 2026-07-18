@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import { selectUserSate } from "@/store/features/userSlice";
 import { Avatar } from "../../ui/Avatar";
 import { ProfileDropdown } from "./ProfileDropdown";
-import { useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { AppLogoFull } from "../../ui/AppLogo";
 import { NavbarSearch } from "./NavbarSearch";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,8 @@ import { cn } from "../../utils";
 import { useNavContext } from "@/contexts/NavContext";
 import { NavMenuItem, SideNavMenu } from "./SideNavMenu";
 import { SettingsNavDropdown } from "./SettingsNavDropdown";
+import { UserDto } from "@/types/dto/userDto";
+import { useAuth } from "@/contexts/AuthContext";
 
 const settingsItem: NavMenuType = {
   id: "settings",
@@ -49,7 +51,6 @@ export function Sidebar() {
 
 export function HeaderNavbar() {
   const { data: user } = useSelector(selectUserSate);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const router = useRouter();
   const { actionButtons, setNavHeight } = useNavContext();
 
@@ -99,26 +100,8 @@ export function HeaderNavbar() {
             <Bell className="w-5 h-5" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
           </Button>
-          <div className="border-l border-gray-200 pl-1">
-            <div
-              className={cn(
-                "flex items-center gap-3 pl-4 rounded-xl py-1 px-2 cursor-pointer",
-                "hover:bg-gray-100 active:bg-gray-300 transition-all duration-200",
-                "select-none",
-              )}
-              onClick={() => setIsProfileOpen((p) => !p)}
-            >
-              <div className="text-right">
-                <p className="text-gray-900 text-sm">{user?.userName}</p>
-                <p className="text-xs text-gray-500">Member</p>
-              </div>
-              <Avatar size={40} />
-            </div>
-            <ProfileDropdown
-              openState={isProfileOpen}
-              onClose={() => setIsProfileOpen(false)}
-            />
-          </div>
+
+          <ProfileButton user={user} />
         </div>
       </div>
     </header>
@@ -134,5 +117,48 @@ export const NavActionButton = ({ ...props }: ButtonType) => {
     >
       {props.children}
     </Button>
+  );
+};
+
+const ProfileButton = ({ user }: { user: UserDto }) => {
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const handleClick = () => {
+    if (isAuthenticated) {
+      setIsProfileOpen((p) => !p);
+    } else {
+      router.push("/auth/login");
+    }
+  };
+
+  return (
+    <div className="border-l border-gray-200 pl-1">
+      <div
+        className={cn(
+          "flex items-center gap-3 pl-4 rounded-xl py-1 px-2 cursor-pointer",
+          "hover:bg-gray-100 active:bg-gray-300 transition-all duration-200",
+          "select-none",
+        )}
+        onClick={handleClick}
+      >
+        {isAuthenticated ? (
+          <div className="text-right">
+            <p className="text-gray-900 text-sm">{user?.userName}</p>
+            <p className="text-xs text-gray-500">Member</p>
+          </div>
+        ) : (
+          <div className="text-right">
+            <p className="text-gray-900 text-sm">Sign in</p>
+          </div>
+        )}
+        <Avatar size={40} />
+      </div>
+      <ProfileDropdown
+        openState={isProfileOpen && isAuthenticated}
+        onClose={() => setIsProfileOpen(false)}
+      />
+    </div>
   );
 };
