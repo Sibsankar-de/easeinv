@@ -1,6 +1,7 @@
-import { Store, User } from "@prisma/client";
+import { Product, Store, User } from "@prisma/client";
 import {
   getEmailVerificationEmail,
+  getStockAlertEmail,
   getStoreCreatedEmail,
   getWelcomeEmail,
 } from "./email.service";
@@ -26,5 +27,20 @@ export const sendStoreCreatedEmail = async (
   dashboardLink: string,
 ) => {
   const emailJob = await getStoreCreatedEmail(user, store, dashboardLink);
+  publishEmailJob(emailJob);
+};
+
+export const sendStockAlertEmail = async (
+  user: User,
+  store: Store,
+  product: Product,
+  inventoryLink: string,
+) => {
+  const emailJob = await getStockAlertEmail(
+    user,
+    store,
+    product,
+    inventoryLink,
+  );
   publishEmailJob(emailJob);
 };

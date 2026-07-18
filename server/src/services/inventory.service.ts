@@ -1,10 +1,14 @@
 import { prisma } from "../lib/prisma";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import { generateGTIN } from "../utils/gtin-generator";
 import { productLimits } from "../constants/limits.constants";
 import { paginate } from "../utils/paginate";
 import { CreateProductDTO, UpdateProductDTO } from "../schemas/product.schema";
+import { TransactionClient } from "../utils/transactionHandler";
+import { Product, Store, User } from "@prisma/client";
+import * as transactionalEmailService from "../services/transactionalEmail.service";
+import { clientPages } from "../constants/client.constant";
 
 export const getOrCreateCategory = async (
   categoryName: string,
@@ -177,38 +181,16 @@ export const createProduct = async (
     sku,
     gtin,
     buyingPricePerQuantity,
-    enableInventoryTracking,
+    trackInventory,
     totalStock,
+    alertThreshold,
+    emailAlert,
     stockUnit,
     pricePerQuantity,
     categories,
     imageIds,
     description,
   } = productData;
-
-  if (
-    [
-      storeId,
-      name,
-      sku,
-      buyingPricePerQuantity,
-      stockUnit,
-      pricePerQuantity,
-    ].some((e) => !e) ||
-    (enableInventoryTracking && !totalStock)
-  ) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Fill all the required fields.",
-    );
-  }
-
-  if ((pricePerQuantity as any[]).length === 0) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Price per quantity is required.",
-    );
-  }
 
   // Resolve categories
   const categoryIds: string[] = [];
@@ -221,15 +203,17 @@ export const createProduct = async (
 
   const product = await prisma.product.create({
     data: {
-      creatorId: userId,
+      userId,
       storeId,
       name,
       sku,
       gtin: gtin || generateGTIN(),
       description,
       buyingPricePerQuantity,
-      enabledInventoryTracking: enableInventoryTracking ?? false,
-      totalStock,
+      trackInventory: trackInventory ?? false,
+      totalStock: totalStock ?? 0,
+      alertThreshold: alertThreshold ?? 0,
+      emailAlert: emailAlert ?? false,
       stockUnit,
       pricePerQuantity: pricePerQuantity as any,
       categories: {
@@ -255,8 +239,10 @@ export const updateProduct = async (
     sku,
     gtin,
     buyingPricePerQuantity,
-    enableInventoryTracking,
+    trackInventory,
     totalStock,
+    alertThreshold,
+    emailAlert,
     stockUnit,
     pricePerQuantity,
     categories,
@@ -273,7 +259,7 @@ export const updateProduct = async (
       stockUnit,
       pricePerQuantity,
     ].some((e) => !e) ||
-    (enableInventoryTracking && !totalStock)
+    (trackInventory && (totalStock === undefined || totalStock === null))
   ) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "All fields are required.");
   }
@@ -298,8 +284,10 @@ export const updateProduct = async (
         gtin: gtin || generateGTIN(),
         description,
         buyingPricePerQuantity,
-        enabledInventoryTracking: enableInventoryTracking ?? false,
-        totalStock,
+        trackInventory: trackInventory ?? false,
+        totalStock: totalStock ?? 0,
+        alertThreshold: alertThreshold ?? 0,
+        emailAlert: emailAlert ?? false,
         stockUnit,
         pricePerQuantity: pricePerQuantity as any,
         categories: {
@@ -403,4 +391,60 @@ export const searchProducts = async (storeId: string, query: string) => {
     );
 
   return scored;
+};
+
+export const updateInventoryStock = async (
+  productId: string,
+  quantity: number,
+  store: Store,
+  tx: TransactionClient,
+) => {
+  let product = await tx.product.findFirst({
+    where: {
+      id: productId,
+    },
+    include: {
+      user: true,
+    },
+  });
+
+  if (!product || !product.trackInventory) {
+    return product;
+  }
+
+  if (product.totalStock >= quantity) {
+    product = await tx.product.update({
+      where: {
+        id: productId,
+      },
+      data: { totalStock: { decrement: quantity } },
+      include: { user: true },
+    });
+  }
+
+  // send stock alert
+  if (product.totalStock <= product.alertThreshold) return product;
+};
+
+export const sendInventoryStockAlert = (
+  product: Product & {
+    user: User;
+  },
+  store: Store,
+) => {
+  if (product.totalStock > product.alertThreshold) return;
+
+  // send email
+  if (product.emailAlert) {
+    const inventoryLink = clientPages.constructProductEditPageUrl(
+      store.id,
+      product.id,
+    );
+    transactionalEmailService.sendStockAlertEmail(
+      product.user,
+      store,
+      product,
+      inventoryLink,
+    );
+  }
 };

@@ -1,5 +1,5 @@
 import { Schema } from "zod";
-import { ApiError } from "./ApiError";
+import { ApiError } from "./apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 
 export const validateBody = <T>(schema: Schema<T>, data: unknown): T => {

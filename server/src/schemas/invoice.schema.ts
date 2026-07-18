@@ -1,23 +1,14 @@
 import { z } from "zod";
+import { pricePerQuantityItemSchema } from "./product.schema";
+import { invoiceStatusList } from "../enums/invoice.enum";
+import { InvoiceStatus } from "@prisma/client";
 
 const billItemSchema = z.object({
-  id: z.number().default(1),
-  product: z.object({
-    id: z.string().min(1, "Product ID is required"),
-    name: z.string().optional(),
-    sku: z.string().optional(),
-  }),
-  pricePerQuantity: z
-    .object({
-      id: z.number().default(1),
-      price: z.number().min(0),
-      quantity: z.number().min(0),
-      profitMargin: z.number().optional().default(0),
-    })
-    .optional(),
+  productId: z.uuid("Product id is required."),
+  pricePerQuantity: pricePerQuantityItemSchema,
   netQuantity: z.number().min(0, "Net quantity must be non-negative"),
   totalPrice: z.number().min(0, "Total price must be non-negative"),
-  stockUnit: z.string().optional(),
+  stockUnit: z.string(),
   totalProfit: z.number().optional().default(0),
 });
 
@@ -26,7 +17,7 @@ const customerDetailsSchema = z.object({
   name: z.string().trim().min(1, "Customer name is required"),
   phoneNumber: z.string().trim().optional(),
   address: z.string().trim().optional(),
-  email: z.string().trim().email().optional(),
+  email: z.email().optional(),
 });
 
 export const createInvoiceSchema = z.object({
@@ -45,7 +36,7 @@ export const createInvoiceSchema = z.object({
   totalProfit: z.number().optional().default(0),
   roundupTotal: z.boolean().optional().default(false),
   note: z.string().optional(),
-  status: z.enum(["PRINTED", "DRAFTED"]).optional().default("DRAFTED"),
+  status: z.enum(invoiceStatusList).optional().default(InvoiceStatus.DRAFTED),
   billItems: z
     .array(billItemSchema)
     .min(1, "At least one bill item is required"),
@@ -56,5 +47,6 @@ export const updateInvoiceDueSchema = z.object({
   paidAmount: z.number().gt(0, "Paid amount must be greater than zero"),
 });
 
+export type InvoiceCustomerDto = z.infer<typeof customerDetailsSchema>;
 export type CreateInvoiceDTO = z.infer<typeof createInvoiceSchema>;
 export type UpdateInvoiceDueDTO = z.infer<typeof updateInvoiceDueSchema>;

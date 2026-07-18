@@ -1,7 +1,7 @@
 import { prisma } from "../lib/prisma";
 import { deleteFromCloudinary, uploadToCloudinary } from "./cloudinary.service";
 import { cloudinaryFolders } from "../constants/cloudinary.constant";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import type { UpdateUserDTO, UpdatePasswordDTO } from "../schemas/user.schema";
 import { comparePassword, hashPassword } from "../utils/hash-utils";

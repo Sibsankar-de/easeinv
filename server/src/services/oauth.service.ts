@@ -5,7 +5,7 @@ import { randomBytes } from "crypto";
 import { StatusCodes } from "http-status-codes";
 import { env } from "../configs/env";
 import { clientPages } from "../constants/client.constant";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 import { AuthProvider } from "@prisma/client";
 import { hashPassword } from "../utils/hash-utils";
 import { sendWelcomeEmail } from "./transactionalEmail.service";

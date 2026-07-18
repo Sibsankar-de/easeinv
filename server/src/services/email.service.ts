@@ -1,4 +1,4 @@
-import { User, Store } from "../types/model";
+import { User, Store, Product } from "../types/model";
 import { emailTemplates } from "../constants/emailTemplates";
 import { renderEmail } from "./emailRender.service";
 import { EmailJob } from "../types/email";
@@ -96,6 +96,45 @@ export const getStoreCreatedEmail = async (
   const emailJob: EmailJob = {
     to: user.email,
     subject: `Your store ${data.storeName} has been created!`,
+    html: body,
+  };
+
+  return emailJob;
+};
+
+export const getStockAlertEmail = async (
+  user: User,
+  store: Store,
+  product: Product,
+  inventoryLink: string,
+): Promise<EmailJob> => {
+  const currentStock = product.totalStock ?? 0;
+  const isOutOfStock = currentStock <= 0;
+
+  const data = {
+    recipientName: user.userName,
+    storeName: store.name,
+    productName: product.name,
+    productSku: product.sku,
+    currentStock,
+    stockUnit: product.stockUnit,
+    inventoryLink,
+    threshold: product.alertThreshold,
+    isOutOfStock,
+  };
+
+  const body = await renderEmail({
+    templateName: emailTemplates.STOCK_ALERT_EMAIL_TEMPLATE,
+    data,
+  });
+
+  const subject = isOutOfStock
+    ? `Out of Stock Alert: ${product.name}`
+    : `Low Stock Alert: ${product.name} (${currentStock} ${product.stockUnit} left)`;
+
+  const emailJob: EmailJob = {
+    to: user.email,
+    subject,
     html: body,
   };
 

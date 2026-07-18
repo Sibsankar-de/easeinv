@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const pricePerQuantityItemSchema = z.object({
+export const pricePerQuantityItemSchema = z.object({
   id: z.number().default(1),
   price: z.number().min(0, "Price must be non-negative"),
   quantity: z.number().min(0, "Quantity must be non-negative"),
@@ -21,8 +21,14 @@ export const createProductSchema = z
     buyingPricePerQuantity: z
       .number()
       .min(0, "Buying price must be non-negative"),
-    enableInventoryTracking: z.boolean().optional().default(false),
-    totalStock: z.number().optional(),
+    trackInventory: z.boolean().optional().default(false),
+    totalStock: z.number().optional().default(0),
+    alertThreshold: z
+      .number()
+      .nonnegative("Alert threshold must be non-negative")
+      .optional()
+      .default(0),
+    emailAlert: z.boolean().optional().default(false),
     stockUnit: z.string().trim().min(1, "Stock unit is required"),
     pricePerQuantity: z
       .array(pricePerQuantityItemSchema)
@@ -33,7 +39,7 @@ export const createProductSchema = z
   .refine(
     (data) => {
       if (
-        data.enableInventoryTracking &&
+        data.trackInventory &&
         (data.totalStock === undefined || data.totalStock === null)
       ) {
         return false;
@@ -56,8 +62,14 @@ export const updateProductSchema = z
     buyingPricePerQuantity: z
       .number()
       .min(0, "Buying price must be non-negative"),
-    enableInventoryTracking: z.boolean().optional().default(false),
-    totalStock: z.number().optional(),
+    trackInventory: z.boolean().optional().default(false),
+    totalStock: z.number().optional().default(0),
+    alertThreshold: z
+      .number()
+      .nonnegative("Alert threshold must be non-negative")
+      .optional()
+      .default(0),
+    emailAlert: z.boolean().optional().default(false),
     stockUnit: z.string().trim().min(1, "Stock unit is required"),
     pricePerQuantity: z
       .array(pricePerQuantityItemSchema)
@@ -68,7 +80,7 @@ export const updateProductSchema = z
   .refine(
     (data) => {
       if (
-        data.enableInventoryTracking &&
+        data.trackInventory &&
         (data.totalStock === undefined || data.totalStock === null)
       ) {
         return false;
@@ -85,6 +97,7 @@ export const rearrangeImagesSchema = z.object({
   imagePriorities: z.record(z.string(), z.number()),
 });
 
+export type PricePerQuantityDto = z.infer<typeof pricePerQuantityItemSchema>;
 export type CreateProductDTO = z.infer<typeof createProductSchema>;
 export type UpdateProductDTO = z.infer<typeof updateProductSchema>;
 export type RearrangeImagesDTO = z.infer<typeof rearrangeImagesSchema>;

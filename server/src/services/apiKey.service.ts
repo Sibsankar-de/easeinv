@@ -1,7 +1,7 @@
 import { ApiKeyStatus } from "../types/model";
 import { prisma } from "../lib/prisma";
 import { generateSecureToken } from "../utils/token-generator";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import { CreateUpdateApiKeyDTO } from "../schemas/apiKey.schema";
 import { apiKeyLimits } from "../constants/limits.constants";

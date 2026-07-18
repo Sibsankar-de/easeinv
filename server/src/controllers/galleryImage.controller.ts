@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { StatusCodes } from "http-status-codes";
-import { ApiResponse } from "../utils/ApiResponse";
+import { ApiResponse } from "../utils/apiResponseHandler";
 import * as galleryImageService from "../services/galleryImage.service";
 import { validateBody } from "../utils/validate.utils";
 import { updateImageNameSchema } from "../schemas/galleryImage.schema";

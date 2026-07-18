@@ -1,6 +1,6 @@
 import type { JwtPayload } from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import { signAccessToken, verifyPasswordResetToken } from "./jwt.service";
 import type {

@@ -1,11 +1,14 @@
 import { prisma } from "../lib/prisma";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import { paginate } from "../utils/paginate";
 import {
   CreateCustomerDTO,
   UpdateCustomerDTO,
 } from "../schemas/customer.schema";
+import { TransactionClient } from "../utils/transactionHandler";
+import { Customer } from "@prisma/client";
+import { InvoiceCustomerDto } from "../schemas/invoice.schema";
 
 export const getCustomers = async (params: {
   storeId: string;
@@ -149,5 +152,44 @@ export const createCustomer = async (
 
   return prisma.customer.create({
     data: { name, phoneNumber, email, address, storeId },
+  });
+};
+
+export const getOrCreateInvoiceCustomer = async (
+  storeId: string,
+  customer: InvoiceCustomerDto,
+  tx: TransactionClient,
+) => {
+  const customerId = customer.id;
+  let newCustomer;
+  if (customerId) {
+    newCustomer = await tx.customer.findFirst({ where: { id: customerId } });
+  }
+
+  if (!newCustomer) {
+    newCustomer = await tx.customer.create({
+      data: {
+        storeId,
+        name: customer.name,
+        phoneNumber: customer.phoneNumber,
+        address: customer.address,
+        email: customer.email,
+      },
+    });
+  }
+
+  return newCustomer;
+};
+
+export const increamentCustomerDue = async (
+  customer: Customer,
+  dueAmount: number,
+  tx: TransactionClient,
+) => {
+  if (dueAmount <= 0) return customer;
+
+  return await prisma.customer.update({
+    where: { id: customer.id },
+    data: { totalDue: { increment: dueAmount } },
   });
 };

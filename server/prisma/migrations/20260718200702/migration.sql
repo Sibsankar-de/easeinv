@@ -82,11 +82,11 @@ CREATE TABLE "gallery_images" (
 -- CreateTable
 CREATE TABLE "invoices" (
     "id" UUID NOT NULL,
-    "creatorId" UUID NOT NULL,
+    "userId" UUID NOT NULL,
     "storeId" UUID NOT NULL,
     "customerId" UUID,
     "invoiceNumber" TEXT NOT NULL,
-    "issueDate" TIMESTAMP(3) NOT NULL,
+    "issueDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "subTotal" DOUBLE PRECISION NOT NULL,
     "total" DOUBLE PRECISION NOT NULL,
     "discountAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -110,13 +110,11 @@ CREATE TABLE "invoice_items" (
     "id" UUID NOT NULL,
     "invoiceId" UUID NOT NULL,
     "sortOrder" INTEGER NOT NULL DEFAULT 1,
-    "productId" UUID,
-    "productName" TEXT,
-    "productSku" TEXT,
-    "pricePerQty" JSONB,
+    "productId" UUID NOT NULL,
+    "pricePerQty" JSONB NOT NULL,
     "netQuantity" DOUBLE PRECISION NOT NULL,
     "totalPrice" DOUBLE PRECISION NOT NULL,
-    "stockUnit" TEXT,
+    "stockUnit" TEXT NOT NULL,
     "totalProfit" DOUBLE PRECISION NOT NULL DEFAULT 0,
 
     CONSTRAINT "invoice_items_pkey" PRIMARY KEY ("id")
@@ -136,7 +134,7 @@ CREATE TABLE "categories" (
 -- CreateTable
 CREATE TABLE "products" (
     "id" UUID NOT NULL,
-    "creatorId" UUID NOT NULL,
+    "userId" UUID NOT NULL,
     "storeId" UUID NOT NULL,
     "name" TEXT NOT NULL,
     "sku" TEXT NOT NULL,
@@ -144,8 +142,10 @@ CREATE TABLE "products" (
     "description" TEXT,
     "thumbnailImageId" UUID,
     "buyingPricePerQuantity" DOUBLE PRECISION NOT NULL,
-    "totalStock" DOUBLE PRECISION,
-    "enabledInventoryTracking" BOOLEAN NOT NULL DEFAULT false,
+    "totalStock" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "trackInventory" BOOLEAN NOT NULL DEFAULT false,
+    "alertThreshold" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "emailAlert" BOOLEAN NOT NULL DEFAULT false,
     "stockUnit" TEXT NOT NULL,
     "pricePerQuantity" JSONB NOT NULL DEFAULT '[]',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -340,6 +340,9 @@ CREATE INDEX "invoices_storeId_customerId_idx" ON "invoices"("storeId", "custome
 CREATE INDEX "invoice_items_invoiceId_idx" ON "invoice_items"("invoiceId");
 
 -- CreateIndex
+CREATE INDEX "invoice_items_productId_idx" ON "invoice_items"("productId");
+
+-- CreateIndex
 CREATE INDEX "categories_storeId_idx" ON "categories"("storeId");
 
 -- CreateIndex
@@ -424,7 +427,7 @@ ALTER TABLE "gallery_images" ADD CONSTRAINT "gallery_images_storeId_fkey" FOREIG
 ALTER TABLE "gallery_images" ADD CONSTRAINT "gallery_images_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "invoices" ADD CONSTRAINT "invoices_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "invoices" ADD CONSTRAINT "invoices_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "invoices" ADD CONSTRAINT "invoices_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "stores"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -436,10 +439,13 @@ ALTER TABLE "invoices" ADD CONSTRAINT "invoices_customerId_fkey" FOREIGN KEY ("c
 ALTER TABLE "invoice_items" ADD CONSTRAINT "invoice_items_invoiceId_fkey" FOREIGN KEY ("invoiceId") REFERENCES "invoices"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "invoice_items" ADD CONSTRAINT "invoice_items_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "categories" ADD CONSTRAINT "categories_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "stores"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "products" ADD CONSTRAINT "products_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "products" ADD CONSTRAINT "products_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "products" ADD CONSTRAINT "products_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "stores"("id") ON DELETE CASCADE ON UPDATE CASCADE;

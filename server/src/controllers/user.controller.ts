@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
-import { ApiResponse } from "../utils/ApiResponse";
+import { ApiResponse } from "../utils/apiResponseHandler";
 import { StatusCodes } from "http-status-codes";
 import * as userService from "../services/user.service";
 import * as authService from "../services/auth.service";
@@ -17,7 +17,7 @@ import {
   cookieOptions,
   refreshTokenCookieOptions,
 } from "../utils/cookie-utils";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 
 export const createUser = asyncHandler(async (req: Request, res: Response) => {
   const validatedBody = validateBody(createUserSchema, req.body);

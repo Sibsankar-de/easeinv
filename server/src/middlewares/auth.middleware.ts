@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import type { JwtPayload } from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import { verifyAccessToken, signAccessToken } from "../services/jwt.service";
 import {

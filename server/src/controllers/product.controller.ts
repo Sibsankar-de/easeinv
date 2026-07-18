@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
-import { ApiResponse } from "../utils/ApiResponse";
+import { ApiResponse } from "../utils/apiResponseHandler";
 import { StatusCodes } from "http-status-codes";
-import * as productService from "../services/product.service";
+import * as inventoryService from "../services/inventory.service";
 import { validateBody } from "../utils/validate.utils";
 import {
   createProductSchema,
@@ -18,7 +18,7 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
   const sortBy = (req.query.sortBy as string) || "createdAt";
   const sortOrder = req.query.sortOrder === "desc" ? "desc" : "asc";
 
-  const productList = await productService.getProducts({
+  const productList = await inventoryService.getProducts({
     storeId,
     page,
     limit,
@@ -38,7 +38,7 @@ export const createProduct = asyncHandler(
 
     const validatedBody = validateBody(createProductSchema, req.body);
 
-    const product = await productService.createProduct(userId!, validatedBody);
+    const product = await inventoryService.createProduct(userId!, validatedBody);
 
     return res
       .status(StatusCodes.OK)
@@ -52,7 +52,7 @@ export const updateProduct = asyncHandler(
 
     const validatedBody = validateBody(updateProductSchema, req.body);
 
-    const product = await productService.updateProduct(
+    const product = await inventoryService.updateProduct(
       productId,
       validatedBody,
     );
@@ -67,7 +67,7 @@ export const getProductById = asyncHandler(
   async (req: Request, res: Response) => {
     const { productId } = req.params as { productId: string };
 
-    const product = await productService.getProductById(productId);
+    const product = await inventoryService.getProductById(productId);
 
     return res
       .status(StatusCodes.OK)
@@ -79,7 +79,7 @@ export const deleteProduct = asyncHandler(
   async (req: Request, res: Response) => {
     const { productId } = req.params as { productId: string };
 
-    const result = await productService.deleteProduct(productId);
+    const result = await inventoryService.deleteProduct(productId);
 
     return res
       .status(StatusCodes.OK)
@@ -93,7 +93,7 @@ export const rearrangeProductImages = asyncHandler(
 
     const validatedBody = validateBody(rearrangeImagesSchema, req.body);
 
-    const productImages = await productService.rearrangeProductImages(
+    const productImages = await inventoryService.rearrangeProductImages(
       productId,
       validatedBody.imagePriorities,
     );
@@ -115,7 +115,7 @@ export const searchProducts = asyncHandler(
     const { storeId } = req.params as { storeId: string };
     const query = (req.query.query as string) || "";
 
-    const searchResults = await productService.searchProducts(storeId, query);
+    const searchResults = await inventoryService.searchProducts(storeId, query);
 
     return res
       .status(StatusCodes.OK)

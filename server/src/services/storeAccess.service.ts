@@ -5,7 +5,7 @@ import { publishEmailJob } from "./emailPublisher.service";
 import { getStoreUserInviteEmail } from "./email.service";
 import { addDays } from "../utils/date-utils";
 import { dateConstants } from "../constants/date.constants";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import {
   InviteStoreUserDTO,
