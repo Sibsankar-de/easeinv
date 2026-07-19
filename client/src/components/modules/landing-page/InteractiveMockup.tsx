@@ -56,7 +56,7 @@ export default function InteractiveMockup() {
         </div>
         <div className="hidden md:flex bg-background/60 rounded-lg px-4 py-1.5 text-xs text-muted-foreground items-center gap-2 border border-border/30">
           <Lock className="w-3.5 h-3.5 text-green-500" />
-          app.easeinv.com/dashboard
+          easeinv.app/dashboard
         </div>
       </div>
 

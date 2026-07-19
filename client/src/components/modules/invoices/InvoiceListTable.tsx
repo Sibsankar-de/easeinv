@@ -12,7 +12,7 @@ import {
 } from "@/store/features/invoiceSlice";
 import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 import { useStoreNavigation } from "@/hooks/store-navigation";
-import { InvoiceDto } from "@/types/dto/invoiceDto";
+import { InvoiceSummaryDto } from "@/types/dto/invoiceDto";
 import { pageLimits } from "@/constants/pageLimits";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FilterSelector } from "@/components/ui/FilterSelector";
@@ -33,13 +33,13 @@ const filterOptions: SelectOptionType[] = [
   { value: "Overdue", key: "overdue" },
 ];
 
-const columnHelper = createColumnHelper<InvoiceDto>();
+const columnHelper = createColumnHelper<InvoiceSummaryDto>();
 
 const InvoiceActions = ({
   invoice,
   page,
 }: {
-  invoice: InvoiceDto;
+  invoice: InvoiceSummaryDto;
   page: number;
 }) => {
   const [editOpen, setEditOpen] = useState(false);
@@ -162,8 +162,9 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
         ),
         meta: { className: "text-left" },
       }),
-      columnHelper.accessor("customerDetails.name", {
+      columnHelper.accessor("customer.name", {
         header: "Customer",
+        enableSorting: false,
         cell: (info) => (
           <span
             className={cn(info.getValue() ? "text-gray-900" : "text-gray-400")}

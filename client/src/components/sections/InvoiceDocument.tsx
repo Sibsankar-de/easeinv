@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useSelector } from "react-redux";
-import { CreateInvoiceDto } from "@/types/dto/invoiceDto";
+import { InvoiceFormState } from "@/helpers/invoiceHelper";
 import { formatDateStr } from "@/utils/formatDate";
 import { convertUnit } from "@/utils/conversion";
 import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
@@ -11,7 +11,7 @@ import { cn } from "../utils";
 import { Dot } from "lucide-react";
 
 interface Props extends React.ComponentPropsWithoutRef<"div"> {
-  invoice: CreateInvoiceDto;
+  invoice: InvoiceFormState;
   pageSize?: string;
 }
 
@@ -53,7 +53,7 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
     const formatAmountWithCurrency = (value?: number) =>
       formatAmount(value, currencySymbol);
 
-    const customerDetails = invoice.customerDetails;
+    const customerDetails = invoice.customer;
     const bankDetails = storeSettings?.invoiceBankDetails;
     const hasCustomerDetails = [
       customerDetails?.name,

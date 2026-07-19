@@ -374,7 +374,17 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
               placeholder="Enter threshold"
               value={localInputs.alertThreshold}
               unit={formData.stockUnit}
-              onChange={(e) => handleNumberChange("alertThreshold", e)}
+              onChange={(e) => {
+                handleNumberChange("alertThreshold", e);
+                if (formFor === "create") {
+                  const num = parseFloat(e);
+                  if (!isNaN(num) && num > 0) {
+                    handleFormData("emailAlert", true);
+                  } else {
+                    handleFormData("emailAlert", false);
+                  }
+                }
+              }}
               disabled={!formData.trackInventory || isLoading}
             />
           </div>

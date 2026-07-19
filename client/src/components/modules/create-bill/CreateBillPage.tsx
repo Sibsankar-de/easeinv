@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { CloudCheck, PrinterCheck, RotateCcw } from "lucide-react";
 import { BillingForm } from "./BillingForm";
 import { useEffect, useRef, useState } from "react";
-import { CreateInvoiceDto } from "@/types/dto/invoiceDto";
+import { InvoiceFormState } from "@/helpers/invoiceHelper";
 import { formatDateStr } from "@/utils/formatDate";
 import { useDispatch, useSelector } from "react-redux";
 import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
@@ -18,6 +18,7 @@ import {
   createInvoiceThunk,
   selectInvoiceState,
 } from "@/store/features/invoiceSlice";
+import { transformInvoicePayload } from "@/helpers/invoiceHelper";
 import { toast } from "react-toastify";
 import { FormSkeleton } from "@/components/ui/Skeleton";
 import { useNavContext } from "@/contexts/NavContext";
@@ -34,7 +35,7 @@ export const CreateBillPage = () => {
 
   const { createStatus } = useSelector(selectInvoiceState);
 
-  const initialState: CreateInvoiceDto = {
+  const initialState: InvoiceFormState = {
     invoiceNumber: "",
     billItems: [],
     issueDate: new Date(),
@@ -45,10 +46,10 @@ export const CreateBillPage = () => {
     paidAmount: 0,
     dueAmount: 0,
     taxAmount: 0,
-    customerDetails: {},
+    customer: {},
   };
 
-  const [formData, setFormData] = useState<CreateInvoiceDto>(initialState);
+  const [formData, setFormData] = useState<InvoiceFormState>(initialState);
 
   const handleFormChange = (key: keyof typeof formData, value: any) => {
     setFormData((prev) => ({
@@ -63,6 +64,7 @@ export const CreateBillPage = () => {
       total,
       taxAmount,
       discountAmount,
+      discountPercent,
       totalProfit,
       paidAmount,
       dueAmount,
@@ -75,6 +77,7 @@ export const CreateBillPage = () => {
       total,
       taxAmount,
       discountAmount,
+      discountPercent,
       totalProfit,
       paidAmount,
       dueAmount,
@@ -105,7 +108,12 @@ export const CreateBillPage = () => {
     if (!storeId || isInvoiceSaved) return;
 
     setIsInvoiceSaved(true);
-    dispatch(createInvoiceThunk({ storeId, status, ...formData }))
+    const apiPayload = transformInvoicePayload({
+      storeId: storeId as string,
+      status,
+      ...formData,
+    });
+    dispatch(createInvoiceThunk(apiPayload))
       .unwrap()
       .then(() => {
         toast.success(`Invoice saved`);
@@ -173,7 +181,7 @@ export const CreateBillPage = () => {
         <div className="mb-8">
           <CustomerDetailsForm
             key={`cf-${resetKey}`}
-            onChange={(e) => handleFormChange("customerDetails", e)}
+            onChange={(e) => handleFormChange("customer", e)}
           />
         </div>
 

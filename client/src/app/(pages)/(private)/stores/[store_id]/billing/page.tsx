@@ -14,7 +14,7 @@ export default function BillingPage() {
     <StorePageContainer>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-gray-900 mb-2">Create New Invoice</h1>
+          <h1 className="text-gray-900 mb-1">Create New Invoice</h1>
           <p className="text-gray-600">
             Generate a professional invoice for your client
           </p>

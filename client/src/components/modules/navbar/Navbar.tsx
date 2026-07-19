@@ -72,7 +72,7 @@ export function HeaderNavbar() {
             <Button
               onClick={() => router.back()}
               variant="outline"
-              className="p-2"
+              className="p-1.5"
               tooltip="Go back"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -80,7 +80,7 @@ export function HeaderNavbar() {
             <Button
               onClick={() => router.forward()}
               variant="outline"
-              className="p-2"
+              className="p-1.5"
               tooltip="Go forward"
             >
               <ChevronRight className="w-5 h-5" />

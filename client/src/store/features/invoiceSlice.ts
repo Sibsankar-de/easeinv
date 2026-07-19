@@ -1,4 +1,4 @@
-import { InvoiceDto } from "@/types/dto/invoiceDto";
+import { InvoiceSummaryDto } from "@/types/dto/invoiceDto";
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import {
@@ -14,7 +14,7 @@ import { InvoiceSummary } from "@/types/InvoiceSummaryType";
 const initialState = {
   data: {
     invoiceListData: {
-      pages: {} as PaginatedPages<InvoiceDto>,
+      pages: {} as PaginatedPages<InvoiceSummaryDto>,
       totalDocs: 0,
       totalPages: 0,
     },
@@ -115,7 +115,7 @@ const invoiceSlice = createSlice({
           pages: {
             ...state.data.invoiceListData.pages,
             [pageable.page]: {
-              docs: docs as InvoiceDto[],
+              docs: docs as InvoiceSummaryDto[],
               pageable,
             },
           },

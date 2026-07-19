@@ -2,11 +2,19 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { Menu, X, ArrowRight, ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import { AppLogoFull } from "@/components/ui/AppLogo";
+import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSelector } from "react-redux";
+import { selectUserSate } from "@/store/features/userSlice";
+import { Avatar } from "@/components/ui/Avatar";
 
 export const TopNav = () => {
+  const { isAuthenticated } = useAuth();
+  const { data: user } = useSelector(selectUserSate);
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -56,23 +64,33 @@ export const TopNav = () => {
         </nav>
 
         {/* Desktop Actions */}
-        <div className="hidden md:flex items-center gap-4">
-          <Link
-            href="/auth/login"
-            className="text-sm font-medium hover:text-primary transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/auth/signup"
-            className="group flex items-center gap-2 text-sm font-medium bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-all shadow-sm hover:shadow-md"
-          >
-            Get Started
-            <ArrowRight
-              size={16}
-              className="transition-transform group-hover:translate-x-1"
-            />
-          </Link>
+        <div className="hidden md:flex items-center gap-2">
+          {isAuthenticated ? (
+            <Link href={"/profile"} className="flex items-center gap-1">
+              <p className="text-sm font-medium">{user.userName}</p>
+              <Avatar userName={user.userName} size={40} />
+            </Link>
+          ) : (
+            <>
+              <Link href="/auth/login">
+                <Button
+                  variant="none"
+                  className="text-sm font-medium hover:text-primary"
+                >
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/auth/signup">
+                <Button className="group text-sm font-medium">
+                  Get Started
+                  <ArrowRight
+                    size={16}
+                    className="transition-transform group-hover:translate-x-1"
+                  />
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -101,20 +119,38 @@ export const TopNav = () => {
             ))}
           </nav>
           <div className="flex flex-col gap-3 pt-4 border-t border-border/50">
-            <Link
-              href="/auth/login"
-              className="text-center py-2 text-base font-medium hover:text-primary transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/auth/signup"
-              className="text-center py-3 text-base font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Get Started
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                href={"/profile"}
+                className="flex items-center gap-2 justify-center"
+              >
+                <Avatar userName={user.userName} size={40} />
+                <p className="text-sm font-medium">{user.userName}</p>
+                <ChevronRight size={15} className="text-gray-500"/>
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/auth/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Button
+                    variant="none"
+                    className="w-full justify-center hover:text-primary font-medium"
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+                <Link
+                  href="/auth/signup"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Button className="w-full py-3 justify-center font-medium">
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

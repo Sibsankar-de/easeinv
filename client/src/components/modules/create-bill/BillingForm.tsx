@@ -50,7 +50,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
 
   const [items, setItems] = useState<BillItemType[]>([initialBillItem]);
   const [calculations, setCalculations] = useState(initialCalculations);
-  const [discountRate, setDiscountRate] = useState("");
+  const [discountPercent, setDiscountPercent] = useState("");
 
   useEffect(() => {
     if (data?.items) setItems(data.items);
@@ -118,7 +118,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
     );
     const tax = 0;
     const discountAmount = roundToDecimal(
-      (Number(discountRate) * subTotal) / 100,
+      (Number(discountPercent) * subTotal) / 100,
     );
     let total = roundToDecimal(subTotal + tax - Number(discountAmount));
 
@@ -133,8 +133,9 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
       paidAmount: total,
       dueAmount: 0,
       totalProfit: subTotalProfit - discountAmount,
+      discountPercent: Number(discountPercent) || 0,
     }));
-  }, [items, discountRate, calculations.roundupTotal]);
+  }, [items, discountPercent, calculations.roundupTotal]);
 
   useEffect(() => {
     const filteredItems = items.filter((e) => e.product.id != "");
@@ -149,11 +150,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <Label className="text-gray-900">Items</Label>
-          <Button
-            onClick={addItem}
-            variant="outline"
-            className="flex items-center gap-2 px-3 py-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-          >
+          <Button onClick={addItem} variant="outline" className="text-primary">
             <Plus className="w-4 h-4" />
             Add Item
           </Button>
@@ -201,8 +198,8 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
               type="number"
               placeholder="Discount percent (%)"
               field="%"
-              onChange={(e) => setDiscountRate(e)}
-              value={discountRate}
+              onChange={(e) => setDiscountPercent(e)}
+              value={discountPercent}
             />
           </div>
           <div className="flex items-center gap-4">
@@ -223,7 +220,10 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
           <div className="space-y-3 mb-4 pb-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <span className="text-gray-600">Subtotal</span>
-              <span className="text-gray-900">{currencySymbol}{calculations.subTotal}</span>
+              <span className="text-gray-900">
+                {currencySymbol}
+                {calculations.subTotal}
+              </span>
             </div>
 
             <ConditionalDiv
@@ -242,10 +242,11 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
             >
               <span className="text-gray-600">
                 Discount (
-                <span className="text-green-600">{discountRate}%</span>)
+                <span className="text-green-600">{discountPercent}%</span>)
               </span>
               <span className="text-green-600">
-                - {currencySymbol}{calculations.discountAmount}
+                - {currencySymbol}
+                {calculations.discountAmount}
               </span>
             </ConditionalDiv>
           </div>
@@ -253,7 +254,10 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-gray-900">Total</span>
-              <span className="text-gray-900">{currencySymbol}{calculations.total}</span>
+              <span className="text-gray-900">
+                {currencySymbol}
+                {calculations.total}
+              </span>
             </div>
 
             <div className="flex items-center justify-between">
@@ -275,7 +279,10 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
 
             <div className="flex items-center justify-between">
               <span className="text-gray-900">Due Amount</span>
-              <span className="text-gray-900">{currencySymbol}{calculations.dueAmount}</span>
+              <span className="text-gray-900">
+                {currencySymbol}
+                {calculations.dueAmount}
+              </span>
             </div>
           </div>
         </div>
