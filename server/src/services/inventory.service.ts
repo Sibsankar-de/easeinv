@@ -196,7 +196,7 @@ export const createProduct = async (
   const categoryIds: string[] = [];
   if (categories && categories.length > 0) {
     for (const category of categories) {
-      const categoryId = await getOrCreateCategory(category?.name, storeId);
+      const categoryId = await getOrCreateCategory(category.name, storeId);
       categoryIds.push(categoryId);
     }
   }
@@ -423,7 +423,11 @@ export const updateInventoryStock = async (
   }
 
   // send stock alert
-  if (product.totalStock <= product.alertThreshold) return product;
+  if (product.totalStock <= product.alertThreshold) {
+    sendInventoryStockAlert(product, store);
+  }
+
+  return product;
 };
 
 export const sendInventoryStockAlert = (

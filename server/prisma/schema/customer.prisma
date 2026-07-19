@@ -13,9 +13,9 @@ model Customer {
   id               String            @id @default(uuid()) @db.Uuid
   storeId          String            @db.Uuid
   name             String
-  phoneNumber      String?
-  email            String?
-  address          String?
+  phoneNumber      String?           @default("")
+  email            String?           @default("")
+  address          String?           @default("")
   totalDue         Float             @default(0)
   advance          Float             @default(0)
   paymentBehaviour PaymentBehaviour?

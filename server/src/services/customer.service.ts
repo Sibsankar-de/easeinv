@@ -178,6 +178,13 @@ export const getOrCreateInvoiceCustomer = async (
     });
   }
 
+  if (!newCustomer) {
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      "Failed to create customer.",
+    );
+  }
+
   return newCustomer;
 };
 
@@ -188,7 +195,7 @@ export const increamentCustomerDue = async (
 ) => {
   if (dueAmount <= 0) return customer;
 
-  return await prisma.customer.update({
+  return await tx.customer.update({
     where: { id: customer.id },
     data: { totalDue: { increment: dueAmount } },
   });

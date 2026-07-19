@@ -7,10 +7,7 @@ export const validateBody = <T>(schema: Schema<T>, data: unknown): T => {
   if (!result.success) {
     // Extract first error message and throw a BAD_REQUEST ApiError
     const firstError = result.error.issues[0];
-    const fieldName = firstError.path.join(".");
-    const errorMessage = fieldName
-      ? `${fieldName}: ${firstError.message}`
-      : firstError.message;
+    const errorMessage = firstError.message;
     throw new ApiError(StatusCodes.BAD_REQUEST, errorMessage);
   }
   return result.data;

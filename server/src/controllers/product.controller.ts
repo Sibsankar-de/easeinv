@@ -38,7 +38,10 @@ export const createProduct = asyncHandler(
 
     const validatedBody = validateBody(createProductSchema, req.body);
 
-    const product = await inventoryService.createProduct(userId!, validatedBody);
+    const product = await inventoryService.createProduct(
+      userId!,
+      validatedBody,
+    );
 
     return res
       .status(StatusCodes.OK)

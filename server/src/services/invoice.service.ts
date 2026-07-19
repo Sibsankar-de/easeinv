@@ -3,10 +3,15 @@ import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import { paginate } from "../utils/paginate";
 import { CreateInvoiceDTO } from "../schemas/invoice.schema";
-import { prismaTransaction } from "../utils/transactionHandler";
+import {
+  prismaTransaction,
+  TransactionClient,
+} from "../utils/transactionHandler";
 import * as inventoryService from "../services/inventory.service";
 import * as customerService from "./customer.service";
 import { InvoiceStatus } from "@prisma/client";
+import { calculateInvoiceDetails } from "../utils/invoice-calculator";
+import { toInvoiceDto, toInvoiceSummaryDto } from "../dto/invoice.dto";
 
 export const createInvoice = async (
   userId: string,
@@ -14,15 +19,7 @@ export const createInvoice = async (
   billData: CreateInvoiceDTO,
 ) =>
   prismaTransaction(async (tx) => {
-    const {
-      invoiceNumber,
-      issueDate,
-      total,
-      subTotal,
-      paidAmount,
-      dueAmount,
-      customerDetails,
-    } = billData;
+    const { invoiceNumber, issueDate, customer: customerDetails } = billData;
 
     // Update store lastInvoiceNumber
     const store = await tx.store.update({
@@ -32,6 +29,32 @@ export const createInvoice = async (
     });
 
     const storeSettings = store.settings;
+
+    // Fetch products
+    const productIds = billData.billItems.map((item) => item.productId);
+    const products = await tx.product.findMany({
+      where: { id: { in: productIds } },
+    });
+
+    if (products.length !== productIds.length) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Some products in the invoice were not found.",
+      );
+    }
+
+    // Perform calculations
+    const calculations = calculateInvoiceDetails(
+      {
+        billItems: billData.billItems,
+        discountPercent: billData.discountPercent,
+        taxRate: billData.taxRate,
+        paidAmount: billData.paidAmount,
+        roundupTotal: billData.roundupTotal,
+      },
+      products,
+      storeSettings,
+    );
 
     // Create or reuse customer
     const customer = await customerService.getOrCreateInvoiceCustomer(
@@ -48,15 +71,16 @@ export const createInvoice = async (
         customerId: customer.id,
         invoiceNumber,
         issueDate: new Date(issueDate),
-        subTotal,
-        total,
-        discountAmount: billData.discountAmount ?? 0,
-        dueAmount: dueAmount ?? 0,
-        paidAmount: paidAmount ?? 0,
-        taxAmount: billData.taxAmount ?? 0,
-        taxRate: billData.taxRate ?? 0,
-        totalProfit: billData.totalProfit ?? 0,
-        roundupTotal: billData.roundupTotal ?? false,
+        subTotal: calculations.subTotal,
+        total: calculations.total,
+        discountAmount: calculations.discountAmount,
+        discountPercent: calculations.discountPercent,
+        dueAmount: calculations.dueAmount,
+        paidAmount: calculations.paidAmount,
+        taxAmount: calculations.taxAmount,
+        taxRate: calculations.taxRate,
+        totalProfit: calculations.totalProfit,
+        roundupTotal: calculations.roundupTotal,
         note: billData.note,
         status: billData.status ?? InvoiceStatus.DRAFTED,
         extraData: {
@@ -70,15 +94,15 @@ export const createInvoice = async (
     });
 
     await tx.invoiceItem.createMany({
-      data: billData.billItems.map((item, i: number) => ({
+      data: calculations.billItems.map((item, i: number) => ({
         invoiceId: invoice.id,
         sortOrder: i + 1,
         productId: item.productId,
-        pricePerQty: item.pricePerQuantity,
+        pricePerQty: item.pricePerQuantity as any,
         netQuantity: item.netQuantity,
         totalPrice: item.totalPrice,
         stockUnit: item.stockUnit,
-        totalProfit: item.totalProfit ?? 0,
+        totalProfit: item.totalProfit,
       })),
     });
 
@@ -94,40 +118,63 @@ export const createInvoice = async (
             ),
           )
         : []),
-      customerService.increamentCustomerDue(customer, dueAmount, tx),
+      customerService.increamentCustomerDue(
+        customer,
+        calculations.dueAmount,
+        tx,
+      ),
     ]);
 
-    return invoice;
+    const createdInvoice = await getInvoiceById(invoice.id, tx);
+    return toInvoiceDto(createdInvoice);
   });
 
 export const updateInvoiceDueAmount = async (
   invoiceId: string,
   paidAmount: number,
-) => {
-  if (paidAmount === null || paidAmount === undefined || paidAmount <= 0) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Paid amount must be greater than zero",
-    );
-  }
+) =>
+  prismaTransaction(async (tx) => {
+    const invoice = await tx.invoice.update({
+      where: { id: invoiceId },
+      data: {
+        paidAmount: { increment: paidAmount },
+        dueAmount: { decrement: paidAmount },
+      },
+    });
 
-  const invoice = await prisma.invoice.update({
+    if (!invoice) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Invoice not found");
+    }
+
+    if (invoice.dueAmount >= 0 && invoice.customerId) {
+      await tx.customer.update({
+        where: { id: invoice.customerId },
+        data: { totalDue: { decrement: paidAmount } },
+      });
+    }
+
+    const updatedInvoice = await getInvoiceById(invoice.id, tx);
+    return toInvoiceDto(updatedInvoice);
+  });
+
+export const getInvoiceById = async (
+  invoiceId: string,
+  tx: TransactionClient = prisma,
+) => {
+  const invoice = await tx.invoice.findUnique({
     where: { id: invoiceId },
-    data: {
-      paidAmount: { increment: paidAmount },
-      dueAmount: { decrement: paidAmount },
+    include: {
+      customer: true,
+      billItems: {
+        include: {
+          product: true,
+        },
+      },
     },
   });
 
   if (!invoice) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Invoice not found");
-  }
-
-  if (invoice.dueAmount >= 0 && invoice.customerId) {
-    await prisma.customer.update({
-      where: { id: invoice.customerId },
-      data: { totalDue: { decrement: paidAmount } },
-    });
+    throw new ApiError(StatusCodes.NOT_FOUND, "Failed to retrieve Invoice.");
   }
 
   return invoice;
@@ -165,18 +212,20 @@ export const searchInvoice = async (params: {
     };
   }
 
-  return paginate(
+  const result = await paginate(
     prisma.invoice,
     where,
     { [sortBy]: sortOrder },
     { page, limit },
     {
-      customer: {
-        select: { id: true, name: true, phoneNumber: true, address: true },
-      },
-      billItems: true,
+      customer: true,
     },
   );
+
+  return {
+    ...result,
+    docs: result.docs.map(toInvoiceSummaryDto),
+  };
 };
 
 export const getInvoiceSummary = async (storeId: string) => {
