@@ -23,6 +23,7 @@ export const Select = ({
   disabled,
   className,
   dropdownClass,
+  errorMessage,
 }: SelectType) => {
   const generatedId = useId();
   const uid = id || generatedId;
@@ -153,6 +154,7 @@ export const Select = ({
           "flex items-center justify-between gap-2 relative",
           "transition-all duration-200 focus-within:ring-primary focus-within:ring-2",
           isFocused && "ring-primary ring-2",
+          errorMessage && "border-red-300 focus-within:ring-red-200",
           className,
         )}
         onClick={handleClick}
@@ -218,6 +220,9 @@ export const Select = ({
             ))}
           </ul>
         </Dropdown>
+      )}
+      {errorMessage && (
+        <p className="text-red-400 text-xs mt-1">{errorMessage}</p>
       )}
     </div>
   );

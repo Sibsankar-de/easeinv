@@ -12,4 +12,6 @@ export type SelectType = {
   placeholderClass?: string;
   className?: string;
   dropdownClass?: string;
+  /** When provided, renders a red error message below the select */
+  errorMessage?: string;
 };

@@ -13,6 +13,7 @@ import {
   PricePerQuantityType,
   ProductDto,
   ProductImageType,
+  UnitGroupType,
 } from "@/types/dto/productDto";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -35,6 +36,7 @@ import { NavActionButton } from "../navbar/Navbar";
 import { IconTooltip } from "@/components/ui/IconTooltip";
 import descriptiveTooltip from "@/constants/descriptiveTooltip";
 import { ProductImageSection } from "./ProductImageSection";
+import { UnitGroupsSection } from "./UnitGroupsSection";
 
 export const ProductForm = ({ formFor }: { formFor: string }) => {
   const router = useRouter();
@@ -65,6 +67,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     emailAlert: false,
     pricePerQuantity: [] as PricePerQuantityType[],
     imageIds: [] as string[],
+    unitGroups: [] as UnitGroupType[],
   });
 
   const [selectedImages, setSelectedImages] = useState<ProductImageType[]>([]);
@@ -84,6 +87,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
           setFormData({
             ...product,
             imageIds: product.images?.map((img: any) => img.id) || [],
+            unitGroups: product.unitGroups || [],
           });
           setSelectedImages(product.images || []);
 
@@ -300,6 +304,24 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
             disabled={isLoading}
           />
         </div>
+      </div>
+
+      <Separator text={"Unit Groups"} className="mb-8 mt-10" />
+
+      <div>
+        <Label className="flex items-center gap-3 mb-3">
+          <p>Unit groups (optional)</p>
+          <IconTooltip
+            icon={<Info size={15} />}
+            tooltip={descriptiveTooltip.UNIT_GROUPS}
+          />
+        </Label>
+        <UnitGroupsSection
+          baseUnit={formData.stockUnit}
+          value={formData.unitGroups}
+          onChange={(groups) => handleFormData("unitGroups", groups)}
+          disabled={isLoading}
+        />
       </div>
 
       <Separator text={"Inventory tracking"} className="mb-8 mt-10" />

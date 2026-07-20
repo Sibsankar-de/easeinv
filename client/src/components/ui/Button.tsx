@@ -46,7 +46,7 @@ export const Button = ({
     nav: "",
     primary: "bg-primary text-primary-foreground hover:bg-primary/90",
     outline:
-      "border border-border bg-background text-foreground hover:bg-accent/50 hover:text-accent-foreground",
+      "border border-border bg-inherit text-foreground hover:bg-accent/50 hover:text-accent-foreground",
     danger: "text-red-400 border border-border bg-gray-100 hover:bg-red-100",
     secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
     dark: "bg-[#353535] text-white hover:bg-gray-800",
