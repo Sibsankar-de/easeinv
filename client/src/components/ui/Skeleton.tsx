@@ -67,20 +67,25 @@ export const TableSkeleton = ({
 
 export const StoreCardSkeleton = () => {
   return (
-    <div className="bg-white rounded-lg border p-6 border-gray-200 flex justify-between items-baseline">
-      <div className="flex items-start gap-4">
-        <Skeleton className="w-12 h-12 rounded-lg" />
-        <div>
-          <Skeleton className="h-5 w-32 mb-2" />
-          <Skeleton className="h-4 w-24 mb-2" />
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-3 w-40" />
+    <div className="bg-white rounded-lg border p-5 border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-center gap-4 flex-1">
+        <Skeleton className="w-12 h-12 rounded-xl shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-4.5 w-14 rounded-full" />
+            <Skeleton className="h-4.5 w-16 rounded-md" />
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2.5">
+            <Skeleton className="h-3.5 w-32 shrink-0" />
+            <Skeleton className="h-3.5 w-36 shrink-0" />
+            <Skeleton className="h-3.5 w-24 shrink-0" />
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <Skeleton className="h-10 w-28 rounded-md" />
-        <Skeleton className="h-10 w-10 rounded-md" />
+      <div className="flex items-center gap-2 shrink-0 pt-4 sm:pt-0 border-t sm:border-none border-gray-50 justify-end w-full sm:w-auto">
+        <Skeleton className="h-9 w-28 rounded-lg" />
+        <Skeleton className="h-9 w-9 rounded-lg" />
       </div>
     </div>
   );
@@ -105,20 +110,13 @@ export const FormSkeleton = ({ rows = 4 }: { rows?: number }) => {
 
 export const ProfileSkeleton = () => {
   return (
-    <div className="p-6">
-      <div className="flex items-start gap-6">
-        <Skeleton className="w-[100px] h-[100px] rounded-full" />
-        <div className="flex-1">
-          <Skeleton className="h-8 w-48 mb-4" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-3">
-              <Skeleton className="w-10 h-10 rounded-lg" />
-              <div>
-                <Skeleton className="h-3 w-12 mb-1" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-            </div>
-          </div>
+    <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center gap-6">
+      <Skeleton className="w-20 h-20 rounded-full shrink-0" />
+      <div className="flex-1 min-w-0">
+        <Skeleton className="h-6 w-48 mb-2.5" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="w-4 h-4 rounded-full shrink-0" />
+          <Skeleton className="h-4 w-40" />
         </div>
       </div>
     </div>

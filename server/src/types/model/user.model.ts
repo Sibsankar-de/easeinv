@@ -1,7 +1,7 @@
-import type { User } from "@prisma/client";
+import type { User as _User } from "@prisma/client";
 
 // Safe user type (no sensitive fields) for API responses
-export type SafeUser = Omit<User, "password" | "refreshToken">;
+export type User = _User;
 
 // JWT payload shapes
 export interface AccessTokenPayload {

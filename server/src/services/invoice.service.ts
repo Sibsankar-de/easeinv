@@ -1,87 +1,88 @@
 import { prisma } from "../lib/prisma";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import { paginate } from "../utils/paginate";
 import { CreateInvoiceDTO } from "../schemas/invoice.schema";
+import {
+  prismaTransaction,
+  TransactionClient,
+} from "../utils/transactionHandler";
+import * as inventoryService from "../services/inventory.service";
+import * as customerService from "./customer.service";
+import { InvoiceStatus } from "@prisma/client";
+import { calculateInvoiceDetails } from "../utils/invoice-calculator";
+import { toInvoiceDto, toInvoiceSummaryDto } from "../dto/invoice.dto";
 
 export const createInvoice = async (
   userId: string,
   storeId: string,
   billData: CreateInvoiceDTO,
-) => {
-  const { invoiceNumber, issueDate, total, subTotal, paidAmount, dueAmount } =
-    billData;
+) =>
+  prismaTransaction(async (tx) => {
+    const { invoiceNumber, issueDate, customer: customerDetails } = billData;
 
-  if (!invoiceNumber || !issueDate) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Invoice number and issue date is required",
-    );
-  }
-
-  if ([total, subTotal, paidAmount, dueAmount].some((e) => e === null)) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Calculated amounts are required",
-    );
-  }
-
-  if (!billData?.billItems || billData.billItems.length === 0) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Atleast one bill item is required",
-    );
-  }
-
-  const customerDetails = billData.customerDetails;
-  if (!customerDetails?.name) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Customer name is required");
-  }
-
-  // Update store lastInvoiceNumber
-  const store = await prisma.store.update({
-    where: { id: storeId },
-    data: { lastInvoiceNumber: invoiceNumber },
-    include: { settings: true },
-  });
-
-  const storeSettings = store.settings;
-
-  // Create or reuse customer
-  let customerId: string | undefined = customerDetails?.id;
-  if (!customerId) {
-    const customer = await prisma.customer.create({
-      data: {
-        storeId,
-        name: customerDetails.name,
-        phoneNumber: customerDetails.phoneNumber,
-        address: customerDetails.address,
-        email: customerDetails.email,
-      },
+    // Update store lastInvoiceNumber
+    const store = await tx.store.update({
+      where: { id: storeId },
+      data: { lastInvoiceNumber: invoiceNumber },
+      include: { settings: true },
     });
-    customerId = customer.id;
-  }
 
-  // Create invoice + items in a transaction
-  const newInvoice = await prisma.$transaction(async (tx) => {
+    const storeSettings = store.settings;
+
+    // Fetch products
+    const productIds = billData.billItems.map((item) => item.productId);
+    const products = await tx.product.findMany({
+      where: { id: { in: productIds } },
+    });
+
+    if (products.length !== productIds.length) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Some products in the invoice were not found.",
+      );
+    }
+
+    // Perform calculations
+    const calculations = calculateInvoiceDetails(
+      {
+        billItems: billData.billItems,
+        discountPercent: billData.discountPercent,
+        taxRate: billData.taxRate,
+        paidAmount: billData.paidAmount,
+        roundupTotal: billData.roundupTotal,
+      },
+      products,
+      storeSettings,
+    );
+
+    // Create or reuse customer
+    const customer = await customerService.getOrCreateInvoiceCustomer(
+      storeId,
+      customerDetails,
+      tx,
+    );
+
+    // create invoice + items
     const invoice = await tx.invoice.create({
       data: {
-        creatorId: userId,
+        userId,
         storeId,
-        customerId,
+        customerId: customer.id,
         invoiceNumber,
         issueDate: new Date(issueDate),
-        subTotal,
-        total,
-        discountAmount: billData.discountAmount ?? 0,
-        dueAmount: dueAmount ?? 0,
-        paidAmount: paidAmount ?? 0,
-        taxAmount: billData.taxAmount ?? 0,
-        taxRate: billData.taxRate ?? 0,
-        totalProfit: billData.totalProfit ?? 0,
-        roundupTotal: billData.roundupTotal ?? false,
+        subTotal: calculations.subTotal,
+        total: calculations.total,
+        discountAmount: calculations.discountAmount,
+        discountPercent: calculations.discountPercent,
+        dueAmount: calculations.dueAmount,
+        paidAmount: calculations.paidAmount,
+        taxAmount: calculations.taxAmount,
+        taxRate: calculations.taxRate,
+        totalProfit: calculations.totalProfit,
+        roundupTotal: calculations.roundupTotal,
         note: billData.note,
-        status: (billData.status as any) ?? "DRAFTED",
+        status: billData.status ?? InvoiceStatus.DRAFTED,
         extraData: {
           customer: {
             name: customerDetails.name,
@@ -93,78 +94,87 @@ export const createInvoice = async (
     });
 
     await tx.invoiceItem.createMany({
-      data: billData.billItems.map((item: any, i: number) => ({
+      data: calculations.billItems.map((item, i: number) => ({
         invoiceId: invoice.id,
         sortOrder: i + 1,
-        productId: item.product?.id ?? null,
-        productName: item.product?.name ?? null,
-        productSku: item.product?.sku ?? null,
-        pricePerQty: item.pricePerQuantity ?? null,
+        productId: item.productId,
+        pricePerQty: item.pricePerQuantity as any,
         netQuantity: item.netQuantity,
         totalPrice: item.totalPrice,
-        stockUnit: item.stockUnit ?? null,
-        totalProfit: item.totalProfit ?? 0,
+        stockUnit: item.stockUnit,
+        totalProfit: item.totalProfit,
       })),
     });
 
-    return invoice;
+    // Side effects: inventory tracking + due amount
+    await Promise.all([
+      ...(storeSettings?.enableInventoryTracking
+        ? billData.billItems.map((item) =>
+            inventoryService.updateInventoryStock(
+              item.productId,
+              item.netQuantity,
+              store,
+              tx,
+            ),
+          )
+        : []),
+      customerService.increamentCustomerDue(
+        customer,
+        calculations.dueAmount,
+        tx,
+      ),
+    ]);
+
+    const createdInvoice = await getInvoiceById(invoice.id, tx);
+    return toInvoiceDto(createdInvoice);
   });
-
-  // Side effects: inventory tracking + due amount
-  await Promise.all([
-    ...(storeSettings?.enableInventoryTracking
-      ? billData.billItems.map((item: any) =>
-          prisma.product.updateMany({
-            where: {
-              id: item.product?.id,
-              enabledInventoryTracking: true,
-              totalStock: { gte: item.netQuantity },
-            },
-            data: { totalStock: { decrement: item.netQuantity } },
-          }),
-        )
-      : []),
-    ...(dueAmount > 0 && customerId
-      ? [
-          prisma.customer.update({
-            where: { id: customerId },
-            data: { totalDue: { increment: dueAmount } },
-          }),
-        ]
-      : []),
-  ]);
-
-  return newInvoice;
-};
 
 export const updateInvoiceDueAmount = async (
   invoiceId: string,
   paidAmount: number,
-) => {
-  if (paidAmount === null || paidAmount === undefined || paidAmount <= 0) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Paid amount must be greater than zero",
-    );
-  }
+) =>
+  prismaTransaction(async (tx) => {
+    const invoice = await tx.invoice.update({
+      where: { id: invoiceId },
+      data: {
+        paidAmount: { increment: paidAmount },
+        dueAmount: { decrement: paidAmount },
+      },
+    });
 
-  const invoice = await prisma.invoice.update({
+    if (!invoice) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Invoice not found");
+    }
+
+    if (invoice.dueAmount >= 0 && invoice.customerId) {
+      await tx.customer.update({
+        where: { id: invoice.customerId },
+        data: { totalDue: { decrement: paidAmount } },
+      });
+    }
+
+    const updatedInvoice = await getInvoiceById(invoice.id, tx);
+    return toInvoiceDto(updatedInvoice);
+  });
+
+export const getInvoiceById = async (
+  invoiceId: string,
+  tx: TransactionClient = prisma,
+) => {
+  const invoice = await tx.invoice.findUnique({
     where: { id: invoiceId },
-    data: {
-      paidAmount: { increment: paidAmount },
-      dueAmount: { decrement: paidAmount },
+    include: {
+      customer: true,
+      billItems: {
+        include: {
+          product: true,
+        },
+      },
     },
   });
 
   if (!invoice) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Invoice not found");
-  }
-
-  if (invoice.dueAmount >= 0 && invoice.customerId) {
-    await prisma.customer.update({
-      where: { id: invoice.customerId },
-      data: { totalDue: { decrement: paidAmount } },
-    });
+    throw new ApiError(StatusCodes.NOT_FOUND, "Failed to retrieve Invoice.");
   }
 
   return invoice;
@@ -202,18 +212,20 @@ export const searchInvoice = async (params: {
     };
   }
 
-  return paginate(
+  const result = await paginate(
     prisma.invoice,
     where,
     { [sortBy]: sortOrder },
     { page, limit },
     {
-      customer: {
-        select: { id: true, name: true, phoneNumber: true, address: true },
-      },
-      billItems: true,
+      customer: true,
     },
   );
+
+  return {
+    ...result,
+    docs: result.docs.map(toInvoiceSummaryDto),
+  };
 };
 
 export const getInvoiceSummary = async (storeId: string) => {

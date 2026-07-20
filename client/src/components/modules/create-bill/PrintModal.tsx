@@ -6,14 +6,14 @@ import { Label } from "@/components/ui/Label";
 import { Modal, ModalHeader } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { pageSizes } from "@/constants/pageSizeMaps";
-import { CreateInvoiceDto } from "@/types/dto/invoiceDto";
+import { InvoiceFormState } from "@/helpers/invoiceHelper";
 import { CloudCheck, PrinterCheck, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 
 type PrintModalType = {
   openState: boolean;
-  invoiceData: CreateInvoiceDto;
+  invoiceData: InvoiceFormState;
   isSaving: boolean;
   isInvoiceSaved: boolean;
   onSave: (status: string) => void;

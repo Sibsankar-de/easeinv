@@ -1,11 +1,15 @@
 import { OAuth2Client } from "google-auth-library";
 import { prisma } from "../lib/prisma";
-import { generateTokenPair, hashPassword } from "./auth.service";
+import { generateTokenPair } from "./auth.service";
 import { randomBytes } from "crypto";
 import { StatusCodes } from "http-status-codes";
 import { env } from "../configs/env";
 import { clientPages } from "../constants/client.constant";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
+import { AuthProvider } from "@prisma/client";
+import { hashPassword } from "../utils/hash-utils";
+import { sendWelcomeEmail } from "./transactionalEmail.service";
+import { generateSecureToken } from "../utils/token-generator";
 
 const client_secret = env.GOOGLE_CLIENT_SECRET;
 const client_id = env.GOOGLE_CLIENT_ID;
@@ -27,17 +31,6 @@ export interface GoogleUserInfo {
   family_name: string;
   picture: string;
   locale: string;
-}
-
-export function generatePassword(length: number = 12): string {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
-  const bytes = randomBytes(length);
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    password += chars[bytes[i] % chars.length];
-  }
-  return password;
 }
 
 export const getGoogleAuthUrl = (redirect?: string) => {
@@ -65,17 +58,17 @@ export const handleGoogleCallback = async (code: string) => {
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, "Unable to get user");
   }
 
-  const password = generatePassword(16);
-
   let user = await prisma.user.findUnique({ where: { email: userinfo.email } });
 
   if (!user) {
+    const password = generateSecureToken(64);
+    const hashedPassword = await hashPassword(password);
     user = await prisma.user.create({
       data: {
         userName: userinfo.name,
         email: userinfo.email,
-        authBy: "google",
-        password: await hashPassword(password),
+        authBy: AuthProvider.GOOGLE,
+        password: hashedPassword,
       },
     });
   }
@@ -84,6 +77,17 @@ export const handleGoogleCallback = async (code: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Google login failed");
   }
 
-  const { accessToken, refreshToken } = await generateTokenPair(user.id);
+  // verify email if not verified
+  if (!user.isEmailVerified) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { isEmailVerified: true },
+    });
+
+    // send welcome email
+    sendWelcomeEmail(user);
+  }
+
+  const { accessToken, refreshToken } = await generateTokenPair(user);
   return { user, accessToken, refreshToken };
 };

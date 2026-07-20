@@ -1,18 +1,18 @@
-import { userRoles } from "../enums/store.enum";
+import { StoreUserRole } from "@prisma/client";
 
-export const OwnerLevelRoles = [userRoles.OWNER];
+export const OwnerLevelRoles = [StoreUserRole.OWNER];
 
-export const AdminLevelRoles = [userRoles.ADMIN, userRoles.OWNER];
+export const AdminLevelRoles = [StoreUserRole.ADMIN, StoreUserRole.OWNER];
 
 export const ManagerLevelRoles = [
-  userRoles.MANAGER,
-  userRoles.ADMIN,
-  userRoles.OWNER,
+  StoreUserRole.MANAGER,
+  StoreUserRole.ADMIN,
+  StoreUserRole.OWNER,
 ];
 
 export const EmployeeLevelRoles = [
-  userRoles.EMPLOYEE,
-  userRoles.MANAGER,
-  userRoles.ADMIN,
-  userRoles.OWNER,
+  StoreUserRole.EMPLOYEE,
+  StoreUserRole.MANAGER,
+  StoreUserRole.ADMIN,
+  StoreUserRole.OWNER,
 ];

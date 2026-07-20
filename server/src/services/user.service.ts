@@ -1,10 +1,10 @@
 import { prisma } from "../lib/prisma";
-import { comparePassword, hashPassword } from "./auth.service";
 import { deleteFromCloudinary, uploadToCloudinary } from "./cloudinary.service";
 import { cloudinaryFolders } from "../constants/cloudinary.constant";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import type { UpdateUserDTO, UpdatePasswordDTO } from "../schemas/user.schema";
+import { comparePassword, hashPassword } from "../utils/hash-utils";
 
 export const getCurrentUser = async (userId: string) => {
   const user = await prisma.user.findUnique({

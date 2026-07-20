@@ -3,7 +3,7 @@ import { prisma } from "../lib/prisma";
 import { uploadToCloudinary } from "./cloudinary.service";
 import { cloudinaryFolders } from "../constants/cloudinary.constant";
 import { uploadSizeLimits } from "../constants/limits.constants";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import { UpdateImageNameDTO } from "../schemas/galleryImage.schema";
 import { paginate } from "../utils/paginate";

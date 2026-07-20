@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import { Button } from "@/components/ui/Button";
 import { StorePageContainer } from "@/components/ui/PageContainer";
-import React from "react";
 import { ProductForm } from "@/components/modules/inventory/ProductForm";
 
 export const metadata: Metadata = {
@@ -16,7 +14,7 @@ export default function AddProductPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-gray-900 mb-2">Add new product</h1>
+            <h1 className="text-gray-900 mb-1">Add new product</h1>
             <p className="text-gray-600">Add new product in your inventory.</p>
           </div>
         </div>

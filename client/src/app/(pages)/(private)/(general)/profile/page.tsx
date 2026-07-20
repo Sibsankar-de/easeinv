@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { HeaderNavbar } from "@/components/modules/navbar/Navbar";
 import { ProfileDetailsSection } from "@/components/modules/profile/ProfileDetailsSection";
 import { StoreListSection } from "@/components/modules/profile/StoreListSection";
 import { PageContainer } from "@/components/ui/PageContainer";
+import { cn } from "@/components/utils";
 
 export const metadata: Metadata = {
   title: "Profile and Stores",
@@ -13,10 +13,13 @@ export const metadata: Metadata = {
 export default function ProfilePage() {
   return (
     <PageContainer>
-      <div className="mb-8">
-        <h1 className="text-gray-900 mb-2">Profile & Stores</h1>
-        <p className="text-gray-600">
-          Manage your personal information and business stores
+      <div className="mb-10">
+        <h1 className="text-2xl font-bold text-gray-900 mb-1.5">
+          Profile & Stores
+        </h1>
+        <p className="text-sm text-gray-500">
+          Manage your personal account details, review connected workspaces, and
+          build new business storefronts.
         </p>
       </div>
 

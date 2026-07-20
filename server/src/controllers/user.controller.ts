@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
-import { ApiResponse } from "../utils/ApiResponse";
+import { ApiResponse } from "../utils/apiResponseHandler";
 import { StatusCodes } from "http-status-codes";
 import * as userService from "../services/user.service";
 import * as authService from "../services/auth.service";
@@ -17,6 +17,7 @@ import {
   cookieOptions,
   refreshTokenCookieOptions,
 } from "../utils/cookie-utils";
+import { ApiError } from "../utils/apiErrorHandler";
 
 export const createUser = asyncHandler(async (req: Request, res: Response) => {
   const validatedBody = validateBody(createUserSchema, req.body);
@@ -25,6 +26,21 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
     .status(StatusCodes.CREATED)
     .json(new ApiResponse(StatusCodes.CREATED, result, "User created"));
 });
+
+export const verifyUserEmail = asyncHandler(
+  async (req: Request, res: Response) => {
+    const token = req.query.token;
+    if (!token) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid token.");
+    }
+
+    await authService.verifyEmail(token as string);
+
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(StatusCodes.OK, null, "Email verified."));
+  },
+);
 
 export const loginUser = asyncHandler(async (req: Request, res: Response) => {
   const validatedBody = validateBody(loginUserSchema, req.body);
@@ -39,7 +55,8 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
-  await authService.logoutUser(req.user!.id);
+  const refreshToken = req.cookies.refreshToken;
+  await authService.logoutUser(req.user!.id, refreshToken);
 
   return res
     .status(StatusCodes.OK)
@@ -47,26 +64,6 @@ export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
     .clearCookie("refreshToken", cookieOptions)
     .json(new ApiResponse(StatusCodes.OK, {}, "User logged out"));
 });
-
-export const refreshAccessToken = asyncHandler(
-  async (req: Request, res: Response) => {
-    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
-    const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-      await authService.refreshAccessToken(refreshToken);
-
-    return res
-      .status(StatusCodes.OK)
-      .cookie("accessToken", newAccessToken, cookieOptions)
-      .cookie("refreshToken", newRefreshToken, cookieOptions)
-      .json(
-        new ApiResponse(
-          StatusCodes.OK,
-          { accessToken: newAccessToken },
-          "Access token refreshed",
-        ),
-      );
-  },
-);
 
 export const checkAuth = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.id;
@@ -88,10 +85,7 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
 
   const validatedBody = validateBody(updateUserSchema, req.body);
 
-  const updatedUser = await userService.updateUser(
-    userId!,
-    validatedBody,
-  );
+  const updatedUser = await userService.updateUser(userId!, validatedBody);
 
   return res
     .status(StatusCodes.OK)

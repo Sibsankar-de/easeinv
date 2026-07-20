@@ -1,10 +1,13 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
-import { ApiResponse } from "../utils/ApiResponse";
+import { ApiResponse } from "../utils/apiResponseHandler";
 import { StatusCodes } from "http-status-codes";
 import * as storeAccessService from "../services/storeAccess.service";
 import { validateBody } from "../utils/validate.utils";
-import { inviteStoreUserSchema, updateStoreUserRoleSchema } from "../schemas/storeAccess.schema";
+import {
+  inviteStoreUserSchema,
+  updateStoreUserRoleSchema,
+} from "../schemas/storeAccess.schema";
 
 /**
  * Get all users for a specific store.
@@ -34,7 +37,7 @@ export const inviteStoreUser = asyncHandler(
   async (req: Request, res: Response) => {
     const store = req.store!;
     const { storeId } = req.params as { storeId: string };
-    
+
     const validatedBody = validateBody(inviteStoreUserSchema, req.body);
 
     await storeAccessService.inviteStoreUser({
@@ -104,8 +107,11 @@ export const acceptStoreUserInvite = asyncHandler(
  */
 export const updateStoreUserRole = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId, userId: targetUserId } = req.params as { storeId: string; userId: string };
-    
+    const { storeId, userId: targetUserId } = req.params as {
+      storeId: string;
+      userId: string;
+    };
+
     const validatedBody = validateBody(updateStoreUserRoleSchema, req.body);
 
     const storeUser = await storeAccessService.updateStoreUserRole({
@@ -131,7 +137,10 @@ export const updateStoreUserRole = asyncHandler(
  */
 export const removeStoreUser = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId, userId: targetUserId } = req.params as { storeId: string; userId: string };
+    const { storeId, userId: targetUserId } = req.params as {
+      storeId: string;
+      userId: string;
+    };
 
     const result = await storeAccessService.removeStoreUser(
       storeId,

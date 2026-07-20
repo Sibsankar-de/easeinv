@@ -15,28 +15,31 @@ model Category {
 }
 
 model Product {
-  id                      String   @id @default(uuid()) @db.Uuid
-  creatorId               String   @db.Uuid
-  storeId                 String   @db.Uuid
-  name                    String
-  sku                     String
-  gtin                    String?  @unique
-  description             String?
-  thumbnailImageId        String?  @db.Uuid
-  buyingPricePerQuantity  Float
-  totalStock              Float?
-  enabledInventoryTracking Boolean @default(false)
-  stockUnit               String
-  pricePerQuantity        Json     @default("[]")
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  id                     String   @id @default(uuid()) @db.Uuid
+  userId                 String   @db.Uuid
+  storeId                String   @db.Uuid
+  name                   String
+  sku                    String
+  gtin                   String?  @unique
+  description            String?
+  thumbnailImageId       String?  @db.Uuid
+  buyingPricePerQuantity Float
+  totalStock             Float    @default(0)
+  trackInventory         Boolean  @default(false)
+  alertThreshold         Float    @default(0)
+  emailAlert             Boolean  @default(false)
+  stockUnit              String
+  pricePerQuantity       Json     @default("[]")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   // Relations
-  creator        User              @relation(fields: [creatorId], references: [id])
+  user           User              @relation(fields: [userId], references: [id])
   store          Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
   thumbnailImage GalleryImage?     @relation("ProductThumbnail", fields: [thumbnailImageId], references: [id])
   categories     ProductCategory[]
   images         ProductImage[]
+  invoiceItems   InvoiceItem[]
 
   @@index([storeId])
   @@index([storeId, name])

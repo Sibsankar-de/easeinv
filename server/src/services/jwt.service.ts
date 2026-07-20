@@ -4,15 +4,17 @@ import type { User } from "../types/model";
 
 // Token signing
 
-export const signAccessToken = (user: Pick<User, "id" | "email">): string =>
-  jwt.sign({ id: user.id, email: user.email }, env.ACCESS_TOKEN_SECRET, {
-    expiresIn: env.ACCESS_TOKEN_EXPIRY as any,
-  });
-
-export const signRefreshToken = (user: Pick<User, "id">): string =>
-  jwt.sign({ id: user.id }, env.REFRESH_TOKEN_SECRET, {
-    expiresIn: env.REFRESH_TOKEN_EXPIRY as any,
-  });
+export const signAccessToken = (
+  user: Pick<User, "id" | "email">,
+  version: number,
+): string =>
+  jwt.sign(
+    { id: user.id, email: user.email, version },
+    env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: env.ACCESS_TOKEN_EXPIRY,
+    },
+  );
 
 export const signPasswordResetToken = (
   user: Pick<User, "id" | "email">,
@@ -27,9 +29,6 @@ export const signPasswordResetToken = (
 
 export const verifyAccessToken = (token: string): JwtPayload =>
   jwt.verify(token, env.ACCESS_TOKEN_SECRET) as JwtPayload;
-
-export const verifyRefreshToken = (token: string): JwtPayload =>
-  jwt.verify(token, env.REFRESH_TOKEN_SECRET) as JwtPayload;
 
 export const verifyPasswordResetToken = (token: string): JwtPayload =>
   jwt.verify(token, env.PASSWORD_RESET_TOKEN_SECRET) as JwtPayload;

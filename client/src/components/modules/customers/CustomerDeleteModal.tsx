@@ -79,7 +79,7 @@ export function CustomerDeleteModal({
           disabled={isDeleting || confInput !== confirmationLine}
           loading={isDeleting}
         >
-          I want to Delete!
+          Confirm Delete!
         </Button>
       </div>
     </Modal>

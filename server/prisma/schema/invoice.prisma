@@ -4,31 +4,32 @@ enum InvoiceStatus {
 }
 
 model Invoice {
-  id             String        @id @default(uuid()) @db.Uuid
-  creatorId      String        @db.Uuid
-  storeId        String        @db.Uuid
-  customerId     String?       @db.Uuid
-  invoiceNumber  String
-  issueDate      DateTime
-  subTotal       Float
-  total          Float
-  discountAmount Float         @default(0)
-  dueAmount      Float         @default(0)
-  paidAmount     Float         @default(0)
-  taxAmount      Float         @default(0)
-  taxRate        Float         @default(0)
-  totalProfit    Float         @default(0)
-  roundupTotal   Boolean       @default(false)
-  note           String?
-  status         InvoiceStatus @default(DRAFTED)
-  extraData      Json?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id              String        @id @default(uuid()) @db.Uuid
+  userId          String        @db.Uuid
+  storeId         String        @db.Uuid
+  customerId      String?       @db.Uuid
+  invoiceNumber   String
+  issueDate       DateTime      @default(now())
+  subTotal        Float
+  total           Float
+  discountAmount  Float         @default(0)
+  discountPercent Float         @default(0)
+  dueAmount       Float         @default(0)
+  paidAmount      Float         @default(0)
+  taxAmount       Float         @default(0)
+  taxRate         Float         @default(0)
+  totalProfit     Float         @default(0)
+  roundupTotal    Boolean       @default(false)
+  note            String?
+  status          InvoiceStatus @default(DRAFTED)
+  extraData       Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   // Relations
-  creator   User         @relation(fields: [creatorId], references: [id])
-  store     Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  customer  Customer?    @relation(fields: [customerId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+  store     Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer  Customer?     @relation(fields: [customerId], references: [id])
   billItems InvoiceItem[]
 
   @@index([storeId])
@@ -39,21 +40,21 @@ model Invoice {
 }
 
 model InvoiceItem {
-  id          String  @id @default(uuid()) @db.Uuid
-  invoiceId   String  @db.Uuid
-  sortOrder   Int     @default(1)
-  productId   String? @db.Uuid
-  productName String?
-  productSku  String?
-  pricePerQty Json?
+  id          String @id @default(uuid()) @db.Uuid
+  invoiceId   String @db.Uuid
+  sortOrder   Int    @default(1)
+  productId   String @db.Uuid
+  pricePerQty Json
   netQuantity Float
   totalPrice  Float
-  stockUnit   String?
-  totalProfit Float   @default(0)
+  stockUnit   String
+  totalProfit Float  @default(0)
 
   // Relations
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: NoAction)
 
   @@index([invoiceId])
+  @@index([productId])
   @@map("invoice_items")
 }

@@ -1,12 +1,34 @@
+enum StoreType {
+  RETAIL
+  WHOLESALE
+  ONLINE
+  FRANCHISE
+  HYBRID
+}
+
+enum StoreStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
 model Store {
-  id                 String   @id @default(uuid()) @db.Uuid
-  name               String
-  ownerId            String   @db.Uuid
-  businessType       String   @default("")
-  address            String   @default("")
-  contactNo          String?
-  contactEmail       String?
-  currencyCode       String
+  id           String      @id @default(uuid()) @db.Uuid
+  name         String
+  ownerId      String      @db.Uuid
+  type         StoreType   @default(HYBRID)
+  status       StoreStatus @default(ACTIVE)
+  currencyCode String
+
+  contactNo    String?
+  contactEmail String?
+
+  addressLine String @default("")
+  city        String @default("")
+  state       String @default("")
+  zipCode     String @default("")
+  country     String
+
   registrationNumber String?
   website            String?
   logoUrl            String?

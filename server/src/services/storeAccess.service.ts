@@ -1,17 +1,17 @@
 import { prisma } from "../lib/prisma";
-import { userRoles } from "../enums/store.enum";
 import { generateSecureToken } from "../utils/token-generator";
 import { clientPages } from "../constants/client.constant";
 import { publishEmailJob } from "./emailPublisher.service";
 import { getStoreUserInviteEmail } from "./email.service";
 import { addDays } from "../utils/date-utils";
 import { dateConstants } from "../constants/date.constants";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import {
   InviteStoreUserDTO,
   UpdateStoreUserRoleDTO,
 } from "../schemas/storeAccess.schema";
+import { Store } from "@prisma/client";
 
 export const getStoreUsers = async (storeId: string) => {
   const storeUsers = await prisma.storeUser.findMany({
@@ -34,7 +34,7 @@ export const getStoreUsers = async (storeId: string) => {
 
 export const inviteStoreUser = async (
   params: InviteStoreUserDTO & {
-    store: any;
+    store: Store;
     storeId: string;
   },
 ) => {
@@ -42,10 +42,6 @@ export const inviteStoreUser = async (
 
   if (!email || !role) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Email and role are required.");
-  }
-
-  if (!Object.values(userRoles).includes(role as any)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid role.");
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
@@ -172,10 +168,6 @@ export const updateStoreUserRole = async (
 
   if (!role) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Role is required.");
-  }
-
-  if (!Object.values(userRoles).includes(role as any)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid role.");
   }
 
   const storeUser = await prisma.storeUser.findFirst({

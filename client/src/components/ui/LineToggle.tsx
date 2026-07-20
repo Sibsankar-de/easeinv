@@ -24,13 +24,13 @@ export const LineToggle = ({
     <Label
       htmlFor={id}
       className={cn(
-        "flex justify-between items-center gap-6 mb-0 p-3 cursor-pointer",
+        "w-full flex justify-between items-center gap-6 mb-0 p-3 cursor-pointer",
         "hover:bg-gray-100 active:bg-gray-200 transition-colors rounded",
         labelProps?.className,
       )}
       {...labelProps}
     >
-      <div className="mb-0 select-none">
+      <div className="mb-0 select-none text-[16px] text-foreground">
         <div className="flex items-center gap-2">
           <p>{title}</p>
           {info && <IconTooltip tooltip={info} tooltipId="toggle-tooltip" />}

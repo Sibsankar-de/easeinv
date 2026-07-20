@@ -1,10 +1,13 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
-import { ApiResponse } from "../utils/ApiResponse";
+import { ApiResponse } from "../utils/apiResponseHandler";
 import { StatusCodes } from "http-status-codes";
 import * as invoiceService from "../services/invoice.service";
 import { validateBody } from "../utils/validate.utils";
-import { createInvoiceSchema, updateInvoiceDueSchema } from "../schemas/invoice.schema";
+import {
+  createInvoiceSchema,
+  updateInvoiceDueSchema,
+} from "../schemas/invoice.schema";
 
 export const createInvoice = asyncHandler(
   async (req: Request, res: Response) => {
@@ -28,7 +31,7 @@ export const createInvoice = asyncHandler(
 export const updateInvoiceDueAmount = asyncHandler(
   async (req: Request, res: Response) => {
     const { invoiceId } = req.params as { invoiceId: string };
-    
+
     const validatedBody = validateBody(updateInvoiceDueSchema, req.body);
 
     const invoice = await invoiceService.updateInvoiceDueAmount(

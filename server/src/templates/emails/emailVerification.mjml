@@ -1,17 +1,24 @@
 <mjml>
   <mj-head>
     <mj-title>Verify your email address - EaseInv</mj-title>
-    <mj-font name="Inter" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    <mj-font
+      name="Inter"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
     <mj-attributes>
-      <mj-all font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" />
+      <mj-all
+        font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      />
       <mj-text color="#374151" font-size="15px" line-height="1.6" padding="0" />
       <mj-section padding="0" />
       <mj-column padding="0" />
     </mj-attributes>
     <mj-style>
       .email-card {
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        border: 1px solid #E5E7EB;
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.05),
+          0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        border: 1px solid #e5e7eb;
         border-radius: 12px;
         overflow: hidden;
       }
@@ -21,12 +28,12 @@
         word-break: break-all;
       }
       .footer-link {
-        color: #9CA3AF;
+        color: #9ca3af;
         text-decoration: none;
         font-weight: 500;
       }
       .footer-link:hover {
-        color: #4F39F6;
+        color: #4f39f6;
         text-decoration: underline;
       }
     </mj-style>
@@ -36,8 +43,8 @@
     <!-- LOGO HEADER -->
     <mj-section padding="32px 24px 24px">
       <mj-column>
-        <mj-image 
-          src="{{logoFullUrl}}"
+        <mj-image
+          src="https://easeinv.app/easeinv-logo-full.png"
           alt="EaseInv Logo"
           width="120px"
           align="center"
@@ -46,18 +53,30 @@
     </mj-section>
 
     <!-- MAIN CARD -->
-    <mj-section css-class="email-card" background-color="#ffffff" padding="36px 32px">
+    <mj-section
+      css-class="email-card"
+      background-color="#ffffff"
+      padding="36px 32px"
+    >
       <mj-column>
-        <mj-text font-size="20px" font-weight="700" color="#111827" padding-bottom="16px">
+        <mj-text
+          font-size="20px"
+          font-weight="700"
+          color="#111827"
+          padding-bottom="16px"
+        >
           Verify your email address
         </mj-text>
-        
+
         <mj-text padding-bottom="12px">
-          Hi <strong>{{recipientName}}</strong>,
+          Hi <strong>{{ recipientName }}</strong
+          >,
         </mj-text>
 
         <mj-text padding-bottom="24px">
-          Thank you for signing up for EaseInv. To complete your registration and secure your account, please verify your email address by clicking the button below:
+          Thank you for signing up for EaseInv. To complete your registration
+          and secure your account, please verify your email address by clicking
+          the button below:
         </mj-text>
 
         <!-- CTA Button -->
@@ -77,24 +96,38 @@
 
         <mj-spacer height="28px" />
 
-        <mj-text font-size="13px" color="#6B7280" padding-bottom="24px" align="center">
-          This verification link is only valid for <strong>15 minutes</strong>. If the link expires, you will need to request a new verification.
+        <mj-text
+          font-size="13px"
+          color="#6B7280"
+          padding-bottom="24px"
+          align="center"
+        >
+          This verification link is only valid for <strong>10 hours</strong>. If
+          the link expires, you will need to request a new verification.
         </mj-text>
 
-        <mj-divider border-color="#F3F4F6" border-width="1px" padding="0 0 20px" />
+        <mj-divider
+          border-color="#F3F4F6"
+          border-width="1px"
+          padding="0 0 20px"
+        />
 
         <!-- Fallback Link -->
         <mj-text font-size="12px" color="#6B7280" padding-bottom="8px">
-          If the button above doesn't work, copy and paste this URL into your browser:
+          If the button above doesn't work, copy and paste this URL into your
+          browser:
         </mj-text>
         <mj-text font-size="12px" padding-bottom="20px">
-          <a href="{{verificationLink}}" class="link-text">{{verificationLink}}</a>
+          <a href="{{verificationLink}}" class="link-text">{{
+            verificationLink
+          }}</a>
         </mj-text>
 
         <mj-spacer height="12px" />
 
         <mj-text font-size="13px" color="#9CA3AF">
-          If you did not register for an EaseInv account, you can safely ignore this message. Someone may have entered your email address by mistake.
+          If you did not register for an EaseInv account, you can safely ignore
+          this message. Someone may have entered your email address by mistake.
         </mj-text>
       </mj-column>
     </mj-section>
@@ -102,13 +135,24 @@
     <!-- FOOTER -->
     <mj-section padding="24px 24px 32px">
       <mj-column>
-        <mj-text align="center" font-size="12px" color="#9CA3AF" padding-bottom="12px">
-          <a href="{{clientUrl}}/about" class="footer-link">About</a> &nbsp;&bull;&nbsp;
-          <a href="{{clientUrl}}/contact" class="footer-link">Contact Support</a> &nbsp;&bull;&nbsp;
-          <a href="{{clientUrl}}/privacy" class="footer-link">Privacy Policy</a>
+        <mj-text
+          align="center"
+          font-size="12px"
+          color="#9CA3AF"
+          padding-bottom="12px"
+        >
+          <a href="https://easeinv.app/about" class="footer-link">About</a>
+          &nbsp;&bull;&nbsp;
+          <a href="https://easeinv.app/contact" class="footer-link"
+            >Contact Support</a
+          >
+          &nbsp;&bull;&nbsp;
+          <a href="https://easeinv.app/privacy-policy" class="footer-link"
+            >Privacy Policy</a
+          >
         </mj-text>
         <mj-text align="center" font-size="11px" color="#BDBDBD">
-          © 2026 EaseInv. All rights reserved.
+          © {{ currentYear }} EaseInv. All rights reserved.
         </mj-text>
       </mj-column>
     </mj-section>

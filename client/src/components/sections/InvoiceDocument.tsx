@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useSelector } from "react-redux";
-import { CreateInvoiceDto } from "@/types/dto/invoiceDto";
+import { InvoiceFormState } from "@/helpers/invoiceHelper";
 import { formatDateStr } from "@/utils/formatDate";
 import { convertUnit } from "@/utils/conversion";
 import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
@@ -11,7 +11,7 @@ import { cn } from "../utils";
 import { Dot } from "lucide-react";
 
 interface Props extends React.ComponentPropsWithoutRef<"div"> {
-  invoice: CreateInvoiceDto;
+  invoice: InvoiceFormState;
   pageSize?: string;
 }
 
@@ -53,7 +53,7 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
     const formatAmountWithCurrency = (value?: number) =>
       formatAmount(value, currencySymbol);
 
-    const customerDetails = invoice.customerDetails;
+    const customerDetails = invoice.customer;
     const bankDetails = storeSettings?.invoiceBankDetails;
     const hasCustomerDetails = [
       customerDetails?.name,
@@ -72,7 +72,7 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
     const storeName =
       storeSettings?.invoiceStoreName || currentStore?.name || "Invoice";
     const storeAddress =
-      storeSettings?.invoiceStoreAddress || currentStore?.address;
+      storeSettings?.invoiceStoreAddress || currentStore?.addressLine;
     const isCompact = pageSize !== "112mm";
 
     return (
@@ -211,7 +211,10 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
             <p className="mb-0.5 text-[9px] font-semibold uppercase tracking-wide text-gray-500">
               Payment Summary
             </p>
-            <DetailLine label="Paid" value={formatAmountWithCurrency(invoice.paidAmount)} />
+            <DetailLine
+              label="Paid"
+              value={formatAmountWithCurrency(invoice.paidAmount)}
+            />
             <DetailLine
               label="Due"
               value={formatAmountWithCurrency(invoice.dueAmount)}
@@ -276,7 +279,9 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
             </ConditionalDiv>
             <div className="mt-1.5 flex justify-between gap-3 border-t border-gray-300 pt-1.5 text-sm font-bold">
               <span>Total</span>
-              <span className="text-right">{formatAmountWithCurrency(invoice.total)}</span>
+              <span className="text-right">
+                {formatAmountWithCurrency(invoice.total)}
+              </span>
             </div>
           </div>
         </section>

@@ -1,3 +1,3 @@
-export const invoiceEnums = {
-  invoiceStatus: ["PRINTED", "DRAFTED"],
-};
+import { InvoiceStatus } from "@prisma/client";
+
+export const invoiceStatusList = Object.values(InvoiceStatus);

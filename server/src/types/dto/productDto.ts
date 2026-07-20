@@ -15,7 +15,9 @@ export type ProductDto = {
   categories?: string[];
   buyingPricePerQuantity: number;
   totalStock?: number;
-  enableInventoryTracking?: boolean;
+  trackInventory?: boolean;
+  alertThreshold?: number;
+  emailAlert?: boolean;
   stockUnit: string;
   pricePerQuantity: PricePerQuantityType[];
   images?: {

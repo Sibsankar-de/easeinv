@@ -3,14 +3,14 @@ import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Label";
 import { Modal, ModalHeader, ModalProps } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
-import { InvoiceDto } from "@/types/dto/invoiceDto";
+import { InvoiceSummaryDto } from "@/types/dto/invoiceDto";
 import { PrinterCheck, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { pageSizes } from "@/constants/pageSizeMaps";
 
 interface InvoiceViewModalProps extends ModalProps {
-  invoice: InvoiceDto;
+  invoice: InvoiceSummaryDto;
 }
 
 export const InvoiceViewModal = ({

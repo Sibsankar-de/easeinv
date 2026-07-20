@@ -1,1 +1,1 @@
-// const verifyOrigin = (req:)
+// const verifyOrigin = (req: Request)

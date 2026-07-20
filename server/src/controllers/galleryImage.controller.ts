@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { StatusCodes } from "http-status-codes";
-import { ApiResponse } from "../utils/ApiResponse";
+import { ApiResponse } from "../utils/apiResponseHandler";
 import * as galleryImageService from "../services/galleryImage.service";
 import { validateBody } from "../utils/validate.utils";
 import { updateImageNameSchema } from "../schemas/galleryImage.schema";
@@ -26,8 +26,11 @@ export const uploadGalleryImage = asyncHandler(
 
 export const updateImageName = asyncHandler(
   async (req: Request, res: Response) => {
-    const { imageId, storeId } = req.params as { imageId: string; storeId: string };
-    
+    const { imageId, storeId } = req.params as {
+      imageId: string;
+      storeId: string;
+    };
+
     const validatedBody = validateBody(updateImageNameSchema, req.body);
 
     const image = await galleryImageService.updateImageName({
@@ -43,7 +46,10 @@ export const updateImageName = asyncHandler(
 );
 
 export const deleteImage = asyncHandler(async (req: Request, res: Response) => {
-  const { imageId, storeId } = req.params as { imageId: string; storeId: string };
+  const { imageId, storeId } = req.params as {
+    imageId: string;
+    storeId: string;
+  };
 
   await galleryImageService.deleteImage({ imageId, storeId });
 

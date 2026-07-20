@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import { asyncHandler } from "../utils/asyncHandler";
-import { ApiResponse } from "../utils/ApiResponse";
+import { ApiResponse } from "../utils/apiResponseHandler";
 import * as apiKeyService from "../services/apiKey.service";
 import { validateBody } from "../utils/validate.utils";
 import { createUpdateApiKeySchema } from "../schemas/apiKey.schema";

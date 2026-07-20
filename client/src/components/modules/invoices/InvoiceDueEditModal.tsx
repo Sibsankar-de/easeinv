@@ -8,7 +8,7 @@ import {
   updateInvoiceDue,
   updateInvoiceDueThunk,
 } from "@/store/features/invoiceSlice";
-import { InvoiceDto } from "@/types/dto/invoiceDto";
+import { InvoiceSummaryDto } from "@/types/dto/invoiceDto";
 import { X } from "lucide-react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -22,7 +22,7 @@ export const InvoiceDueEditModal = ({
 }: {
   openState: boolean;
   onClose: () => void;
-  invoice: InvoiceDto;
+  invoice: InvoiceSummaryDto;
   page: number;
 }) => {
   const { storeId } = useStoreNavigation();

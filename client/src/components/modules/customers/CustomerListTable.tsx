@@ -87,15 +87,19 @@ export const CustomerListTable = () => {
 
   // Debounce effect
   useEffect(() => {
+    const trimmed = searchTerm.trim();
+    if (trimmed === debouncedSearchTerm) {
+      return;
+    }
     const delay = getTableSearchDebounceTime(searchTerm, debounceCtx.current);
     const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm.trim());
+      setDebouncedSearchTerm(trimmed);
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
       dispatch(clearCustomerListData());
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [searchTerm, dispatch]);
+  }, [searchTerm, debouncedSearchTerm, dispatch]);
 
   useEffect(() => {
     if (!customerListData.pages[currentPage]) {

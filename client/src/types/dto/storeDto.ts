@@ -1,3 +1,11 @@
+export enum StoreType {
+  RETAIL = "RETAIL",
+  WHOLESALE = "WHOLESALE",
+  ONLINE = "ONLINE",
+  FRANCHISE = "FRANCHISE",
+  HYBRID = "HYBRID",
+}
+
 export type CustomUnitType = {
   key: string;
   value: string;
@@ -29,10 +37,11 @@ export type StoreDto = {
   name: string;
   owner?: string;
   currencyCode: string;
-  address?: string;
+  addressLine?: string;
   contactNo?: string;
   contactEmail?: string;
-  businessType?: string;
+  type?: string;
+  country?: string;
   registrationNumber?: string;
   website?: string;
   taxRate?: number;

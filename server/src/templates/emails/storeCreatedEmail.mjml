@@ -1,0 +1,198 @@
+<mjml>
+  <mj-head>
+    <mj-title>Your store {{ storeName }} has been created on EaseInv</mj-title>
+    <mj-font
+      name="Inter"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <mj-attributes>
+      <mj-all
+        font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      />
+      <mj-text color="#374151" font-size="15px" line-height="1.6" padding="0" />
+      <mj-section padding="0" />
+      <mj-column padding="0" />
+    </mj-attributes>
+    <mj-style>
+      .email-card {
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.05),
+          0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .details-table {
+        background-color: #f8f9fa;
+        border: 1px solid #ecebff;
+        border-radius: 8px;
+      }
+      .link-text {
+        color: #4f39f6;
+        text-decoration: none;
+        word-break: break-all;
+      }
+      .footer-link {
+        color: #9ca3af;
+        text-decoration: none;
+        font-weight: 500;
+      }
+      .footer-link:hover {
+        color: #4f39f6;
+        text-decoration: underline;
+      }
+    </mj-style>
+  </mj-head>
+
+  <mj-body background-color="#F3F4F6">
+    <!-- LOGO HEADER -->
+    <mj-section padding="32px 24px 24px">
+      <mj-column>
+        <mj-image
+          src="https://easeinv.app/easeinv-logo-full.png"
+          alt="EaseInv Logo"
+          width="120px"
+          align="center"
+        />
+      </mj-column>
+    </mj-section>
+
+    <!-- MAIN CARD -->
+    <mj-section
+      css-class="email-card"
+      background-color="#ffffff"
+      padding="36px 32px"
+    >
+      <mj-column>
+        <!-- Welcome Message -->
+        <mj-text
+          font-size="20px"
+          font-weight="700"
+          color="#111827"
+          padding-bottom="16px"
+        >
+          Your new store is ready!
+        </mj-text>
+
+        <mj-text padding-bottom="12px">
+          Hi <strong>{{ recipientName }}</strong
+          >,
+        </mj-text>
+
+        <mj-text padding-bottom="24px">
+          Congratulations! Your store <strong>{{ storeName }}</strong> has been
+          successfully created on EaseInv. You can now start managing inventory,
+          creating invoices, and adding team members.
+        </mj-text>
+
+        <!-- Details Box -->
+        <mj-table
+          css-class="details-table"
+          padding="16px 20px"
+          line-height="1.5"
+        >
+          <tr>
+            <td
+              style="
+                padding: 6px 0;
+                font-size: 13px;
+                color: #6b7280;
+                width: 35%;
+              "
+            >
+              Store Name
+            </td>
+            <td
+              style="
+                padding: 6px 0;
+                font-size: 14px;
+                font-weight: 600;
+                color: #111827;
+              "
+            >
+              {{ storeName }}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; font-size: 13px; color: #6b7280">
+              Business Type
+            </td>
+            <td
+              style="
+                padding: 6px 0;
+                font-size: 14px;
+                font-weight: 600;
+                color: #111827;
+              "
+            >
+              {{ type }}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; font-size: 13px; color: #6b7280">
+              Currency
+            </td>
+            <td style="padding: 6px 0; font-size: 14px; color: #111827">
+              {{ currencyCode }}
+            </td>
+          </tr>
+        </mj-table>
+
+        <mj-spacer height="28px" />
+
+        <!-- CTA Button -->
+        <mj-button
+          background-color="#4f39f6"
+          color="#ffffff"
+          href="{{storeLink}}"
+          font-size="15px"
+          font-weight="600"
+          border-radius="8px"
+          padding="0"
+          inner-padding="14px 28px"
+          align="center"
+        >
+          Manage Store
+        </mj-button>
+
+        <mj-spacer height="28px" />
+
+        <mj-divider
+          border-color="#F3F4F6"
+          border-width="1px"
+          padding="0 0 20px"
+        />
+
+        <mj-text font-size="13px" color="#9CA3AF">
+          Need help setting up your store? Contact our support team or check our
+          guides to get started.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- FOOTER -->
+    <mj-section padding="24px 24px 32px">
+      <mj-column>
+        <mj-text
+          align="center"
+          font-size="12px"
+          color="#9CA3AF"
+          padding-bottom="12px"
+        >
+          <a href="https://easeinv.app/about" class="footer-link">About</a>
+          &nbsp;&bull;&nbsp;
+          <a href="https://easeinv.app/contact" class="footer-link"
+            >Contact Support</a
+          >
+          &nbsp;&bull;&nbsp;
+          <a href="https://easeinv.app/privacy-policy" class="footer-link"
+            >Privacy Policy</a
+          >
+        </mj-text>
+        <mj-text align="center" font-size="11px" color="#BDBDBD">
+          © {{ currentYear }} EaseInv. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

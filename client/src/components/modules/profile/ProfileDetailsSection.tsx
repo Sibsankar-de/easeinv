@@ -5,6 +5,7 @@ import { selectUserSate } from "@/store/features/userSlice";
 import { Mail } from "lucide-react";
 import { useSelector } from "react-redux";
 import { ProfileSkeleton } from "@/components/ui/Skeleton";
+import { PrimaryBox } from "@/components/ui/PrimaryBox";
 
 export const ProfileDetailsSection = () => {
   const { data: user, status } = useSelector(selectUserSate);
@@ -14,33 +15,23 @@ export const ProfileDetailsSection = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex items-start gap-6">
-        <Avatar
-          src={user?.avatar}
-          size={100}
-          userName={user?.userName}
-          fallbackClass="text-3xl"
-        />
-
-        <div className="flex-1">
-          <div className="mb-4">
-            <h2 className="text-gray-900 mb-1">{user?.userName}</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-indigo-50 rounded-lg flex items-center justify-center">
-                <Mail className="w-5 h-5 text-indigo-600" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Email</p>
-                <p className="text-sm text-gray-900">{user?.email}</p>
-              </div>
-            </div>
-          </div>
+    <PrimaryBox className="p-6 flex items-center gap-6">
+      <Avatar
+        src={user?.avatar}
+        size={80}
+        userName={user?.userName}
+        fallbackClass="text-2xl"
+        className="ring-4 ring-indigo-50/50"
+      />
+      <div className="min-w-0">
+        <h2 className="text-xl font-bold text-gray-900 mb-1.5 leading-none">
+          {user?.userName}
+        </h2>
+        <div className="flex items-center gap-2 text-gray-500">
+          <Mail className="w-4 h-4 text-gray-400 shrink-0" />
+          <span className="text-sm font-medium truncate">{user?.email}</span>
         </div>
       </div>
-    </div>
+    </PrimaryBox>
   );
 };

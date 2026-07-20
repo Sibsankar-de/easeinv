@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
-import { ApiResponse } from "../utils/ApiResponse";
+import { ApiResponse } from "../utils/apiResponseHandler";
 import { StatusCodes } from "http-status-codes";
 import * as customerService from "../services/customer.service";
 import { validateBody } from "../utils/validate.utils";
@@ -39,7 +39,7 @@ export const searchCustomers = asyncHandler(
     const query = (req.query.query as string) || "";
     const page = parseInt((req.query.page as string) || "1");
     const limit = parseInt((req.query.limit as string) || "10");
-    const sortBy = (req.query.sortBy as string) || "searchScore";
+    const sortBy = (req.query.sortBy as string) || "createdAt";
     const sortOrder = req.query.sortOrder === "desc" ? "desc" : "asc";
 
     const results = await customerService.searchCustomers({
@@ -50,25 +50,25 @@ export const searchCustomers = asyncHandler(
       sortBy,
       sortOrder,
     });
- 
+
     return res
       .status(StatusCodes.OK)
       .json(new ApiResponse(StatusCodes.OK, results, "Customers fetched"));
   },
 );
- 
+
 export const getCustomerById = asyncHandler(
   async (req: Request, res: Response) => {
     const { storeId, customerId } = req.params as {
       storeId: string;
       customerId: string;
     };
- 
+
     const customerData = await customerService.getCustomerById(
       storeId,
       customerId,
     );
- 
+
     return res
       .status(StatusCodes.OK)
       .json(
@@ -80,16 +80,16 @@ export const getCustomerById = asyncHandler(
       );
   },
 );
- 
+
 export const deleteCustomer = asyncHandler(
   async (req: Request, res: Response) => {
     const { storeId, customerId } = req.params as {
       storeId: string;
       customerId: string;
     };
- 
+
     await customerService.deleteCustomer(storeId, customerId);
- 
+
     return res
       .status(StatusCodes.OK)
       .json(
@@ -97,22 +97,22 @@ export const deleteCustomer = asyncHandler(
       );
   },
 );
- 
+
 export const updateCustomer = asyncHandler(
   async (req: Request, res: Response) => {
     const { storeId, customerId } = req.params as {
       storeId: string;
       customerId: string;
     };
- 
+
     const validatedBody = validateBody(updateCustomerSchema, req.body);
- 
+
     const updatedCustomer = await customerService.updateCustomer(
       storeId,
       customerId,
       validatedBody,
     );
- 
+
     return res
       .status(StatusCodes.OK)
       .json(
@@ -124,7 +124,7 @@ export const updateCustomer = asyncHandler(
       );
   },
 );
- 
+
 export const createCustomer = asyncHandler(
   async (req: Request, res: Response) => {
     const storeId = req.store?.id;

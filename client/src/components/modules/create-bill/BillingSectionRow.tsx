@@ -46,6 +46,7 @@ export function BillingSectionRow({
           name: selectedItem.name,
           sku: selectedItem.sku,
         },
+        pricePerQuantity: calc.chosenTier,
         netQuantity: quantity,
         totalPrice: calc.price,
         stockUnit: selectedItem.stockUnit,
@@ -78,6 +79,7 @@ export function BillingSectionRow({
 
       const withTotal = {
         ...updated,
+        pricePerQuantity: calc.chosenTier,
         totalPrice: calc.price,
         totalProfit: calc.profit,
       };

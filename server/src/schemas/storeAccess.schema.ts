@@ -1,12 +1,13 @@
 import { z } from "zod";
+import { storeUserRoleList } from "../enums/store.enum";
 
 export const inviteStoreUserSchema = z.object({
   email: z.email("Invalid email address"),
-  role: z.string().trim().min(1, "Role is required"),
+  role: z.enum(storeUserRoleList, "Invalid role"),
 });
 
 export const updateStoreUserRoleSchema = z.object({
-  role: z.string().trim().min(1, "Role is required"),
+  role: z.enum(storeUserRoleList, "Invalid role"),
 });
 
 export type InviteStoreUserDTO = z.infer<typeof inviteStoreUserSchema>;

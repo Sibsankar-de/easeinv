@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 import { env } from "../configs/env";
+import { Prisma } from "@prisma/client";
 
 export const errorMiddleware = (
   err: any,
@@ -12,6 +13,16 @@ export const errorMiddleware = (
 
   // log the error for debugging
   console.error("Error:", error);
+
+  if (
+    error instanceof Prisma.PrismaClientKnownRequestError ||
+    error instanceof Prisma.PrismaClientUnknownRequestError ||
+    error instanceof Prisma.PrismaClientRustPanicError ||
+    error instanceof Prisma.PrismaClientInitializationError ||
+    error instanceof Prisma.PrismaClientValidationError
+  ) {
+    error = new ApiError(500, "Internal Server Error", [], error.stack);
+  }
 
   if (!(error instanceof ApiError)) {
     const statusCode = error.statusCode || 500;

@@ -60,7 +60,9 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     buyingPricePerQuantity: 0,
     stockUnit: "PCS",
     totalStock: 0,
-    enableInventoryTracking: false,
+    trackInventory: false,
+    alertThreshold: 0,
+    emailAlert: false,
     pricePerQuantity: [] as PricePerQuantityType[],
     imageIds: [] as string[],
   });
@@ -71,6 +73,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
   const [localInputs, setLocalInputs] = useState({
     buyingPricePerQuantity: "",
     totalStock: "",
+    alertThreshold: "",
   });
 
   useEffect(() => {
@@ -92,6 +95,10 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
             totalStock:
               product.totalStock !== undefined
                 ? String(product.totalStock)
+                : "",
+            alertThreshold:
+              product.alertThreshold !== undefined
+                ? String(product.alertThreshold)
                 : "",
           });
         });
@@ -297,9 +304,13 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
 
       <Separator text={"Inventory tracking"} className="mb-8 mt-10" />
 
-      <div>
+      <div className="space-y-4">
+        {/* Toggle Inventory Tracking */}
         <div className="flex items-center gap-6 mb-3">
-          <Label className="flex items-center gap-3 mb-0" htmlFor="">
+          <Label
+            className="flex items-center gap-3 mb-0"
+            htmlFor="enable-tracking"
+          >
             <p>Enable Inventory tracking</p>
             <IconTooltip
               icon={<Info size={15} />}
@@ -308,26 +319,91 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
           </Label>
           <ToggleButton
             id="enable-tracking"
-            isActive={formData.enableInventoryTracking}
-            onChange={(e) => handleFormData("enableInventoryTracking", e)}
+            isActive={formData.trackInventory}
+            onChange={(e) => {
+              handleFormData("trackInventory", e);
+              if (
+                e &&
+                (!formData.alertThreshold || formData.alertThreshold === 0) &&
+                formData.totalStock > 0
+              ) {
+                const defaultThreshold =
+                  Math.round(formData.totalStock * 0.1 * 100) / 100;
+                handleFormData("alertThreshold", defaultThreshold);
+                setLocalInputs((prev) => ({
+                  ...prev,
+                  alertThreshold: String(defaultThreshold),
+                }));
+              }
+            }}
+            disabled={isLoading}
           />
         </div>
-        <div className="flex-1">
-          <Label
-            htmlFor="stock"
-            className="block text-gray-600 mb-1.5"
-            required={formData.enableInventoryTracking}
-          >
-            Total Stock
+
+        {/* Inventory details grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <Label
+              htmlFor="stock"
+              className="block text-gray-600 mb-1.5"
+              required={formData.trackInventory}
+            >
+              Total Stock
+            </Label>
+            <StockInput
+              type="number"
+              id="stock"
+              placeholder="Enter stock"
+              value={localInputs.totalStock}
+              unit={formData.stockUnit}
+              onChange={(e) => handleNumberChange("totalStock", e)}
+              disabled={!formData.trackInventory || isLoading}
+            />
+          </div>
+
+          <div>
+            <Label
+              htmlFor="alert-threshold"
+              className="block text-gray-600 mb-1.5"
+            >
+              Low Stock Alert Threshold
+            </Label>
+            <StockInput
+              type="number"
+              id="alert-threshold"
+              placeholder="Enter threshold"
+              value={localInputs.alertThreshold}
+              unit={formData.stockUnit}
+              onChange={(e) => {
+                handleNumberChange("alertThreshold", e);
+                if (formFor === "create") {
+                  const num = parseFloat(e);
+                  if (!isNaN(num) && num > 0) {
+                    handleFormData("emailAlert", true);
+                  } else {
+                    handleFormData("emailAlert", false);
+                  }
+                }
+              }}
+              disabled={!formData.trackInventory || isLoading}
+            />
+          </div>
+        </div>
+
+        {/* Email Alert Toggle */}
+        <div className="flex items-center gap-6 pt-2">
+          <Label className="flex items-center gap-3 mb-0" htmlFor="email-alert">
+            <p>Enable Email Alerts</p>
+            <IconTooltip
+              icon={<Info size={15} />}
+              tooltip={descriptiveTooltip.EMAIL_ALERT}
+            />
           </Label>
-          <StockInput
-            type="number"
-            id="stock"
-            placeholder="Enter stock"
-            value={localInputs.totalStock}
-            unit={formData.stockUnit}
-            onChange={(e) => handleNumberChange("totalStock", e)}
-            disabled={!formData.enableInventoryTracking || isLoading}
+          <ToggleButton
+            id="email-alert"
+            isActive={formData.emailAlert}
+            onChange={(e) => handleFormData("emailAlert", e)}
+            disabled={!formData.trackInventory || isLoading}
           />
         </div>
       </div>

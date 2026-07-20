@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import { prisma } from "../lib/prisma";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import {
   EmployeeLevelRoles,
   ManagerLevelRoles,
   OwnerLevelRoles,
 } from "../constants/userStoreRoles";
+import { StoreUserRole } from "@prisma/client";
 
 export const verifyStoreAccess = (allowed_roles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -36,6 +37,7 @@ export const verifyStoreAccess = (allowed_roles: string[]) => {
       }
 
       req.store = store;
+      req.storeUserRole = storeUser.role;
       next();
     } catch (error) {
       next(error);

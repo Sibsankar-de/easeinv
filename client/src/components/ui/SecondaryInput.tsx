@@ -18,7 +18,7 @@ export const SecondaryInput = ({
   const id = propId ?? reactId;
 
   return (
-    <div className="grid grid-cols-[1fr_auto]">
+    <div className="grid grid-cols-[1fr_auto] w-full">
       <Input
         id={id}
         type="number"
@@ -28,9 +28,10 @@ export const SecondaryInput = ({
       {field && (
         <label
           htmlFor={id}
-          className={
-            "px-3 bg-gray-200 border border-gray-300 border-l-0 rounded-r-lg h-full flex items-center justify-center text-gray-800"
-          }
+          className={cn(
+            "px-3 bg-gray-200 border border-gray-300 border-l-0 rounded-r-lg",
+            "h-full flex items-center justify-center text-gray-800",
+          )}
         >
           {field}
         </label>
