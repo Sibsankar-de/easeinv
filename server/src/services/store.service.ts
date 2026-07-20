@@ -9,116 +9,142 @@ import {
   UpdateStoreDTO,
   UpdateStoreSettingsDTO,
 } from "../schemas/store.schema";
-import { StoreUserRole } from "@prisma/client";
+import { StoreUserRole, User } from "@prisma/client";
+import {
+  prismaTransaction,
+  TransactionClient,
+} from "../utils/transactionHandler";
+import { toStoreDto, toStoreSummaryDto } from "../dto/store.dto";
+import * as transactionalEmailService from "./transactionalEmail.service";
 
-export const createStore = async (
-  userId: string,
-  storeData: CreateStoreDTO,
-) => {
-  const {
-    name,
-    type,
-    addressLine,
-    country,
-    state,
-    city,
-    zipCode,
-    contactEmail,
-    contactNo,
-    currencyCode,
-  } = storeData;
-
-  const store = await prisma.store.create({
-    data: {
+export const createStore = async (user: User, storeData: CreateStoreDTO) =>
+  prismaTransaction(async (tx) => {
+    const {
       name,
-      ownerId: userId,
       type,
+      addressLine,
+      country,
+      state,
+      city,
+      zipCode,
       contactEmail,
       contactNo,
       currencyCode,
-      addressLine,
-      city,
-      state,
-      zipCode,
-      country,
-    },
-  });
+    } = storeData;
 
-  // Create StoreUser entry for owner
-  await prisma.storeUser.create({
-    data: {
-      storeId: store.id,
-      userId,
-      role: StoreUserRole.OWNER,
-    },
-  });
+    const store = await tx.store.create({
+      data: {
+        name,
+        ownerId: user.id,
+        type,
+        contactEmail,
+        contactNo,
+        currencyCode,
+        addressLine,
+        city,
+        state,
+        zipCode,
+        country,
+      },
+    });
 
-  // Create StoreSettings
-  const storeSettings = await prisma.storeSettings.create({
-    data: {
-      storeId: store.id,
-      invoiceStoreName: store.name,
-      invoiceStoreAddress: store.addressLine,
-    },
-  });
+    // Create StoreUser entry for owner
+    await tx.storeUser.create({
+      data: {
+        storeId: store.id,
+        userId: user.id,
+        role: StoreUserRole.OWNER,
+      },
+    });
 
-  return { ...store, settings: storeSettings };
-};
+    // Create StoreSettings
+    await tx.storeSettings.create({
+      data: {
+        storeId: store.id,
+        invoiceStoreName: store.name,
+        invoiceStoreAddress: store.addressLine,
+      },
+    });
+
+    // send email to owner
+    void transactionalEmailService.sendStoreCreatedEmail(user, store);
+
+    return await getStoreByUserAndId(store.id, user.id, tx);
+  });
 
 export const updateStore = async (
   storeId: string,
+  userId: string,
   updateData: UpdateStoreDTO,
   files?: {
     logo?: Express.Multer.File[];
     qrCode?: Express.Multer.File[];
   },
-) => {
-  if (!updateData.name || !updateData.currencyCode) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Store name and currency is required",
-    );
-  }
-
-  let logoUrl: string | undefined;
-  let qrCodeUrl: string | undefined;
-
-  if (files) {
-    if (files.logo && files.logo[0]) {
-      const uploadData = await uploadToCloudinary(
-        files.logo[0].buffer,
-        files.logo[0].originalname,
-        cloudinaryFolders.STORE_LOGO,
+) =>
+  prismaTransaction(async (tx) => {
+    if (!updateData.name || !updateData.currencyCode) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Store name and currency is required",
       );
-      if (uploadData) logoUrl = uploadData.url;
     }
-    if (files.qrCode && files.qrCode[0]) {
-      const uploadData = await uploadToCloudinary(
-        files.qrCode[0].buffer,
-        files.qrCode[0].originalname,
-        cloudinaryFolders.PAYMENT_QR,
-      );
-      if (uploadData) qrCodeUrl = uploadData.url;
-    }
-  }
 
-  const updatedStore = await prisma.store.update({
-    where: { id: storeId },
-    data: { ...updateData },
+    let logoUrl: string | undefined;
+    let qrCodeUrl: string | undefined;
+
+    if (files) {
+      if (files.logo && files.logo[0]) {
+        const uploadData = await uploadToCloudinary(
+          files.logo[0].buffer,
+          files.logo[0].originalname,
+          cloudinaryFolders.STORE_LOGO,
+        );
+        if (uploadData) logoUrl = uploadData.url;
+      }
+      if (files.qrCode && files.qrCode[0]) {
+        const uploadData = await uploadToCloudinary(
+          files.qrCode[0].buffer,
+          files.qrCode[0].originalname,
+          cloudinaryFolders.PAYMENT_QR,
+        );
+        if (uploadData) qrCodeUrl = uploadData.url;
+      }
+    }
+
+    await tx.store.update({
+      where: { id: storeId },
+      data: { ...updateData },
+    });
+
+    if (logoUrl || qrCodeUrl) {
+      const settingsUpdate: any = {};
+      if (logoUrl) settingsUpdate.invoiceStoreLogoUrl = logoUrl;
+      if (qrCodeUrl) settingsUpdate.invoicePaymentQrCode = qrCodeUrl;
+
+      await tx.storeSettings.updateMany({
+        where: { storeId },
+        data: settingsUpdate,
+      });
+    }
+
+    return await getStoreByUserAndId(storeId, userId, tx);
   });
 
-  if (logoUrl || qrCodeUrl) {
-    const settingsUpdate: any = {};
-    if (logoUrl) settingsUpdate.invoiceStoreLogoUrl = logoUrl;
-    if (qrCodeUrl) settingsUpdate.invoicePaymentQrCode = qrCodeUrl;
+const getStoreByUserAndId = async (
+  storeId: string,
+  userId: string,
+  tx: TransactionClient = prisma,
+) => {
+  const storeUser = await tx.storeUser.findFirst({
+    where: { storeId, userId },
+    include: { store: { include: { settings: true } } },
+  });
 
-    await prisma.storeSettings.updateMany({
-      where: { storeId },
-      data: settingsUpdate,
-    });
+  if (!storeUser || !storeUser.store) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Failed to fetch store.");
   }
 
-  return updatedStore;
+  return toStoreDto(storeUser.store, storeUser.role);
 };
 
 export const deleteStore = async (storeId: string) => {
@@ -208,35 +234,15 @@ export const getStoreList = async (userId: string) => {
   const storeUsers = await prisma.storeUser.findMany({
     where: { userId },
     include: {
-      store: {
-        select: {
-          id: true,
-          name: true,
-          type: true,
-          currencyCode: true,
-          country: true,
-          contactEmail: true,
-          contactNo: true,
-          createdAt: true,
-        },
-      },
+      store: true,
     },
   });
 
-  return storeUsers.map((su) => ({ ...su.store, role: su.role }));
+  return storeUsers.map((su) => toStoreSummaryDto(su.store, su.role));
 };
 
-export const getStoreDetails = async (storeId: string) => {
-  const store = await prisma.store.findUnique({
-    where: { id: storeId },
-    include: { settings: true },
-  });
-
-  if (!store) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to get store");
-  }
-
-  return store;
+export const getStoreDetails = async (storeId: string, userId: string) => {
+  return await getStoreByUserAndId(storeId, userId);
 };
 
 export const getProductsByStore = async (params: {

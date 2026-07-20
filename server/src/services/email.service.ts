@@ -78,8 +78,8 @@ export const getWelcomeEmail = async (user: User): Promise<EmailJob> => {
 export const getStoreCreatedEmail = async (
   user: User,
   store: Store,
-  dashboardLink: string,
 ): Promise<EmailJob> => {
+  const dashboardLink = clientPages.constructStorePageUrl(store.id);
   const data = {
     recipientName: user.userName,
     storeName: store.name,

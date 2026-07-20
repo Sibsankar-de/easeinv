@@ -7,27 +7,40 @@ import {
 } from "./email.service";
 import { publishEmailJob } from "./emailPublisher.service";
 import { sendMail } from "../lib/mailer";
+import { createModuleLogger } from "../utils/logger";
+
+const log = createModuleLogger(import.meta.url);
 
 export const sendWelcomeEmail = async (user: User) => {
-  const emailJob = await getWelcomeEmail(user);
-  publishEmailJob(emailJob);
+  try {
+    const emailJob = await getWelcomeEmail(user);
+    await publishEmailJob(emailJob);
+  } catch (error) {
+    log.error("Email publishing failed " + error);
+  }
 };
 
 export const sendEmailVerificationEmail = async (
   user: User,
   verificationLink: string,
 ) => {
-  const emailJob = await getEmailVerificationEmail(user, verificationLink);
+  let emailJob;
+  try {
+    emailJob = await getEmailVerificationEmail(user, verificationLink);
+  } catch (error) {
+    log.error("Failed to create email " + error);
+    return;
+  }
   await sendMail(emailJob);
 };
 
-export const sendStoreCreatedEmail = async (
-  user: User,
-  store: Store,
-  dashboardLink: string,
-) => {
-  const emailJob = await getStoreCreatedEmail(user, store, dashboardLink);
-  publishEmailJob(emailJob);
+export const sendStoreCreatedEmail = async (user: User, store: Store) => {
+  try {
+    const emailJob = await getStoreCreatedEmail(user, store);
+    await publishEmailJob(emailJob);
+  } catch (error) {
+    log.error("Email publishing failed " + error);
+  }
 };
 
 export const sendStockAlertEmail = async (
@@ -36,11 +49,15 @@ export const sendStockAlertEmail = async (
   product: Product,
   inventoryLink: string,
 ) => {
-  const emailJob = await getStockAlertEmail(
-    user,
-    store,
-    product,
-    inventoryLink,
-  );
-  publishEmailJob(emailJob);
+  try {
+    const emailJob = await getStockAlertEmail(
+      user,
+      store,
+      product,
+      inventoryLink,
+    );
+    await publishEmailJob(emailJob);
+  } catch (error) {
+    log.error("Email publishing failed " + error);
+  }
 };

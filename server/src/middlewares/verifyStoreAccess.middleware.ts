@@ -7,6 +7,7 @@ import {
   ManagerLevelRoles,
   OwnerLevelRoles,
 } from "../constants/userStoreRoles";
+import { StoreUserRole } from "@prisma/client";
 
 export const verifyStoreAccess = (allowed_roles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -36,6 +37,7 @@ export const verifyStoreAccess = (allowed_roles: string[]) => {
       }
 
       req.store = store;
+      req.storeUserRole = storeUser.role;
       next();
     } catch (error) {
       next(error);

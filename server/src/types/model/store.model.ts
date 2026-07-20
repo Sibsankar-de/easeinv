@@ -1,9 +1,3 @@
-import type { Store, StoreSettings } from "@prisma/client";
-
-export type StoreWithSettings = Store & {
-  settings: StoreSettings | null;
-};
-
 // JSON field shapes stored in StoreSettings
 export interface CustomUnitEntry {
   key: string;

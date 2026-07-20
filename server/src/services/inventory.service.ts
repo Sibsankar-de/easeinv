@@ -7,7 +7,7 @@ import { paginate } from "../utils/paginate";
 import { CreateProductDTO, UpdateProductDTO } from "../schemas/product.schema";
 import { TransactionClient } from "../utils/transactionHandler";
 import { Product, Store, User } from "@prisma/client";
-import * as transactionalEmailService from "../services/transactionalEmail.service";
+import * as transactionalEmailService from "./transactionalEmail.service";
 import { clientPages } from "../constants/client.constant";
 
 export const getOrCreateCategory = async (

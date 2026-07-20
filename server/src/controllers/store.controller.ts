@@ -12,11 +12,11 @@ import {
 } from "../schemas/store.schema";
 
 export const createStore = asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.user?.id;
+  const user = req.user;
 
   const validatedBody = validateBody(createStoreSchema, req.body);
 
-  const store = await storeService.createStore(userId!, validatedBody);
+  const store = await storeService.createStore(user, validatedBody);
 
   return res
     .status(StatusCodes.OK)
@@ -26,13 +26,15 @@ export const createStore = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updateStore = asyncHandler(async (req: Request, res: Response) => {
-  const { storeId } = req.params as { storeId: string };
+  const { storeId } = req.params;
+  const userId = req.user?.id;
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
   const validatedBody = validateBody(updateStoreSchema, req.body);
 
   const updatedStore = await storeService.updateStore(
-    storeId,
+    storeId as string,
+    userId,
     validatedBody,
     files,
   );
@@ -43,9 +45,9 @@ export const updateStore = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const deleteStore = asyncHandler(async (req: Request, res: Response) => {
-  const { storeId } = req.params as { storeId: string };
+  const { storeId } = req.params;
 
-  await storeService.deleteStore(storeId);
+  await storeService.deleteStore(storeId as string);
 
   return res
     .status(StatusCodes.OK)
@@ -54,12 +56,12 @@ export const deleteStore = asyncHandler(async (req: Request, res: Response) => {
 
 export const updateStoreSettings = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId } = req.params as { storeId: string };
+    const { storeId } = req.params;
 
     const validatedBody = validateBody(updateStoreSettingsSchema, req.body);
 
     const updatedStoreSettings = await storeService.updateStoreSettings(
-      storeId,
+      storeId as string,
       validatedBody,
     );
 
@@ -77,10 +79,10 @@ export const updateStoreSettings = asyncHandler(
 
 export const uploadStoreLogo = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId } = req.params as { storeId: string };
+    const { storeId } = req.params;
     const file = req.file;
 
-    const logoUrl = await storeService.uploadStoreLogo(storeId, file);
+    const logoUrl = await storeService.uploadStoreLogo(storeId as string, file);
 
     return res
       .status(StatusCodes.OK)
@@ -96,11 +98,11 @@ export const uploadStoreLogo = asyncHandler(
 
 export const uploadInvoicePaymentQrCode = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId } = req.params as { storeId: string };
+    const { storeId } = req.params;
     const file = req.file;
 
     const qrCodeUrl = await storeService.uploadInvoicePaymentQrCode(
-      storeId,
+      storeId as string,
       file,
     );
 
@@ -130,9 +132,13 @@ export const getStoreList = asyncHandler(
 
 export const getStoreDetails = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId } = req.params as { storeId: string };
+    const { storeId } = req.params;
+    const userId = req.user?.id;
 
-    const storeDetails = await storeService.getStoreDetails(storeId);
+    const storeDetails = await storeService.getStoreDetails(
+      storeId as string,
+      userId,
+    );
 
     return res
       .status(StatusCodes.OK)
@@ -166,12 +172,12 @@ export const getProductsByStore = asyncHandler(
 
 export const createCategory = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId } = req.params as { storeId: string };
+    const { storeId } = req.params;
 
     const validatedBody = validateBody(createCategorySchema, req.body);
 
     const category = await storeService.createCategory(
-      storeId,
+      storeId as string,
       validatedBody.name,
     );
 
@@ -183,9 +189,11 @@ export const createCategory = asyncHandler(
 
 export const getCategoriesByStore = asyncHandler(
   async (req: Request, res: Response) => {
-    const { storeId } = req.params as { storeId: string };
+    const { storeId } = req.params;
 
-    const categories = await storeService.getCategoriesByStore(storeId);
+    const categories = await storeService.getCategoriesByStore(
+      storeId as string,
+    );
 
     return res
       .status(StatusCodes.OK)
