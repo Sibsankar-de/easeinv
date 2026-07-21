@@ -29,7 +29,8 @@ model Product {
   alertThreshold         Float    @default(0)
   emailAlert             Boolean  @default(false)
   stockUnit              String
-  pricePerQuantity       Json     @default("[]")
+  unitGroups             Json     @default("[]") // {id, name, unit, multiplier}
+  pricePerQuantity       Json     @default("[]") // {id, price, quantity, profitMargin}
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 

@@ -5,8 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import * as inventoryService from "../services/inventory.service";
 import { validateBody } from "../utils/validate.utils";
 import {
-  createProductSchema,
-  updateProductSchema,
+  productCreateUpdateSchema,
   rearrangeImagesSchema,
 } from "../schemas/product.schema";
 
@@ -36,7 +35,7 @@ export const createProduct = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.user?.id;
 
-    const validatedBody = validateBody(createProductSchema, req.body);
+    const validatedBody = validateBody(productCreateUpdateSchema, req.body);
 
     const product = await inventoryService.createProduct(
       userId!,
@@ -53,7 +52,7 @@ export const updateProduct = asyncHandler(
   async (req: Request, res: Response) => {
     const { productId } = req.params as { productId: string };
 
-    const validatedBody = validateBody(updateProductSchema, req.body);
+    const validatedBody = validateBody(productCreateUpdateSchema, req.body);
 
     const product = await inventoryService.updateProduct(
       productId,
@@ -70,7 +69,7 @@ export const getProductById = asyncHandler(
   async (req: Request, res: Response) => {
     const { productId } = req.params as { productId: string };
 
-    const product = await inventoryService.getProductById(productId);
+    const product = await inventoryService.getPopulatedProductById(productId);
 
     return res
       .status(StatusCodes.OK)

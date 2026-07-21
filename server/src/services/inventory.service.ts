@@ -4,8 +4,16 @@ import { StatusCodes } from "http-status-codes";
 import { generateGTIN } from "../utils/gtin-generator";
 import { productLimits } from "../constants/limits.constants";
 import { paginate } from "../utils/paginate";
-import { CreateProductDTO, UpdateProductDTO } from "../schemas/product.schema";
-import { TransactionClient } from "../utils/transactionHandler";
+import { ProductCreateUpdateDTO } from "../schemas/product.schema";
+import {
+  toProductDto,
+  ProductResponseDto,
+  toProductSummaryDto,
+} from "../dto/product.dto";
+import {
+  prismaTransaction,
+  TransactionClient,
+} from "../utils/transactionHandler";
 import { Product, Store, User } from "@prisma/client";
 import * as transactionalEmailService from "./transactionalEmail.service";
 import { clientPages } from "../constants/client.constant";
@@ -13,62 +21,64 @@ import { clientPages } from "../constants/client.constant";
 export const getOrCreateCategory = async (
   categoryName: string,
   storeId: string,
+  tx: TransactionClient = prisma,
 ): Promise<string> => {
-  let category = await prisma.category.findFirst({
+  let category = await tx.category.findFirst({
     where: { name: { equals: categoryName, mode: "insensitive" }, storeId },
   });
   if (!category) {
-    category = await prisma.category.create({
+    category = await tx.category.create({
       data: { name: categoryName, storeId },
     });
   }
   return category.id;
 };
 
-export const getProductImages = async (productId: string) => {
-  const images = await prisma.productImage.findMany({
+export const getProductImages = async (
+  productId: string,
+  tx: TransactionClient = prisma,
+) => {
+  return await tx.productImage.findMany({
     where: { productId },
     orderBy: { priority: "asc" },
     include: {
-      image: { select: { id: true, url: true, name: true } },
+      image: true,
     },
   });
-
-  return images.map((img) => ({
-    id: img.id,
-    priority: img.priority,
-    imageId: img.imageId,
-    url: img.image.url,
-    name: img.image.name,
-  }));
 };
 
-export const getPopulatedProductData = async (productId: string) => {
-  const product = await prisma.product.findUnique({
+export const getPopulatedProductById = async (
+  productId: string,
+  tx: TransactionClient = prisma,
+) => {
+  const product = await tx.product.findUnique({
     where: { id: productId },
     include: {
       categories: {
         include: {
-          category: { select: { id: true, name: true, storeId: true } },
+          category: true,
+        },
+      },
+      images: {
+        include: {
+          image: true,
         },
       },
     },
   });
 
-  if (!product) throw new ApiError(StatusCodes.NOT_FOUND, "Product not found");
+  if (!product) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Product not found");
+  }
+  const categories = product.categories.map((pc) => pc.category);
 
-  const images = await getProductImages(productId);
-
-  return {
-    ...product,
-    categories: product.categories.map((pc) => pc.category),
-    images,
-  };
+  return toProductDto(product, categories, product.images);
 };
 
 export const addOrRemoveProductImages = async (
   productId: string,
   imageIds: string[],
+  tx: TransactionClient = prisma,
 ) => {
   if (imageIds.length > productLimits.MAX_IMAGES) {
     throw new ApiError(
@@ -77,7 +87,7 @@ export const addOrRemoveProductImages = async (
     );
   }
 
-  const existingImages = await prisma.productImage.findMany({
+  const existingImages = await tx.productImage.findMany({
     where: { productId },
   });
   const existingImageIds = existingImages.map((img) => img.imageId);
@@ -88,13 +98,13 @@ export const addOrRemoveProductImages = async (
   const imagesToAdd = imageIds.filter((id) => !existingImageIds.includes(id));
 
   if (imagesToRemove.length > 0) {
-    await prisma.productImage.deleteMany({
+    await tx.productImage.deleteMany({
       where: { productId, imageId: { in: imagesToRemove } },
     });
   }
 
   if (imagesToAdd.length > 0) {
-    await prisma.productImage.createMany({
+    await tx.productImage.createMany({
       data: imagesToAdd.map((imageId) => ({
         productId,
         imageId,
@@ -106,12 +116,12 @@ export const addOrRemoveProductImages = async (
   // Update thumbnail
   if (imageIds.length > 0) {
     const thumbnailImageId = imageIds[0];
-    await prisma.product.update({
+    await tx.product.update({
       where: { id: productId },
       data: { thumbnailImageId },
     });
   } else {
-    await prisma.product.update({
+    await tx.product.update({
       where: { id: productId },
       data: { thumbnailImageId: null },
     });
@@ -142,143 +152,54 @@ export const getProducts = async (params: {
     where,
     { [sortBy]: sortOrder },
     { page, limit },
-    {
-      categories: {
-        include: {
-          category: { select: { id: true, name: true, storeId: true } },
-        },
-      },
-      images: {
-        include: { image: { select: { id: true, url: true, name: true } } },
-        orderBy: { priority: "asc" as const },
-      },
-    },
   );
 
-  // Flatten category/image relations
-  const docs = (result.docs as any[]).map((p) => ({
-    ...p,
-    categories: p.categories.map((pc: any) => pc.category),
-    images: p.images.map((pi: any) => ({
-      id: pi.id,
-      priority: pi.priority,
-      imageId: pi.imageId,
-      url: pi.image.url,
-      name: pi.image.name,
-    })),
-  }));
-
-  return { ...result, docs };
+  return {
+    ...result,
+    docs: result.docs.map(toProductSummaryDto),
+  };
 };
 
 export const createProduct = async (
   userId: string,
-  productData: CreateProductDTO,
-) => {
-  const {
-    storeId,
-    name,
-    sku,
-    gtin,
-    buyingPricePerQuantity,
-    trackInventory,
-    totalStock,
-    alertThreshold,
-    emailAlert,
-    stockUnit,
-    pricePerQuantity,
-    categories,
-    imageIds,
-    description,
-  } = productData;
-
-  // Resolve categories
-  const categoryIds: string[] = [];
-  if (categories && categories.length > 0) {
-    for (const category of categories) {
-      const categoryId = await getOrCreateCategory(category.name, storeId);
-      categoryIds.push(categoryId);
-    }
-  }
-
-  const product = await prisma.product.create({
-    data: {
-      userId,
+  productData: ProductCreateUpdateDTO,
+) =>
+  prismaTransaction(async (tx) => {
+    const {
       storeId,
       name,
       sku,
-      gtin: gtin || generateGTIN(),
-      description,
+      gtin,
       buyingPricePerQuantity,
-      trackInventory: trackInventory ?? false,
-      totalStock: totalStock ?? 0,
-      alertThreshold: alertThreshold ?? 0,
-      emailAlert: emailAlert ?? false,
+      trackInventory,
+      totalStock,
+      alertThreshold,
+      emailAlert,
       stockUnit,
-      pricePerQuantity: pricePerQuantity as any,
-      categories: {
-        create: categoryIds.map((categoryId) => ({ categoryId })),
-      },
-    },
-  });
-
-  if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
-    await addOrRemoveProductImages(product.id, imageIds);
-  }
-
-  return getPopulatedProductData(product.id);
-};
-
-export const updateProduct = async (
-  productId: string,
-  productData: UpdateProductDTO,
-) => {
-  const {
-    storeId,
-    name,
-    sku,
-    gtin,
-    buyingPricePerQuantity,
-    trackInventory,
-    totalStock,
-    alertThreshold,
-    emailAlert,
-    stockUnit,
-    pricePerQuantity,
-    categories,
-    imageIds,
-    description,
-  } = productData;
-
-  if (
-    [
-      storeId,
-      name,
-      sku,
-      buyingPricePerQuantity,
-      stockUnit,
+      unitGroups,
       pricePerQuantity,
-    ].some((e) => !e) ||
-    (trackInventory && (totalStock === undefined || totalStock === null))
-  ) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "All fields are required.");
-  }
+      categories,
+      imageIds,
+      description,
+    } = productData;
 
-  // Resolve categories
-  const categoryIds: string[] = [];
-  if (categories && categories.length > 0) {
-    for (const category of categories) {
-      const categoryId = await getOrCreateCategory(category?.name, storeId);
-      categoryIds.push(categoryId);
+    // Resolve categories
+    const categoryIds: string[] = [];
+    if (categories && categories.length > 0) {
+      for (const category of categories) {
+        const categoryId = await getOrCreateCategory(
+          category.name,
+          storeId,
+          tx,
+        );
+        categoryIds.push(categoryId);
+      }
     }
-  }
 
-  // Update product + replace category relations
-  await prisma.$transaction([
-    prisma.productCategory.deleteMany({ where: { productId } }),
-    prisma.product.update({
-      where: { id: productId },
+    const product = await tx.product.create({
       data: {
+        userId,
+        storeId,
         name,
         sku,
         gtin: gtin || generateGTIN(),
@@ -289,31 +210,97 @@ export const updateProduct = async (
         alertThreshold: alertThreshold ?? 0,
         emailAlert: emailAlert ?? false,
         stockUnit,
+        unitGroups: unitGroups as any,
         pricePerQuantity: pricePerQuantity as any,
         categories: {
           create: categoryIds.map((categoryId) => ({ categoryId })),
         },
       },
-    }),
-  ]);
+    });
 
-  if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
-    await addOrRemoveProductImages(productId, imageIds);
-  }
+    if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
+      await addOrRemoveProductImages(product.id, imageIds, tx);
+    }
 
-  return getPopulatedProductData(productId);
-};
+    return await getPopulatedProductById(product.id, tx);
+  });
+
+export const updateProduct = async (
+  productId: string,
+  productData: ProductCreateUpdateDTO,
+) =>
+  prismaTransaction(async (tx) => {
+    const {
+      storeId,
+      name,
+      sku,
+      gtin,
+      buyingPricePerQuantity,
+      trackInventory,
+      totalStock,
+      alertThreshold,
+      emailAlert,
+      stockUnit,
+      unitGroups,
+      pricePerQuantity,
+      categories,
+      imageIds,
+      description,
+    } = productData;
+
+    if (!gtin) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Gtin isrequired.");
+    }
+
+    // Resolve categories
+    const categoryIds: string[] = [];
+    if (categories && categories.length > 0) {
+      for (const category of categories) {
+        const categoryId = await getOrCreateCategory(
+          category?.name,
+          storeId,
+          tx,
+        );
+        categoryIds.push(categoryId);
+      }
+    }
+
+    // Update product + replace category relations
+    await tx.productCategory.deleteMany({ where: { productId } });
+    await tx.product.update({
+      where: { id: productId },
+      data: {
+        name,
+        sku,
+        gtin,
+        description,
+        buyingPricePerQuantity,
+        trackInventory: trackInventory ?? false,
+        totalStock: totalStock ?? 0,
+        alertThreshold: alertThreshold ?? 0,
+        emailAlert: emailAlert ?? false,
+        stockUnit,
+        unitGroups: unitGroups as any,
+        pricePerQuantity: pricePerQuantity as any,
+        categories: {
+          create: categoryIds.map((categoryId) => ({ categoryId })),
+        },
+      },
+    });
+
+    if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
+      await addOrRemoveProductImages(productId, imageIds, tx);
+    }
+
+    return await getPopulatedProductById(productId, tx);
+  });
 
 export const getProductById = async (productId: string) => {
-  const product = await prisma.product.findUnique({ where: { id: productId } });
-  if (!product) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid product id");
-  }
-  return getPopulatedProductData(productId);
+  return getPopulatedProductById(productId);
 };
 
 export const deleteProduct = async (productId: string) => {
-  // ProductImage cascades via schema; delete product
+  // Related fields are cascade via relation
   await prisma.product.delete({ where: { id: productId } });
   return { productId };
 };
@@ -321,38 +308,42 @@ export const deleteProduct = async (productId: string) => {
 export const rearrangeProductImages = async (
   productId: string,
   imagePriorities: Record<string, number>,
-) => {
-  if (!imagePriorities || typeof imagePriorities !== "object") {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Image priorities map is required.",
+) =>
+  prismaTransaction(async (tx) => {
+    if (!imagePriorities || typeof imagePriorities !== "object") {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Image priorities map is required.",
+      );
+    }
+
+    await Promise.all(
+      Object.entries(imagePriorities).map(([imageId, priority]) =>
+        tx.productImage.updateMany({
+          where: { productId, imageId },
+          data: { priority: Number(priority) },
+        }),
+      ),
     );
-  }
 
-  await Promise.all(
-    Object.entries(imagePriorities).map(([imageId, priority]) =>
-      prisma.productImage.updateMany({
-        where: { productId, imageId },
-        data: { priority: Number(priority) },
-      }),
-    ),
-  );
+    // Set thumbnail to priority=1 image
+    const thumbnailImageId = Object.keys(imagePriorities).find(
+      (key) => imagePriorities[key] === 1,
+    );
+    if (thumbnailImageId) {
+      await tx.product.update({
+        where: { id: productId },
+        data: { thumbnailImageId },
+      });
+    }
 
-  // Set thumbnail to priority=1 image
-  const thumbnailImageId = Object.keys(imagePriorities).find(
-    (key) => imagePriorities[key] === 1,
-  );
-  if (thumbnailImageId) {
-    await prisma.product.update({
-      where: { id: productId },
-      data: { thumbnailImageId },
-    });
-  }
+    return getProductImages(productId, tx);
+  });
 
-  return getProductImages(productId);
-};
-
-export const searchProducts = async (storeId: string, query: string) => {
+export const searchProducts = async (
+  storeId: string,
+  query: string,
+): Promise<ProductResponseDto[]> => {
   if (!storeId) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "storeId is required");
   }
@@ -371,7 +362,7 @@ export const searchProducts = async (storeId: string, query: string) => {
     take: 10,
     include: {
       categories: {
-        include: { category: { select: { id: true, name: true } } },
+        include: { category: true },
       },
     },
   });
@@ -390,7 +381,10 @@ export const searchProducts = async (storeId: string, query: string) => {
       (a, b) => b.searchScore - a.searchScore || a.name.localeCompare(b.name),
     );
 
-  return scored;
+  return scored.map((p) => {
+    const categories = p.categories.map((pc) => pc.category);
+    return toProductDto(p, categories, []);
+  });
 };
 
 export const updateInventoryStock = async (
