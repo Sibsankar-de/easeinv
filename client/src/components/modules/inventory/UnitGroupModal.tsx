@@ -41,7 +41,6 @@ export const UnitGroupModal = ({
   const [form, setForm] = useState(EMPTY_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  /* ── Sync form when modal opens or editingGroup changes ── */
   useEffect(() => {
     if (open) {
       if (editingGroup) {
@@ -50,9 +49,8 @@ export const UnitGroupModal = ({
           unit: editingGroup.unit,
           multiplierStr: String(editingGroup.multiplier),
         });
-      } else {
-        setForm(EMPTY_FORM);
       }
+
       setErrors({});
     }
   }, [open, editingGroup]);
@@ -63,7 +61,6 @@ export const UnitGroupModal = ({
   const baseUnitLabel = convertUnit(baseUnit, storeSettings.customUnits);
   const groupUnitLabel = convertUnit(form.unit, storeSettings.customUnits);
 
-  /* ── Validation ── */
   function validate() {
     const errs: Record<string, string> = {};
     if (!form.name.trim()) errs.name = "Group name is required.";
