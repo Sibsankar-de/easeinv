@@ -56,7 +56,7 @@ export function LocalSearchableInput<T extends Record<string, any>>({
   return (
     <SelectableInputDropdown
       items={filtered}
-      value={inputValue}
+      value={value}
       inputProps={{ placeholder, ...inputProps }}
       closeOnEmpty={closeOnEmpty}
       getLabel={getLabel}

@@ -1,3 +1,5 @@
+import { CategoryDto } from "./categoryDto";
+
 export type PricePerQuantityType = {
   id: number;
   price: number;
@@ -27,7 +29,7 @@ export type ProductDto = {
   sku: string;
   gtin?: string;
   description?: string;
-  categories?: string[];
+  categories?: CategoryDto[];
   buyingPricePerQuantity: number;
   totalStock?: number;
   trackInventory?: boolean;

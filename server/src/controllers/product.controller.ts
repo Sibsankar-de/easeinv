@@ -34,11 +34,13 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
 export const createProduct = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.user?.id;
+    const storeId = req.store?.id;
 
     const validatedBody = validateBody(productCreateUpdateSchema, req.body);
 
     const product = await inventoryService.createProduct(
       userId!,
+      storeId!,
       validatedBody,
     );
 

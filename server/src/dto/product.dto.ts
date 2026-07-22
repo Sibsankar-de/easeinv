@@ -1,4 +1,10 @@
-import { Product, Category, GalleryImage, ProductImage } from "@prisma/client";
+import {
+  Product,
+  Category,
+  GalleryImage,
+  ProductImage,
+  ProductCategory,
+} from "@prisma/client";
 import { PricePerQuantityDto, UnitGroupDto } from "../schemas/product.schema";
 
 export interface CategoryDto {
@@ -53,6 +59,7 @@ export interface ProductSummaryResponseDto {
   stockUnit: string;
   pricePerQuantity: PricePerQuantityDto[];
   createdAt: Date;
+  categories: CategoryDto[];
 }
 
 export const toProductDto = (
@@ -95,7 +102,9 @@ export const toProductDto = (
 };
 
 export const toProductSummaryDto = (
-  product: Product,
+  product: Product & {
+    categories?: (ProductCategory & { category: Category })[];
+  },
 ): ProductSummaryResponseDto => {
   return {
     id: product.id,
@@ -105,17 +114,28 @@ export const toProductSummaryDto = (
     stockUnit: product.stockUnit,
     pricePerQuantity: (product.pricePerQuantity as PricePerQuantityDto[]) ?? [],
     createdAt: product.createdAt,
+    categories: product.categories
+      ? product.categories.map((pc) => ({
+          id: pc.category.id,
+          storeId: pc.category.storeId,
+          name: pc.category.name,
+        }))
+      : [],
   };
 };
 
 export const toProductSummaryListDto = (
-  products: Product[],
+  products: (Product & {
+    categories?: (ProductCategory & { category: Category })[];
+  })[],
 ): ProductSummaryResponseDto[] => {
   return products.map(toProductSummaryDto);
 };
 
 export const toPaginatedProductsDto = (paginatedResult: {
-  docs: Product[];
+  docs: (Product & {
+    categories?: (ProductCategory & { category: Category })[];
+  })[];
   totalDocs: number;
   limit: number;
   totalPages: number;

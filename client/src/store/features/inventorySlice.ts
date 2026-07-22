@@ -54,13 +54,12 @@ export const rearrangeProductImagesThunk: any = createApiThunk(
 
 export const fetchCategoriesThunk: any = createApiThunk(
   "categories/list",
-  async (storeId) => await api.get(`/stores/${storeId}/category-list`),
+  async (storeId) => await api.get(`/categories/${storeId}/list`),
 );
 
 export const createCategoryThunk: any = createApiThunk(
   "categories/create",
-  async (payload) =>
-    await api.post(`/stores/${payload.storeId}/add-category`, payload),
+  async (payload) => await api.post(`/categories/${payload.storeId}`, payload),
 );
 
 export const searchProductsThunk: any = createApiThunk(
@@ -93,7 +92,7 @@ const initialState = {
   error: null,
 };
 
-const productSlice = createSlice({
+const inventorySlice = createSlice({
   name: "products",
   initialState,
   reducers: {
@@ -198,6 +197,6 @@ const productSlice = createSlice({
   },
 });
 
-export const selectProductState = (state: RootState) => state.product;
-export const { clearProductList } = productSlice.actions;
-export default productSlice.reducer;
+export const selectInventoryState = (state: RootState) => state.inventory;
+export const { clearProductList } = inventorySlice.actions;
+export default inventorySlice.reducer;

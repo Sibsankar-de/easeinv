@@ -7,8 +7,8 @@ import { Modal, ModalHeader } from "@/components/ui/Modal";
 import { useStoreNavigation } from "@/hooks/store-navigation";
 import {
   deleteProductThunk,
-  selectProductState,
-} from "@/store/features/productSlice";
+  selectInventoryState,
+} from "@/store/features/inventorySlice";
 import { ProductDto } from "@/types/dto/productDto";
 import { X } from "lucide-react";
 import { useState } from "react";
@@ -26,7 +26,7 @@ export function ProductDeleteModal({
 }) {
   const { storeId } = useStoreNavigation();
   const dispatch = useDispatch();
-  const { deleteStatus } = useSelector(selectProductState);
+  const { deleteStatus } = useSelector(selectInventoryState);
 
   const [confInput, setConfInpt] = useState("");
 

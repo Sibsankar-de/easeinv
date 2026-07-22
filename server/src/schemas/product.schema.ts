@@ -41,8 +41,8 @@ export const productCreateUpdateSchema = z
       .array(pricePerQuantityItemSchema)
       .min(1, "Price per quantity is required"),
     unitGroups: z.array(unitGroupSchema).default([]).optional(),
-    categories: z.array(categoryItemSchema).optional(),
-    imageIds: z.array(z.string()).optional(),
+    categoryIds: z.array(z.string()).default([]).optional(),
+    imageIds: z.array(z.string()).default([]).optional(),
   })
   .refine(
     (data) => {

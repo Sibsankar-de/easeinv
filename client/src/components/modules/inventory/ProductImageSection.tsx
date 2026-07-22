@@ -9,8 +9,8 @@ import { GalleryImageDto } from "@/types/dto/galleryImageDto";
 import { useDispatch, useSelector } from "react-redux";
 import {
   rearrangeProductImagesThunk,
-  selectProductState,
-} from "@/store/features/productSlice";
+  selectInventoryState,
+} from "@/store/features/inventorySlice";
 import { Badge } from "@/components/ui/Badge";
 
 type ProductImageSectionTypes = {
@@ -34,7 +34,7 @@ export const ProductImageSection = ({
   const [isLocalRearranging, setIsLocalRearranging] = useState(false);
 
   const dispatch = useDispatch();
-  const { rearrangeStatus } = useSelector(selectProductState);
+  const { rearrangeStatus } = useSelector(selectInventoryState);
 
   const isRearrangeDisabled =
     isLocalRearranging || rearrangeStatus === "loading";

@@ -1,6 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 
-import productReducer from "./features/productSlice";
+import inventoryReducer from "./features/inventorySlice";
 import userReducer from "./features/userSlice";
 import storeReducer from "./features/storeSlice";
 import currentStoreReducer from "./features/currentStoreSlice";
@@ -14,7 +14,7 @@ import apikeyReducer from "./features/apiKeySlice";
 export function makeStore() {
   return configureStore({
     reducer: {
-      product: productReducer,
+      inventory: inventoryReducer,
       user: userReducer,
       store: storeReducer,
       currentStore: currentStoreReducer,

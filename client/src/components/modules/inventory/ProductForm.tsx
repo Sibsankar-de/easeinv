@@ -19,9 +19,9 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   addNewProductThunk,
   getProductDetailsThunk,
-  selectProductState,
+  selectInventoryState,
   updateProductThunk,
-} from "@/store/features/productSlice";
+} from "@/store/features/inventorySlice";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { useStoreNavigation } from "@/hooks/store-navigation";
@@ -45,7 +45,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
   const productId = params?.product_id;
   const dispatch = useDispatch();
   const { getStatus, createStatus, updateStatus } =
-    useSelector(selectProductState);
+    useSelector(selectInventoryState);
   const {
     data: { storeSettings, currencySymbol },
   } = useSelector(selectCurrentStoreState);
@@ -58,7 +58,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     sku: "",
     gtin: "",
     description: "",
-    categories: [] as CategoryDto[],
+    categoryIds: [] as string[],
     buyingPricePerQuantity: 0,
     stockUnit: "PCS",
     totalStock: 0,
@@ -71,6 +71,9 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
   });
 
   const [selectedImages, setSelectedImages] = useState<ProductImageType[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<CategoryDto[]>(
+    [],
+  );
 
   // UI State (String values for Inputs)
   const [localInputs, setLocalInputs] = useState({
@@ -90,6 +93,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
             unitGroups: product.unitGroups || [],
           });
           setSelectedImages(product.images || []);
+          setSelectedCategories(product.categories || []);
 
           setLocalInputs({
             buyingPricePerQuantity:
@@ -121,6 +125,14 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     handleFormData(
       "imageIds",
       images.map((img) => img.imageId),
+    );
+  };
+
+  const handleSelectedCategoryChange = (categories: CategoryDto[]) => {
+    setSelectedCategories(categories);
+    handleFormData(
+      "categoryIds",
+      categories.map((c) => c.id),
     );
   };
 
@@ -263,8 +275,8 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
           Select categories
         </Label>
         <CategorySelector
-          value={formData.categories}
-          onChange={(e) => handleFormData("categories", e)}
+          value={selectedCategories}
+          onChange={handleSelectedCategoryChange}
         />
       </div>
 

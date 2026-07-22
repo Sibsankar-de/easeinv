@@ -3,8 +3,8 @@
 import { useDispatch, useSelector } from "react-redux";
 import {
   searchProductsThunk,
-  selectProductState,
-} from "@/store/features/productSlice";
+  selectInventoryState,
+} from "@/store/features/inventorySlice";
 import { ProductDto } from "@/types/dto/productDto";
 import { SelectableItem } from "@/components/ui/SelectableInputDropdown";
 import { calculatePrice } from "@/utils/price-calculator";
@@ -25,7 +25,7 @@ export function ProductSearchInput({
 }) {
   const { storeId } = useStoreNavigation();
   const dispatch = useDispatch();
-  const { searchStatus } = useSelector(selectProductState);
+  const { searchStatus } = useSelector(selectInventoryState);
   const {
     data: { storeSettings, currencySymbol },
   } = useSelector(selectCurrentStoreState);

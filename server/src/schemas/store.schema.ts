@@ -43,11 +43,6 @@ export const updateStoreSettingsSchema = z
   })
   .loose();
 
-export const createCategorySchema = z.object({
-  name: z.string().trim().min(1, "Category name is required"),
-});
-
 export type CreateStoreDTO = z.infer<typeof createStoreSchema>;
 export type UpdateStoreDTO = z.infer<typeof updateStoreSchema>;
 export type UpdateStoreSettingsDTO = z.infer<typeof updateStoreSettingsSchema>;
-export type CreateCategoryDTO = z.infer<typeof createCategorySchema>;

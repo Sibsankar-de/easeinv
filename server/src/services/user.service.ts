@@ -9,7 +9,7 @@ import { comparePassword, hashPassword } from "../utils/hash-utils";
 export const getCurrentUser = async (userId: string) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    omit: { password: true, refreshToken: true },
+    omit: { password: true },
   });
   if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
   return user;
@@ -30,7 +30,7 @@ export const updateUser = async (userId: string, data: UpdateUserDTO) => {
   return prisma.user.update({
     where: { id: userId },
     data: { userName, email },
-    omit: { password: true, refreshToken: true },
+    omit: { password: true },
   });
 };
 
@@ -88,6 +88,6 @@ export const updateAvatar = async (
   return prisma.user.update({
     where: { id: userId },
     data: { avatar: uploadData.url },
-    omit: { password: true, refreshToken: true },
+    omit: { password: true },
   });
 };

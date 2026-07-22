@@ -282,28 +282,3 @@ export const getProductsByStore = async (params: {
     },
   );
 };
-
-export const createCategory = async (storeId: string, name: string) => {
-  if (!name) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Category name is required");
-  }
-
-  const existingCategory = await prisma.category.findFirst({
-    where: { name: { equals: name, mode: "insensitive" }, storeId },
-  });
-  if (existingCategory) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Category with this name already exists",
-    );
-  }
-
-  return prisma.category.create({ data: { name, storeId } });
-};
-
-export const getCategoriesByStore = async (storeId: string) => {
-  return prisma.category.findMany({
-    where: { storeId },
-    select: { id: true, name: true, storeId: true },
-  });
-};
