@@ -4,6 +4,7 @@ export type PricePerQuantityType = {
   id: number;
   price: number;
   quantity: number;
+  unit: string;
   profitMargin: number;
 };
 

@@ -6,28 +6,34 @@ import { SelectOptionType, SelectType } from "@/types/SelectType";
 import { useSelector } from "react-redux";
 import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 
-type StockUnitInputType = Omit<SelectType, "options">;
+type StockUnitInputType = Omit<SelectType, "options"> & {
+  filters?: string[];
+};
 
 export const StockUnitInput = ({
   id,
   onChange,
   value,
   disabled,
+  filters,
   ...props
 }: StockUnitInputType) => {
   const {
     data: { storeSettings },
   } = useSelector(selectCurrentStoreState);
 
-  const options: SelectOptionType[] = [
+  let options: SelectOptionType[] = [
     ...unitMap,
     ...(storeSettings.customUnits || []),
   ];
+
+  options = options.filter((e) => !filters?.includes(e.key));
+
   return (
     <Select
       id={id}
       options={options}
-      value={value || "PCS"}
+      value={value || options[0].key}
       onChange={onChange}
       disabled={disabled}
       {...props}

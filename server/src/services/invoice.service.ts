@@ -98,6 +98,7 @@ export const createInvoice = async (
         invoiceId: invoice.id,
         sortOrder: i + 1,
         productId: item.productId,
+        productName: products.find((p) => p.id === item.productId)?.name || "",
         pricePerQty: item.pricePerQuantity as any,
         netQuantity: item.netQuantity,
         totalPrice: item.totalPrice,
@@ -167,7 +168,9 @@ export const getInvoiceById = async (
       customer: true,
       billItems: {
         include: {
-          product: true,
+          product: {
+            select: { id: true, name: true, sku: true },
+          },
         },
       },
     },

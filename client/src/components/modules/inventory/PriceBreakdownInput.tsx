@@ -5,31 +5,45 @@ import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
-import { PricePerQuantityType } from "@/types/dto/productDto";
+import { PricePerQuantityType, UnitGroupType } from "@/types/dto/productDto";
 import { StockInput } from "../../ui/StockInput";
 import { calculateProfit } from "@/utils/price-calculator";
 import { cn } from "@/components/utils";
+import { SelectOptionType } from "@/types/SelectType";
 
 export const PriceBreakdownInput = ({
   value,
   onChange,
-  unit,
+  baseUnit,
   buyingPricePerItem,
+  unitOptions,
+  unitGroups,
 }: {
   value?: PricePerQuantityType[];
   onChange?: (e: PricePerQuantityType[]) => void;
-  unit?: string;
+  baseUnit: string;
   buyingPricePerItem?: number;
+  unitOptions: SelectOptionType[];
+  unitGroups: UnitGroupType[];
 }) => {
   const [priceBreakdowns, setPriceBreakdowns] = useState<
     PricePerQuantityType[]
-  >([{ id: 1, price: 0, quantity: 0, profitMargin: 0 }]);
+  >([{ id: 1, price: 0, quantity: 0, unit: baseUnit, profitMargin: 0 }]);
 
   useEffect(() => {
     if (value && value.length > 0) {
       setPriceBreakdowns(value);
     }
   }, [value]);
+
+  // Sync the first breakdown's unit when baseUnit changes (create mode, no value loaded)
+  useEffect(() => {
+    if (!value || value.length === 0) {
+      setPriceBreakdowns([
+        { id: 1, price: 0, quantity: 0, unit: baseUnit, profitMargin: 0 },
+      ]);
+    }
+  }, [baseUnit]);
 
   function handleAddNewBreakdown() {
     const lastBreakdown = priceBreakdowns[priceBreakdowns.length - 1];
@@ -47,6 +61,7 @@ export const PriceBreakdownInput = ({
       id: (lastBreakdown.id || 0) + 1,
       price: 0,
       quantity: 0,
+      unit: baseUnit,
       profitMargin: 0,
     };
 
@@ -54,7 +69,7 @@ export const PriceBreakdownInput = ({
   }
 
   function handleUpdateBreakdown(breakdown: PricePerQuantityType) {
-    const { id, price, quantity } = breakdown;
+    const { id, price, quantity, unit } = breakdown;
 
     const breakdownlist = [...priceBreakdowns];
     const editIndex = breakdownlist.findIndex((e) => e.id === id);
@@ -66,11 +81,15 @@ export const PriceBreakdownInput = ({
       ...breakdownlist[editIndex],
       price,
       quantity,
+      unit,
     };
 
     // calculate profit using UPDATED values
     if (price > 0 && quantity > 0 && buyingPricePerItem) {
-      const costPerItem = price / quantity;
+      const multiplier =
+        unitGroups.find((ug) => ug.unit === unit)?.multiplier || 1;
+
+      const costPerItem = price / (quantity * multiplier);
       const profitMargin = calculateProfit(buyingPricePerItem, costPerItem);
 
       breakdownlist[editIndex] = {
@@ -83,21 +102,6 @@ export const PriceBreakdownInput = ({
     onChange?.(breakdownlist);
   }
 
-  // update profit margins on stock change
-  useEffect(() => {
-    if (!buyingPricePerItem) return;
-    setPriceBreakdowns((prev) =>
-      prev.map((item) => {
-        const costPerItem = item.price / item.quantity;
-        const profitMargin = calculateProfit(buyingPricePerItem, costPerItem);
-        return {
-          ...item,
-          profitMargin,
-        };
-      }),
-    );
-  }, [buyingPricePerItem]);
-
   return (
     <div>
       {priceBreakdowns.map((item, index) => {
@@ -107,7 +111,7 @@ export const PriceBreakdownInput = ({
               item={item}
               id={item.id!}
               onInputChange={handleUpdateBreakdown}
-              unit={unit}
+              unitOptions={unitOptions}
             />
             {index === priceBreakdowns.length - 1 ? (
               <Button className="py-2" onClick={handleAddNewBreakdown}>
@@ -137,12 +141,12 @@ function BreakdownItem({
   id,
   item,
   onInputChange,
-  unit,
+  unitOptions,
 }: {
   id: number;
   onInputChange: (i: PricePerQuantityType) => void;
   item: PricePerQuantityType;
-  unit?: string;
+  unitOptions: SelectOptionType[];
 }) {
   // 1. Local state for string inputs
   const [localInputs, setLocalInputs] = useState({
@@ -173,17 +177,20 @@ function BreakdownItem({
     });
   }, [item.price, item.quantity]);
 
+  const handleInputChange = (key: keyof PricePerQuantityType, value: any) => {
+    onInputChange({
+      ...item,
+      id: id,
+      [key]: value,
+    });
+  };
+
   const handleLocalChange = (key: "price" | "quantity", value: string) => {
     setLocalInputs((prev) => ({ ...prev, [key]: value }));
 
     const numValue = parseFloat(value);
     const safeValue = isNaN(numValue) ? 0 : numValue;
-
-    onInputChange({
-      ...item,
-      id: id,
-      [key]: safeValue,
-    });
+    handleInputChange(key, safeValue);
   };
 
   function getColor(profit: number) {
@@ -207,8 +214,11 @@ function BreakdownItem({
         id={"stock-" + id}
         placeholder="Enter quantity"
         value={localInputs.quantity}
+        unit={item.unit}
+        isSelect={true}
+        options={unitOptions}
         onChange={(e) => handleLocalChange("quantity", e)}
-        unit={unit}
+        onUnitChange={(u) => handleInputChange("unit", u)}
       />
       {item.profitMargin !== undefined && (
         <div

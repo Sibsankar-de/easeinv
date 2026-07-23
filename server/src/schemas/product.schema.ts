@@ -4,6 +4,7 @@ export const pricePerQuantityItemSchema = z.object({
   id: z.number().default(1),
   price: z.number().min(0, "Price must be non-negative"),
   quantity: z.number().min(0, "Quantity must be non-negative"),
+  unit: z.string("Breakdown unit is required"),
   profitMargin: z.number().optional().default(0),
 });
 
@@ -12,10 +13,6 @@ export const unitGroupSchema = z.object({
   name: z.string("Group name is required"),
   unit: z.string("Group unit is required."),
   multiplier: z.number("Unit multiplier must be a positive number."),
-});
-
-const categoryItemSchema = z.object({
-  name: z.string().trim().min(1, "Category name cannot be empty"),
 });
 
 export const productCreateUpdateSchema = z

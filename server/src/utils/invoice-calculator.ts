@@ -1,5 +1,5 @@
 import { Product, StoreSettings } from "@prisma/client";
-import { PricePerQuantityType } from "../types/dto/productDto";
+import { PricePerQuantityType } from "../types/productTypes";
 import { calculatePrice } from "./price-calculator";
 
 export interface CalculateInvoiceItemInput {

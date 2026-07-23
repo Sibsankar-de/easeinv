@@ -1,4 +1,4 @@
-export type SelectOptionType = { key: string; value: string } | string;
+export type SelectOptionType = { key: string; value: string };
 
 export type SelectType = {
   id?: string;

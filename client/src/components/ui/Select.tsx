@@ -3,14 +3,7 @@
 import { SelectType } from "@/types/SelectType";
 import clsx from "clsx";
 import { ChevronDown } from "lucide-react";
-import {
-  KeyboardEvent,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { KeyboardEvent, useEffect, useId, useRef, useState } from "react";
 import { cn } from "../utils";
 import { Dropdown } from "./Dropdown";
 
@@ -36,12 +29,6 @@ export const Select = ({
   const triggerRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
 
-  const normalized = useMemo(
-    () =>
-      options.map((o) => (typeof o === "string" ? { key: o, value: o } : o)),
-    [options],
-  );
-
   useEffect(() => {
     if (open && ref.current) {
       const rect = ref.current.getBoundingClientRect();
@@ -65,7 +52,7 @@ export const Select = ({
 
   useEffect(() => {
     if (open) {
-      const idx = normalized.findIndex((o) => o.key === selected);
+      const idx = options.findIndex((o) => o.key === selected);
       setTimeout(() => {
         setFocusedIndex(idx >= 0 ? idx : 0);
       }, 0);
@@ -74,7 +61,7 @@ export const Select = ({
         setFocusedIndex(-1);
       }, 0);
     }
-  }, [open, selected, normalized]);
+  }, [open, selected, options]);
 
   useEffect(() => {
     if (open && focusedIndex >= 0 && listRef.current) {
@@ -124,8 +111,8 @@ export const Select = ({
     if (disabled) return;
     if (e.key === " " || e.key === "Enter") {
       e.preventDefault();
-      if (open && focusedIndex >= 0 && focusedIndex < normalized.length) {
-        selectValue(normalized[focusedIndex].key);
+      if (open && focusedIndex >= 0 && focusedIndex < options.length) {
+        selectValue(options[focusedIndex].key);
       } else {
         setOpen((s) => !s);
       }
@@ -134,7 +121,7 @@ export const Select = ({
       if (!open) {
         setOpen(true);
       } else {
-        setFocusedIndex((prev) => Math.min(prev + 1, normalized.length - 1));
+        setFocusedIndex((prev) => Math.min(prev + 1, options.length - 1));
       }
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
@@ -174,7 +161,7 @@ export const Select = ({
           <span className="truncate select-none">
             {!selected
               ? placeholder
-              : (normalized.find((o) => o.key === selected)?.value ?? selected)}
+              : (options.find((o) => o.key === selected)?.value ?? selected)}
           </span>
         </div>
         <div
@@ -199,12 +186,12 @@ export const Select = ({
           }}
           className={cn(
             direction === "top" ? "bottom-full mb-2" : "mt-2",
-            "w-full overflow-auto",
+            "w-full overflow-auto select-none",
             dropdownClass,
           )}
         >
           <ul ref={listRef} role="listbox" aria-labelledby={uid}>
-            {normalized.map((opt) => (
+            {options.map((opt) => (
               <SelectOption
                 key={opt.key}
                 opt={opt}
@@ -245,7 +232,7 @@ const SelectOption = ({
       aria-selected={isSelected}
       tabIndex={0}
       className={clsx(
-        "px-4 py-2 rounded-md hover:bg-accent hover:text-white cursor-pointer",
+        "px-4 py-2 rounded-md hover:bg-accent hover:text-white cursor-pointer select-none",
         isSelected && "font-semibold bg-secondary text-white",
       )}
       onClick={onClick}

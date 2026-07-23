@@ -1,19 +1,50 @@
-import { PricePerQuantityType } from "@/types/dto/productDto";
+import { PricePerQuantityType, UnitGroupType } from "@/types/dto/productDto";
+
+export type UnitOptions = {
+  baseUnit: string;
+  selectedUnit: string;
+  unitGroups: UnitGroupType[];
+};
 
 export function calculatePrice(
   quantity: number,
   tiers: PricePerQuantityType[],
+  unitOptions: UnitOptions,
 ): { price: number; profit: number; chosenTier?: PricePerQuantityType } {
   if (tiers.length === 0) return { price: 0, profit: 0 };
 
-  // sort tiers by quantity ascending
-  const sorted = [...tiers].sort((a, b) => a.quantity - b.quantity);
+  const { baseUnit, selectedUnit, unitGroups } = unitOptions;
 
-  // find the tier with the largest quantity <= requested quantity
+  // Resolve multiplier for the selected unit (1 if same as base or not found)
+  let multiplier = 1;
+  if (selectedUnit !== baseUnit) {
+    const match = unitGroups.find((g) => g.unit === selectedUnit);
+    if (match) multiplier = match.multiplier;
+  }
+
+  // Filter tiers that directly target the selected unit
+  const unitTiers = tiers.filter((t) => t.unit === selectedUnit);
+
+  // Choose tier pool and effective quantity:
+  //    - unit tiers exist -> match within them using raw quantity
+  //    - no unit tiers   -> match across all tiers using quantity × multiplier
+  let tierPool = unitTiers;
+  let effectiveQuantity = quantity;
+
+  // if no tires for selected unit use the tires with base unit
+  if (tierPool.length == 0) {
+    tierPool = tiers.filter((t) => t.unit === baseUnit);
+    effectiveQuantity = quantity * multiplier;
+  }
+
+  // sort tier pool by quantity ascending
+  const sorted = tierPool.sort((a, b) => a.quantity - b.quantity);
+
+  // find the tier with the largest quantity <= effectiveQuantity
   let chosen = sorted[0];
 
   for (const tier of sorted) {
-    if (tier.quantity <= quantity) {
+    if (tier.quantity <= effectiveQuantity) {
       chosen = tier;
     } else {
       break;
@@ -21,9 +52,9 @@ export function calculatePrice(
   }
 
   const unitPrice = chosen.price / chosen.quantity;
-  const totalPrice = Number((quantity * unitPrice).toFixed(2));
+  const totalPrice = Number((effectiveQuantity * unitPrice).toFixed(2));
   const totalProfit = Number(
-    ((chosen.profitMargin / 100) * quantity).toFixed(2),
+    ((chosen.profitMargin / 100) * effectiveQuantity).toFixed(2),
   );
   return { price: totalPrice, profit: totalProfit, chosenTier: chosen };
 }

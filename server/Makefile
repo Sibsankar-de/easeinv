@@ -1,4 +1,4 @@
-.PHONY: dev docker-down docker-up build deploy
+.PHONY: dev docker-down docker-up build deploy prisma
 
 dev: docker-down docker-up npm-dev
 
@@ -17,3 +17,7 @@ build:
 
 deploy: build
 	bash deployment/deploy.sh
+
+prisma: docker-down docker-up
+	npm run db:generate
+	npm run db:migrate

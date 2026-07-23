@@ -89,8 +89,14 @@ export function ProductSearchInput({
             <div>
               <p className="text-green-800">
                 {currencySymbol}
-                {calculatePrice(1, p.pricePerQuantity).price} /{" "}
-                {convertUnit(p.stockUnit, storeSettings.customUnits)}
+                {
+                  calculatePrice(1, p.pricePerQuantity, {
+                    baseUnit: p.stockUnit,
+                    selectedUnit: p.stockUnit,
+                    unitGroups: p.unitGroups ?? [],
+                  }).price
+                }{" "}
+                / {convertUnit(p.stockUnit, storeSettings.customUnits)}
               </p>
             </div>
           </SelectableItem>

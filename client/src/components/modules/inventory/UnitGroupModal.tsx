@@ -19,11 +19,12 @@ interface UnitGroupModalProps {
   onSave: (group: UnitGroupType) => void;
   editingGroup?: UnitGroupType | null;
   baseUnit: string;
+  unitGroups: UnitGroupType[];
 }
 
 const EMPTY_FORM = {
   name: "",
-  unit: "PKT",
+  unit: "",
   multiplierStr: "",
 };
 
@@ -33,6 +34,7 @@ export const UnitGroupModal = ({
   onSave,
   editingGroup,
   baseUnit,
+  unitGroups,
 }: UnitGroupModalProps) => {
   const {
     data: { storeSettings },
@@ -79,8 +81,12 @@ export const UnitGroupModal = ({
       unit: form.unit,
       multiplier: multiplierNum,
     });
+    setForm(EMPTY_FORM);
+    setErrors({});
     onClose();
   }
+
+  const unitFilters = [baseUnit, ...unitGroups.map((e) => e.unit)];
 
   return (
     <Modal
@@ -119,6 +125,7 @@ export const UnitGroupModal = ({
         <StockUnitInput
           id="ug-unit"
           value={form.unit}
+          filters={unitFilters}
           onChange={(v) => {
             setForm((p) => ({ ...p, unit: v }));
             if (errors.unit) setErrors((e) => ({ ...e, unit: "" }));

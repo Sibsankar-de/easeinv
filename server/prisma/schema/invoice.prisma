@@ -40,19 +40,20 @@ model Invoice {
 }
 
 model InvoiceItem {
-  id          String @id @default(uuid()) @db.Uuid
-  invoiceId   String @db.Uuid
-  sortOrder   Int    @default(1)
-  productId   String @db.Uuid
+  id          String  @id @default(uuid()) @db.Uuid
+  invoiceId   String  @db.Uuid
+  sortOrder   Int     @default(1)
+  productId   String? @db.Uuid
+  productName String  @default("")
   pricePerQty Json
   netQuantity Float
   totalPrice  Float
   stockUnit   String
-  totalProfit Float  @default(0)
+  totalProfit Float   @default(0)
 
   // Relations
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: NoAction)
+  invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   @@index([invoiceId])
   @@index([productId])

@@ -1,4 +1,4 @@
-import { PricePerQuantityType } from "../types/dto/productDto";
+import { PricePerQuantityType } from "../types/productTypes";
 
 export function calculatePrice(
   quantity: number,

@@ -37,6 +37,9 @@ import { IconTooltip } from "@/components/ui/IconTooltip";
 import descriptiveTooltip from "@/constants/descriptiveTooltip";
 import { ProductImageSection } from "./ProductImageSection";
 import { UnitGroupsSection } from "./UnitGroupsSection";
+import { SelectOptionType } from "@/types/SelectType";
+import { convertUnit } from "@/utils/conversion";
+import { unitMap } from "@/constants/UnitMaps";
 
 export const ProductForm = ({ formFor }: { formFor: string }) => {
   const router = useRouter();
@@ -60,7 +63,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     description: "",
     categoryIds: [] as string[],
     buyingPricePerQuantity: 0,
-    stockUnit: "PCS",
+    stockUnit: unitMap[0].key,
     totalStock: 0,
     trackInventory: false,
     alertThreshold: 0,
@@ -172,6 +175,17 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     if (formFor === "create") handleCreateProduct();
     else handleUpdateProduct();
   };
+
+  const groupUnitOptions: SelectOptionType[] = [
+    ...formData.unitGroups.map((ug: UnitGroupType) => ({
+      key: ug.unit,
+      value: convertUnit(ug.unit, storeSettings.customUnits),
+    })),
+    {
+      key: formData.stockUnit,
+      value: convertUnit(formData.stockUnit, storeSettings.customUnits),
+    },
+  ];
 
   const isSubmitting = createStatus === "loading" || updateStatus === "loading";
   const isLoading =
@@ -460,8 +474,10 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
           <PriceBreakdownInput
             value={formData.pricePerQuantity}
             onChange={(e) => handleFormData("pricePerQuantity", e)}
-            unit={formData.stockUnit}
+            baseUnit={formData.stockUnit}
             buyingPricePerItem={formData.buyingPricePerQuantity}
+            unitOptions={groupUnitOptions}
+            unitGroups={formData.unitGroups}
           />
         </div>
       </div>

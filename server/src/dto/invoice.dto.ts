@@ -1,21 +1,22 @@
 import { Invoice, InvoiceItem, Product, Customer } from "@prisma/client";
 
 export type InvoiceItemWithProduct = InvoiceItem & {
-  product: Pick<Product, "id" | "name" | "sku">;
+  product?: Pick<Product, "id" | "name" | "sku"> | null;
 };
 
 export type InvoiceWithRelations = Invoice & {
   customer?: Customer | null;
-  billItems: InvoiceItemWithProduct[];
+  billItems?: InvoiceItemWithProduct[];
 };
 
 export interface BillItemDto {
   id: string;
-  product: {
+  product?: {
     id: string;
     name: string;
     sku: string;
   };
+  productName: string;
   pricePerQuantity?: any;
   netQuantity: number;
   totalPrice: number;
@@ -56,11 +57,14 @@ export interface InvoiceResponseDto {
 export const toBillItemDto = (item: InvoiceItemWithProduct): BillItemDto => {
   return {
     id: item.id,
-    product: {
-      id: item.product.id,
-      name: item.product.name,
-      sku: item.product.sku,
-    },
+    product: item.product
+      ? {
+          id: item.product.id,
+          name: item.product.name,
+          sku: item.product.sku,
+        }
+      : undefined,
+    productName: item.productName,
     pricePerQuantity: item.pricePerQty ? (item.pricePerQty as any) : undefined,
     netQuantity: item.netQuantity,
     totalPrice: item.totalPrice,

@@ -100,6 +100,7 @@ export const UnitGroupsSection = ({
         onSave={handleSave}
         editingGroup={editingGroup}
         baseUnit={baseUnit}
+        unitGroups={value}
       />
     </div>
   );
