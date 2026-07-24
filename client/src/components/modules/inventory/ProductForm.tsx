@@ -40,6 +40,7 @@ import { UnitGroupsSection } from "./UnitGroupsSection";
 import { SelectOptionType } from "@/types/SelectType";
 import { convertUnit } from "@/utils/conversion";
 import { unitMap } from "@/constants/UnitMaps";
+import { PriceInput } from "@/components/ui/PriceInput";
 
 export const ProductForm = ({ formFor }: { formFor: string }) => {
   const router = useRouter();
@@ -303,10 +304,9 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
             className="block text-gray-600 mb-1.5"
             required
           >
-            Buying price ({currencySymbol})
+            Buying price
           </Label>
-          <Input
-            type="number"
+          <PriceInput
             placeholder="Enter price for 1 unit"
             id="price"
             value={localInputs.buyingPricePerQuantity}

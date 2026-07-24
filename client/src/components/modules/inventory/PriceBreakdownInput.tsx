@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Input } from "../../ui/Input";
 import { Button } from "../../ui/Button";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -10,6 +9,7 @@ import { StockInput } from "../../ui/StockInput";
 import { calculateProfit } from "@/utils/price-calculator";
 import { cn } from "@/components/utils";
 import { SelectOptionType } from "@/types/SelectType";
+import { PriceInput } from "@/components/ui/PriceInput";
 
 export const PriceBreakdownInput = ({
   value,
@@ -201,11 +201,9 @@ function BreakdownItem({
 
   return (
     <div className="flex items-center gap-3">
-      <Input
-        type="number"
+      <PriceInput
         placeholder="Enter price"
         id={"price-" + id}
-        className="flex-1"
         value={localInputs.price}
         onChange={(e) => handleLocalChange("price", e)}
       />

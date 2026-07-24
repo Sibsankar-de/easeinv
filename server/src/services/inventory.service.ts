@@ -14,7 +14,7 @@ import {
   prismaTransaction,
   TransactionClient,
 } from "../utils/transactionHandler";
-import { Product, Store, User } from "@prisma/client";
+import { Product, ProductStockStatus, Store, User } from "@prisma/client";
 import * as transactionalEmailService from "./transactionalEmail.service";
 import { clientPages } from "../constants/client.constant";
 
@@ -91,6 +91,7 @@ export const createProduct = async (
         totalStock: totalStock ?? 0,
         alertThreshold: alertThreshold ?? 0,
         emailAlert: emailAlert ?? false,
+        stockStatus: getProductStockStatus(totalStock, alertThreshold),
         stockUnit,
         unitGroups: unitGroups as any,
         pricePerQuantity: pricePerQuantity as any,
@@ -148,6 +149,7 @@ export const updateProduct = async (
         totalStock: totalStock ?? 0,
         alertThreshold: alertThreshold ?? 0,
         emailAlert: emailAlert ?? false,
+        stockStatus: getProductStockStatus(totalStock, alertThreshold),
         stockUnit,
         unitGroups: unitGroups as any,
         pricePerQuantity: pricePerQuantity as any,
@@ -175,6 +177,15 @@ export const deleteProduct = async (productId: string) => {
   // Related fields are cascade via relation
   await prisma.product.delete({ where: { id: productId } });
   return { productId };
+};
+
+export const getProductStockStatus = (
+  totalStock: number,
+  threshold: number,
+): ProductStockStatus => {
+  if (totalStock <= 0) return ProductStockStatus.OUT_OF_STOCK;
+  if (totalStock <= threshold) return ProductStockStatus.LOW_STOCK;
+  return ProductStockStatus.AVAILABLE;
 };
 
 export const addOrRemoveProductCategories = async (
@@ -344,10 +355,7 @@ export const rearrangeProductImages = async (
     return getProductImages(productId, tx);
   });
 
-export const searchProducts = async (
-  storeId: string,
-  query: string,
-): Promise<ProductResponseDto[]> => {
+export const searchProducts = async (storeId: string, query: string) => {
   if (!storeId) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "storeId is required");
   }
@@ -385,10 +393,7 @@ export const searchProducts = async (
       (a, b) => b.searchScore - a.searchScore || a.name.localeCompare(b.name),
     );
 
-  return scored.map((p) => {
-    const categories = p.categories.map((pc) => pc.category);
-    return toProductDto(p, categories, []);
-  });
+  return scored.map(toProductSummaryDto);
 };
 
 export const updateInventoryStock = async (
@@ -415,7 +420,13 @@ export const updateInventoryStock = async (
       where: {
         id: productId,
       },
-      data: { totalStock: { decrement: quantity } },
+      data: {
+        totalStock: { decrement: quantity },
+        stockStatus: getProductStockStatus(
+          product.totalStock - quantity,
+          product.alertThreshold,
+        ),
+      },
       include: { user: true },
     });
   }

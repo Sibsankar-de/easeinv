@@ -14,25 +14,32 @@ model Category {
   @@map("categories")
 }
 
+enum ProductStockStatus {
+  AVAILABLE
+  LOW_STOCK
+  OUT_OF_STOCK
+}
+
 model Product {
-  id                     String   @id @default(uuid()) @db.Uuid
-  userId                 String   @db.Uuid
-  storeId                String   @db.Uuid
+  id                     String             @id @default(uuid()) @db.Uuid
+  userId                 String             @db.Uuid
+  storeId                String             @db.Uuid
   name                   String
   sku                    String
-  gtin                   String?  @unique
+  gtin                   String?            @unique
   description            String?
-  thumbnailImageId       String?  @db.Uuid
+  thumbnailImageId       String?            @db.Uuid
   buyingPricePerQuantity Float
-  totalStock             Float    @default(0)
-  trackInventory         Boolean  @default(false)
-  alertThreshold         Float    @default(0)
-  emailAlert             Boolean  @default(false)
+  totalStock             Float              @default(0)
+  trackInventory         Boolean            @default(false)
+  alertThreshold         Float              @default(0)
+  emailAlert             Boolean            @default(false)
+  stockStatus            ProductStockStatus @default(AVAILABLE)
   stockUnit              String
-  unitGroups             Json     @default("[]") // {id, name, unit, multiplier}
-  pricePerQuantity       Json     @default("[]") // {id, price, quantity, profitMargin}
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  unitGroups             Json               @default("[]") // {id, name, unit, multiplier}
+  pricePerQuantity       Json               @default("[]") // {id, price, quantity, profitMargin}
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
   // Relations
   user           User              @relation(fields: [userId], references: [id])

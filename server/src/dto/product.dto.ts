@@ -4,6 +4,7 @@ import {
   GalleryImage,
   ProductImage,
   ProductCategory,
+  ProductStockStatus,
 } from "@prisma/client";
 import { PricePerQuantityDto, UnitGroupDto } from "../schemas/product.schema";
 
@@ -43,6 +44,7 @@ export interface ProductResponseDto {
   alertThreshold: number;
   emailAlert: boolean;
   stockUnit: string;
+  stockStatus: ProductStockStatus;
   unitGroups: UnitGroupDto[];
   pricePerQuantity: PricePerQuantityDto[];
   categories: CategoryDto[];
@@ -56,8 +58,12 @@ export interface ProductSummaryResponseDto {
   name: string;
   sku: string;
   buyingPricePerQuantity: number;
+  totalStock: number;
   stockUnit: string;
   pricePerQuantity: PricePerQuantityDto[];
+  unitGroups: UnitGroupDto[];
+  stockStatus: ProductStockStatus;
+  alertThreshold: number;
   createdAt: Date;
   categories: CategoryDto[];
 }
@@ -81,6 +87,7 @@ export const toProductDto = (
     trackInventory: product.trackInventory,
     alertThreshold: product.alertThreshold,
     emailAlert: product.emailAlert,
+    stockStatus: product.stockStatus,
     stockUnit: product.stockUnit,
     unitGroups: (product.unitGroups as UnitGroupDto[]) ?? [],
     pricePerQuantity: (product.pricePerQuantity as PricePerQuantityDto[]) ?? [],
@@ -111,8 +118,12 @@ export const toProductSummaryDto = (
     name: product.name,
     sku: product.sku,
     buyingPricePerQuantity: product.buyingPricePerQuantity,
+    totalStock: product.totalStock,
     stockUnit: product.stockUnit,
     pricePerQuantity: (product.pricePerQuantity as PricePerQuantityDto[]) ?? [],
+    unitGroups: (product.unitGroups as UnitGroupDto[]) ?? [],
+    stockStatus: product.stockStatus,
+    alertThreshold: product.alertThreshold,
     createdAt: product.createdAt,
     categories: product.categories
       ? product.categories.map((pc) => ({

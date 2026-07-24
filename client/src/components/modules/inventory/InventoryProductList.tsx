@@ -27,6 +27,10 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { NavActionButton } from "../navbar/Navbar";
 import { useNavContext } from "@/contexts/NavContext";
 import { Badge } from "@/components/ui/Badge";
+import {
+  StockStatusBadgeVariantMap,
+  StockStatusMap,
+} from "@/constants/productConstants";
 
 const categories: SelectOptionType[] = [
   { value: "All Categories", key: "all" },
@@ -180,15 +184,6 @@ export const InventoryProductList = () => {
         },
         meta: { className: "text-center" },
       }),
-      columnHelper.accessor("createdAt", {
-        header: "Date added",
-        cell: (info) => (
-          <span className="text-gray-600">
-            {info.getValue() ? formatDateStr(info.getValue()!).dashedDate : "-"}
-          </span>
-        ),
-        meta: { className: "text-center" },
-      }),
       columnHelper.display({
         id: "price-qty",
         header: "Price / Qty",
@@ -206,6 +201,29 @@ export const InventoryProductList = () => {
                 storeSettings.customUnits,
               )}
             </span>
+          </span>
+        ),
+        meta: { className: "text-center" },
+      }),
+      columnHelper.accessor("stockStatus", {
+        header: "Status",
+        cell: (info) => {
+          const stockStatus = info.getValue();
+          return (
+            <div className="flex items-center justify-center">
+              <Badge variant={StockStatusBadgeVariantMap[stockStatus]}>
+                {StockStatusMap[stockStatus]}
+              </Badge>
+            </div>
+          );
+        },
+        meta: { className: "text-center" },
+      }),
+      columnHelper.accessor("createdAt", {
+        header: "Date added",
+        cell: (info) => (
+          <span className="text-gray-600">
+            {info.getValue() ? formatDateStr(info.getValue()!).dashedDate : "-"}
           </span>
         ),
         meta: { className: "text-center" },

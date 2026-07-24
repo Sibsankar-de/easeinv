@@ -1,5 +1,11 @@
 import { CategoryDto } from "./categoryDto";
 
+export enum ProductStockStatus {
+  AVAILABLE = "AVAILABLE",
+  LOW_STOCK = "LOW_STOCK",
+  OUT_OF_STOCK = "OUT_OF_STOCK",
+}
+
 export type PricePerQuantityType = {
   id: number;
   price: number;
@@ -36,6 +42,7 @@ export type ProductDto = {
   trackInventory?: boolean;
   alertThreshold?: number;
   emailAlert?: boolean;
+  stockStatus: ProductStockStatus;
   stockUnit: string;
   pricePerQuantity: PricePerQuantityType[];
   unitGroups?: UnitGroupType[];
