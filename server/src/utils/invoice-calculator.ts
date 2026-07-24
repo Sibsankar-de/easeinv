@@ -1,26 +1,11 @@
 import { Product, StoreSettings } from "@prisma/client";
 import { PricePerQuantityType } from "../types/productTypes";
-import { calculatePrice } from "./price-calculator";
-
-export interface CalculateInvoiceItemInput {
-  productId: string;
-  netQuantity: number;
-  totalPrice: number;
-  pricePerQuantity?: PricePerQuantityType;
-}
-
-export interface CalculateInvoiceInput {
-  billItems: CalculateInvoiceItemInput[];
-  discountPercent?: number;
-  taxRate?: number;
-  paidAmount?: number;
-  roundupTotal?: boolean;
-}
+import { InvoiceCreateDto } from "../schemas/invoice.schema";
 
 export interface CalculatedInvoiceItem {
   productId: string;
   netQuantity: number;
-  pricePerQuantity: PricePerQuantityType;
+  pricePerQuantity?: PricePerQuantityType;
   totalPrice: number;
   totalProfit: number;
   stockUnit: string;
@@ -41,9 +26,9 @@ export interface CalculatedInvoice {
 }
 
 export function calculateInvoiceDetails(
-  input: CalculateInvoiceInput,
+  input: InvoiceCreateDto,
   products: Product[],
-  storeSettings?: StoreSettings | null,
+  storeSettings: StoreSettings,
 ): CalculatedInvoice {
   const calculatedItems: CalculatedInvoiceItem[] = [];
 
@@ -51,21 +36,6 @@ export function calculateInvoiceDetails(
     const product = products.find((p) => p.id === item.productId);
     if (!product) {
       throw new Error(`Product not found: ${item.productId}`);
-    }
-
-    let chosenTier: PricePerQuantityType;
-    if (item.pricePerQuantity) {
-      chosenTier = item.pricePerQuantity;
-    } else {
-      let tiers: PricePerQuantityType[] = [];
-      if (product.pricePerQuantity) {
-        tiers =
-          typeof product.pricePerQuantity === "string"
-            ? JSON.parse(product.pricePerQuantity)
-            : (product.pricePerQuantity as unknown as PricePerQuantityType[]);
-      }
-      const priceCalc = calculatePrice(item.netQuantity, tiers);
-      chosenTier = priceCalc.chosenTier;
     }
 
     const totalPrice = item.totalPrice;
@@ -78,10 +48,10 @@ export function calculateInvoiceDetails(
     calculatedItems.push({
       productId: item.productId,
       netQuantity: item.netQuantity,
-      pricePerQuantity: chosenTier,
+      pricePerQuantity: item.pricePerQuantity,
       totalPrice,
       totalProfit,
-      stockUnit: product.stockUnit,
+      stockUnit: item.stockUnit,
     });
   }
 
@@ -92,10 +62,7 @@ export function calculateInvoiceDetails(
     calculatedItems.reduce((sum, item) => sum + item.totalProfit, 0).toFixed(2),
   );
 
-  const discountPercent =
-    input.discountPercent !== undefined
-      ? input.discountPercent
-      : (storeSettings?.defaultDiscountRate ?? 0);
+  const discountPercent = input.discountPercent ?? 0;
   const discountAmount = Number(
     ((discountPercent * subTotal) / 100).toFixed(2),
   );
@@ -103,7 +70,7 @@ export function calculateInvoiceDetails(
   const taxRate =
     input.taxRate !== undefined
       ? input.taxRate
-      : (storeSettings?.defaultTaxRate ?? 0);
+      : (storeSettings.defaultTaxRate ?? 0);
   // Calculate tax on subtotal after discount
   const taxAmount = Number(
     ((taxRate * (subTotal - discountAmount)) / 100).toFixed(2),
@@ -114,7 +81,7 @@ export function calculateInvoiceDetails(
   const roundupTotal =
     input.roundupTotal !== undefined
       ? input.roundupTotal
-      : (storeSettings?.roundupInvoiceTotal ?? false);
+      : (storeSettings.roundupInvoiceTotal ?? false);
   if (roundupTotal) {
     total = Math.round(total);
   }

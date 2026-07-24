@@ -45,7 +45,7 @@ model InvoiceItem {
   sortOrder   Int     @default(1)
   productId   String? @db.Uuid
   productName String  @default("")
-  pricePerQty Json
+  pricePerQty Json?
   netQuantity Float
   totalPrice  Float
   stockUnit   String

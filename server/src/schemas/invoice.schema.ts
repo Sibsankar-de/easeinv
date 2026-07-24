@@ -41,6 +41,7 @@ export const updateInvoiceDueSchema = z.object({
   paidAmount: z.number().gt(0, "Paid amount must be greater than zero"),
 });
 
+export type BillItemCreateDto = z.infer<typeof billItemSchema>;
 export type InvoiceCustomerDto = z.infer<typeof customerDetailsSchema>;
-export type CreateInvoiceDTO = z.infer<typeof createInvoiceSchema>;
-export type UpdateInvoiceDueDTO = z.infer<typeof updateInvoiceDueSchema>;
+export type InvoiceCreateDto = z.infer<typeof createInvoiceSchema>;
+export type InvoiceUpdateDueDto = z.infer<typeof updateInvoiceDueSchema>;
