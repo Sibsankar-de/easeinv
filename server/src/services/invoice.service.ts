@@ -9,7 +9,7 @@ import {
 } from "../utils/transactionHandler";
 import * as inventoryService from "../services/inventory.service";
 import * as customerService from "./customer.service";
-import { InvoiceStatus } from "@prisma/client";
+import { InvoiceStatus, InvoicePaymentStatus } from "@prisma/client";
 import { calculateInvoiceDetails } from "../utils/invoice-calculator";
 import { toInvoiceDto, toInvoiceSummaryDto } from "../dto/invoice.dto";
 
@@ -77,6 +77,10 @@ export const createInvoice = async (
         roundupTotal: calculations.roundupTotal,
         note: billData.note,
         status: billData.status ?? InvoiceStatus.DRAFTED,
+        paymentStatus:
+          calculations.dueAmount > 0
+            ? InvoicePaymentStatus.DUE
+            : InvoicePaymentStatus.PAID,
         extraData: {
           customer: {
             name: customerDetails.name,
@@ -129,17 +133,31 @@ export const updateInvoiceDueAmount = async (
   paidAmount: number,
 ) =>
   prismaTransaction(async (tx) => {
+    const currentInvoice = await tx.invoice.findUnique({
+      where: { id: invoiceId },
+      select: { dueAmount: true, customerId: true },
+    });
+
+    if (!currentInvoice) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Invoice not found");
+    }
+
+    if (paidAmount > currentInvoice.dueAmount) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid paid ammount.");
+    }
+
+    const newDueAmount = currentInvoice.dueAmount - paidAmount;
+    const paymentStatus =
+      newDueAmount > 0 ? InvoicePaymentStatus.DUE : InvoicePaymentStatus.PAID;
+
     const invoice = await tx.invoice.update({
       where: { id: invoiceId },
       data: {
         paidAmount: { increment: paidAmount },
         dueAmount: { decrement: paidAmount },
+        paymentStatus,
       },
     });
-
-    if (!invoice) {
-      throw new ApiError(StatusCodes.NOT_FOUND, "Invoice not found");
-    }
 
     if (invoice.dueAmount >= 0 && invoice.customerId) {
       await tx.customer.update({
@@ -187,6 +205,7 @@ export const searchInvoice = async (params: {
   page: number;
   limit: number;
   status?: string;
+  paymentStatus?: string;
   customerPrefix?: string;
   customerId?: string;
   sortBy: string;
@@ -197,6 +216,7 @@ export const searchInvoice = async (params: {
     page,
     limit,
     status,
+    paymentStatus,
     customerPrefix,
     customerId,
     sortBy,
@@ -206,6 +226,7 @@ export const searchInvoice = async (params: {
   const where: any = { storeId };
 
   if (status) where.status = status;
+  if (paymentStatus) where.paymentStatus = paymentStatus;
   if (customerId) where.customerId = customerId;
 
   if (customerPrefix) {

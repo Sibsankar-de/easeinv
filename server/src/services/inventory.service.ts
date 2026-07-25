@@ -434,17 +434,15 @@ export const updateInventoryStock = async (
     return product;
   }
 
-  if (product.totalStock >= quantity) {
+  if (product.totalStock > 0) {
+    const newStock = Math.max(product.totalStock - quantity, 0);
     product = await tx.product.update({
       where: {
         id: productId,
       },
       data: {
-        totalStock: { decrement: quantity },
-        stockStatus: getProductStockStatus(
-          product.totalStock - quantity,
-          product.alertThreshold,
-        ),
+        totalStock: newStock,
+        stockStatus: getProductStockStatus(newStock, product.alertThreshold),
       },
       include: { user: true },
     });

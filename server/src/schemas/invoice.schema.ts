@@ -30,7 +30,10 @@ export const createInvoiceSchema = z.object({
   taxRate: z.number().optional().default(0),
   roundupTotal: z.boolean().optional().default(false),
   note: z.string().optional(),
-  status: z.enum(invoiceStatusList).optional().default(InvoiceStatus.DRAFTED),
+  status: z
+    .enum(invoiceStatusList as any)
+    .optional()
+    .default(InvoiceStatus.DRAFTED),
   billItems: z
     .array(billItemSchema)
     .min(1, "At least one bill item is required"),

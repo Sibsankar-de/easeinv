@@ -50,6 +50,7 @@ export interface InvoiceResponseDto {
   roundupTotal?: boolean;
   note?: string;
   status: string;
+  paymentStatus: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -104,6 +105,7 @@ export const toInvoiceDto = (
     roundupTotal: invoice.roundupTotal,
     note: invoice.note || undefined,
     status: invoice.status,
+    paymentStatus: invoice.paymentStatus,
     createdAt: invoice.createdAt,
     updatedAt: invoice.updatedAt,
   };
@@ -135,6 +137,7 @@ export interface InvoiceSummaryResponseDto {
   dueAmount: number;
   paidAmount: number;
   status: string;
+  paymentStatus: string;
 }
 
 export const toInvoiceSummaryDto = (
@@ -153,5 +156,6 @@ export const toInvoiceSummaryDto = (
     dueAmount: invoice.dueAmount,
     paidAmount: invoice.paidAmount,
     status: invoice.status,
+    paymentStatus: invoice.paymentStatus,
   };
 };
