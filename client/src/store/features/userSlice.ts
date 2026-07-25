@@ -47,7 +47,6 @@ const userSlice = createSlice({
       .addCase(fetchCurrentUser.rejected, setState)
       .addCase(fetchCurrentUser.fulfilled, setState)
 
-      // Update Username Thunk
       .addCase(updateUserThunk.pending, (state) => {
         state.updateProfileStatus = "loading";
         state.error = null;
@@ -62,7 +61,6 @@ const userSlice = createSlice({
         state.error = null;
       })
 
-      // Update Password Thunk
       .addCase(updatePasswordThunk.pending, (state) => {
         state.updatePasswordStatus = "loading";
         state.error = null;

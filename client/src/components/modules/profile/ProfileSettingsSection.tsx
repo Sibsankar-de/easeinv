@@ -15,6 +15,7 @@ import {
   updatePasswordThunk,
 } from "@/store/features/userSlice";
 import { AppDispatch } from "@/store/store";
+import { TextLink } from "@/components/ui/TextLink";
 
 export const ProfileSettingsSection = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -24,7 +25,6 @@ export const ProfileSettingsSection = () => {
     updatePasswordStatus,
   } = useSelector(selectUserSate);
 
-  // Username form state
   const [userName, setUserName] = useState("");
   const [prevUserUsername, setPrevUserUsername] = useState("");
 
@@ -33,7 +33,6 @@ export const ProfileSettingsSection = () => {
     setUserName(user.userName);
   }
 
-  // Password form state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -41,7 +40,6 @@ export const ProfileSettingsSection = () => {
   const isUpdatingUsername = updateProfileStatus === "loading";
   const isUpdatingPassword = updatePasswordStatus === "loading";
 
-  // Handle Username Update
   const handleUpdateUsername = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userName.trim()) {
@@ -58,12 +56,9 @@ export const ProfileSettingsSection = () => {
       ).unwrap();
 
       toast.success("Profile username updated successfully!");
-    } catch {
-      // Errors are handled by api-thunk interceptor
-    }
+    } catch {}
   };
 
-  // Handle Password Reset
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -95,16 +90,8 @@ export const ProfileSettingsSection = () => {
       });
   };
 
-  // Handle Simulated Forgot Password
-  const handleForgotPassword = () => {
-    toast.info(
-      "Forgot password email requested (Simulated). Please check your inbox for instructions.",
-    );
-  };
-
   return (
     <div className="space-y-8 max-w-3xl">
-      {/* Section 1: Username Update */}
       <section className="space-y-4">
         <div className="border-b border-gray-100 pb-2">
           <h2 className="text-lg font-semibold text-gray-900">
@@ -117,7 +104,6 @@ export const ProfileSettingsSection = () => {
 
         <PrimaryBox className="space-y-6">
           <form onSubmit={handleUpdateUsername} className="space-y-6">
-            {/* Username Input */}
             <div className="space-y-2">
               <Label
                 htmlFor="username"
@@ -137,7 +123,6 @@ export const ProfileSettingsSection = () => {
               />
             </div>
 
-            {/* Email Input (Read-only) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label
@@ -174,7 +159,6 @@ export const ProfileSettingsSection = () => {
         </PrimaryBox>
       </section>
 
-      {/* Section 2: Reset Password */}
       <section className="space-y-4">
         <div className="border-b border-gray-100 pb-2">
           <h2 className="text-lg font-semibold text-gray-900">
@@ -187,7 +171,6 @@ export const ProfileSettingsSection = () => {
 
         <PrimaryBox>
           <form onSubmit={handleResetPassword} className="space-y-6">
-            {/* Current Password */}
             <div className="space-y-2">
               <Label htmlFor="currentPassword">Current Password</Label>
               <Input
@@ -202,7 +185,6 @@ export const ProfileSettingsSection = () => {
               />
             </div>
 
-            {/* New Password */}
             <div className="space-y-2">
               <Label htmlFor="newPassword">New Password</Label>
               <Input
@@ -217,7 +199,6 @@ export const ProfileSettingsSection = () => {
               />
             </div>
 
-            {/* Confirm New Password */}
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm New Password</Label>
               <Input
@@ -232,15 +213,8 @@ export const ProfileSettingsSection = () => {
               />
             </div>
 
-            {/* Form Buttons */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
-              <button
-                type="button"
-                onClick={handleForgotPassword}
-                className="text-sm font-medium text-indigo-600 hover:text-indigo-700 text-left transition-colors cursor-pointer select-none"
-              >
-                Forgot password?
-              </button>
+              <TextLink href={"/reset-password"}>Forgot password?</TextLink>
               <Button
                 type="submit"
                 disabled={isUpdatingPassword}

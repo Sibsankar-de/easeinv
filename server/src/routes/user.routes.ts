@@ -9,6 +9,8 @@ import {
   updateAvatar,
   checkAuth,
   verifyUserEmail,
+  requestPasswordReset,
+  validateAndResetPassword,
 } from "../controllers/user.controller";
 import { verifyAuth } from "../middlewares/auth.middleware";
 import { upload } from "../middlewares/multer.middleware";
@@ -17,6 +19,8 @@ const router = Router();
 
 router.route("/register").post(createUser);
 router.route("/verify-email").post(verifyUserEmail);
+router.route("/forgot-password").post(requestPasswordReset);
+router.route("/reset-password").post(validateAndResetPassword);
 router.route("/login").post(loginUser);
 router.route("/logout").post(verifyAuth, logoutUser);
 router.route("/current-user").get(verifyAuth, getCurrentUser);

@@ -4,6 +4,7 @@ import {
   getStockAlertEmail,
   getStoreCreatedEmail,
   getWelcomeEmail,
+  getPasswordResetEmail,
 } from "./email.service";
 import { publishEmailJob } from "./emailPublisher.service";
 import { sendMail } from "../lib/mailer";
@@ -60,4 +61,15 @@ export const sendStockAlertEmail = async (
   } catch (error) {
     log.error("Email publishing failed " + error);
   }
+};
+
+export const sendPasswordResetEmail = async (user: User, resetLink: string) => {
+  let emailJob;
+  try {
+    emailJob = await getPasswordResetEmail(user, resetLink);
+  } catch (error) {
+    log.error("Failed to create email " + error);
+    return;
+  }
+  await sendMail(emailJob);
 };

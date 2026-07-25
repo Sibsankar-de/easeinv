@@ -9,6 +9,7 @@ import AuthContext from "@/contexts/AuthContext";
 import { toast } from "react-toastify";
 import { Separator } from "../ui/Separator";
 import { GoogleIcon } from "../icons/GoogleIcon";
+import { TextLink } from "../ui/TextLink";
 
 export const LoginForm = () => {
   const { loginUser, loginWithGoogle } = useContext(AuthContext)!;
@@ -94,9 +95,7 @@ export const LoginForm = () => {
 
         {/* Forgot Password */}
         <div className="flex items-center justify-end">
-          <button className="text-sm text-indigo-600 hover:text-indigo-700">
-            Forgot password?
-          </button>
+          <TextLink href={"/reset-password"}>Forgot password?</TextLink>
         </div>
 
         {/* Login Button */}

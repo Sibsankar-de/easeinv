@@ -16,20 +16,11 @@ export const getCurrentUser = async (userId: string) => {
 };
 
 export const updateUser = async (userId: string, data: UpdateUserDTO) => {
-  const { email, userName } = data;
-
-  if (!email || !userName) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "All fields are required");
-  }
-
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing && existing.id !== userId) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Email is already in use");
-  }
+  const { userName } = data;
 
   return prisma.user.update({
     where: { id: userId },
-    data: { userName, email },
+    data: { userName },
     omit: { password: true },
   });
 };

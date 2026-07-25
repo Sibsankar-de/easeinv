@@ -11,6 +11,7 @@ import {
   updateUserSchema,
   updatePasswordSchema,
   validateAndResetPasswordSchema,
+  requestPasswordResetSchema,
 } from "../schemas/user.schema";
 import {
   accessTokenCookieOptions,
@@ -119,6 +120,23 @@ export const updateAvatar = asyncHandler(
   },
 );
 
+export const requestPasswordReset = asyncHandler(
+  async (req: Request, res: Response) => {
+    const validatedBody = validateBody(requestPasswordResetSchema, req.body);
+    await authService.requestPasswordReset(validatedBody.email);
+
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        new ApiResponse(
+          StatusCodes.OK,
+          {},
+          "If the email exists, a password reset link has been sent.",
+        ),
+      );
+  },
+);
+
 export const validateAndResetPassword = asyncHandler(
   async (req: Request, res: Response) => {
     const validatedBody = validateBody(
@@ -130,7 +148,9 @@ export const validateAndResetPassword = asyncHandler(
 
     return res
       .status(StatusCodes.OK)
-      .json(new ApiResponse(StatusCodes.OK, {}, "Password reset successfully"));
+      .json(
+        new ApiResponse(StatusCodes.OK, null, "Password reset successfully"),
+      );
   },
 );
 
