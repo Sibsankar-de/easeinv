@@ -45,6 +45,17 @@ export const updateInvoiceDueAmount = asyncHandler(
   },
 );
 
+export const getInvoiceById = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { invoiceId } = req.params;
+    const invoice = await invoiceService.getInvoiceById(invoiceId as string);
+
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(StatusCodes.OK, invoice, "Invoice fetched"));
+  },
+);
+
 export const searchInvoice = asyncHandler(
   async (req: Request, res: Response) => {
     const { storeId } = req.params as { storeId: string };

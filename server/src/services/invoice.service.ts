@@ -120,7 +120,7 @@ export const createInvoice = async (
       ),
     ]);
 
-    const createdInvoice = await getInvoiceById(invoice.id, tx);
+    const createdInvoice = await getPopulatedInvoice(invoice.id, tx);
     return toInvoiceDto(createdInvoice);
   });
 
@@ -148,11 +148,16 @@ export const updateInvoiceDueAmount = async (
       });
     }
 
-    const updatedInvoice = await getInvoiceById(invoice.id, tx);
+    const updatedInvoice = await getPopulatedInvoice(invoice.id, tx);
     return toInvoiceDto(updatedInvoice);
   });
 
-export const getInvoiceById = async (
+export const getInvoiceById = async (invoiceId: string) => {
+  const invoice = await getPopulatedInvoice(invoiceId);
+  return toInvoiceDto(invoice);
+};
+
+export const getPopulatedInvoice = async (
   invoiceId: string,
   tx: TransactionClient = prisma,
 ) => {
