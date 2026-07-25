@@ -124,7 +124,7 @@ export const ProductUnitAddSection = ({
             </Button>
             <Button
               variant="outline"
-              className="text-red-300"
+              className="text-red-300 p-2"
               onClick={handleCancelEdit}
             >
               <X size={18} />
@@ -181,14 +181,14 @@ function UnitItem({
       <div className="flex items-center gap-2">
         <Button
           variant="outline"
-          className="text-primary"
+          className="text-primary p-2"
           onClick={() => onEdit(unitData)}
         >
           <Edit size={15} />
         </Button>
         <Button
-          variant="outline"
-          className="text-red-400"
+          variant="danger"
+          className="text-red-400 p-2"
           onClick={() => onDelete(unitData.key)}
         >
           <Trash2 size={15} />

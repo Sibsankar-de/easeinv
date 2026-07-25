@@ -7,20 +7,21 @@ import { CategorySelector } from "./CategorySelector";
 import { StockUnitInput } from "../../ui/StockUnitInput";
 import { PriceBreakdownInput } from "./PriceBreakdownInput";
 import { Button } from "../../ui/Button";
-import { CloudCheck, Info } from "lucide-react";
+import { CloudCheck, Info, Clock, Package, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   PricePerQuantityType,
   ProductDto,
   ProductImageType,
+  UnitGroupType,
 } from "@/types/dto/productDto";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addNewProductThunk,
   getProductDetailsThunk,
-  selectProductState,
+  selectInventoryState,
   updateProductThunk,
-} from "@/store/features/productSlice";
+} from "@/store/features/inventorySlice";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { useStoreNavigation } from "@/hooks/store-navigation";
@@ -35,6 +36,12 @@ import { NavActionButton } from "../navbar/Navbar";
 import { IconTooltip } from "@/components/ui/IconTooltip";
 import descriptiveTooltip from "@/constants/descriptiveTooltip";
 import { ProductImageSection } from "./ProductImageSection";
+import { UnitGroupsSection } from "./UnitGroupsSection";
+import { SelectOptionType } from "@/types/SelectType";
+import { convertUnit } from "@/utils/conversion";
+import { unitMap } from "@/constants/UnitMaps";
+import { formatDateStr } from "@/utils/formatDate";
+import { PriceInput } from "@/components/ui/PriceInput";
 
 export const ProductForm = ({ formFor }: { formFor: string }) => {
   const router = useRouter();
@@ -43,7 +50,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
   const productId = params?.product_id;
   const dispatch = useDispatch();
   const { getStatus, createStatus, updateStatus } =
-    useSelector(selectProductState);
+    useSelector(selectInventoryState);
   const {
     data: { storeSettings, currencySymbol },
   } = useSelector(selectCurrentStoreState);
@@ -56,18 +63,22 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     sku: "",
     gtin: "",
     description: "",
-    categories: [] as CategoryDto[],
+    categoryIds: [] as string[],
     buyingPricePerQuantity: 0,
-    stockUnit: "PCS",
+    stockUnit: unitMap[0].key,
     totalStock: 0,
     trackInventory: false,
     alertThreshold: 0,
     emailAlert: false,
     pricePerQuantity: [] as PricePerQuantityType[],
     imageIds: [] as string[],
+    unitGroups: [] as UnitGroupType[],
   });
 
   const [selectedImages, setSelectedImages] = useState<ProductImageType[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<CategoryDto[]>(
+    [],
+  );
 
   // UI State (String values for Inputs)
   const [localInputs, setLocalInputs] = useState({
@@ -84,8 +95,10 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
           setFormData({
             ...product,
             imageIds: product.images?.map((img: any) => img.id) || [],
+            unitGroups: product.unitGroups || [],
           });
           setSelectedImages(product.images || []);
+          setSelectedCategories(product.categories || []);
 
           setLocalInputs({
             buyingPricePerQuantity:
@@ -120,6 +133,14 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     );
   };
 
+  const handleSelectedCategoryChange = (categories: CategoryDto[]) => {
+    setSelectedCategories(categories);
+    handleFormData(
+      "categoryIds",
+      categories.map((c) => c.id),
+    );
+  };
+
   const handleNumberChange = (key: keyof typeof formData, rawValue: string) => {
     setLocalInputs((prev) => ({
       ...prev,
@@ -147,8 +168,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     dispatch(updateProductThunk({ ...formData, productId, storeId }))
       .unwrap()
       .then(() => {
-        toast.success("Product updated");
-        navigate(`/inventory`);
+        toast.success("Product saved.");
       });
   };
 
@@ -156,6 +176,17 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     if (formFor === "create") handleCreateProduct();
     else handleUpdateProduct();
   };
+
+  const groupUnitOptions: SelectOptionType[] = [
+    ...formData.unitGroups.map((ug: UnitGroupType) => ({
+      key: ug.unit,
+      value: convertUnit(ug.unit, storeSettings.customUnits),
+    })),
+    {
+      key: formData.stockUnit,
+      value: convertUnit(formData.stockUnit, storeSettings.customUnits),
+    },
+  ];
 
   const isSubmitting = createStatus === "loading" || updateStatus === "loading";
   const isLoading =
@@ -259,8 +290,8 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
           Select categories
         </Label>
         <CategorySelector
-          value={formData.categories}
-          onChange={(e) => handleFormData("categories", e)}
+          value={selectedCategories}
+          onChange={handleSelectedCategoryChange}
         />
       </div>
 
@@ -273,10 +304,9 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
             className="block text-gray-600 mb-1.5"
             required
           >
-            Buying price ({currencySymbol})
+            Buying price
           </Label>
-          <Input
-            type="number"
+          <PriceInput
             placeholder="Enter price for 1 unit"
             id="price"
             value={localInputs.buyingPricePerQuantity}
@@ -300,6 +330,24 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
             disabled={isLoading}
           />
         </div>
+      </div>
+
+      <Separator text={"Unit Groups"} className="mb-8 mt-10" />
+
+      <div>
+        <Label className="flex items-center gap-3 mb-3">
+          <p>Unit groups (optional)</p>
+          <IconTooltip
+            icon={<Info size={15} />}
+            tooltip={descriptiveTooltip.UNIT_GROUPS}
+          />
+        </Label>
+        <UnitGroupsSection
+          baseUnit={formData.stockUnit}
+          value={formData.unitGroups}
+          onChange={(groups) => handleFormData("unitGroups", groups)}
+          disabled={isLoading}
+        />
       </div>
 
       <Separator text={"Inventory tracking"} className="mb-8 mt-10" />
@@ -359,6 +407,14 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
               onChange={(e) => handleNumberChange("totalStock", e)}
               disabled={!formData.trackInventory || isLoading}
             />
+            {formData.trackInventory && formData.lastStockAddedAt && (
+              <p className="mt-1.5 text-xs text-gray-500">
+                Last stock update: {formData.lastStockAmount}{" "}
+                {convertUnit(formData.stockUnit, storeSettings.customUnits)} on{" "}
+                {formatDateStr(formData.lastStockAddedAt).dateStr} at{" "}
+                {formatDateStr(formData.lastStockAddedAt).timeStr}
+              </p>
+            )}
           </div>
 
           <div>
@@ -426,15 +482,18 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
           <PriceBreakdownInput
             value={formData.pricePerQuantity}
             onChange={(e) => handleFormData("pricePerQuantity", e)}
-            unit={formData.stockUnit}
+            baseUnit={formData.stockUnit}
             buyingPricePerItem={formData.buyingPricePerQuantity}
+            unitOptions={groupUnitOptions}
+            unitGroups={formData.unitGroups}
           />
         </div>
       </div>
 
       <div className="mt-10 flex items-center gap-3 justify-end">
         <Button variant="outline" onClick={() => router.back()}>
-          Cancel
+          <ArrowLeft size={15} />
+          Back
         </Button>
         <Button
           onClick={handleSaveProduct}

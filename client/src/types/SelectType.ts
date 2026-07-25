@@ -1,4 +1,4 @@
-export type SelectOptionType = { key: string; value: string } | string;
+export type SelectOptionType = { key: string; value: string };
 
 export type SelectType = {
   id?: string;
@@ -12,4 +12,6 @@ export type SelectType = {
   placeholderClass?: string;
   className?: string;
   dropdownClass?: string;
+  /** When provided, renders a red error message below the select */
+  errorMessage?: string;
 };

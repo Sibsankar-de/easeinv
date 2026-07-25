@@ -260,7 +260,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
               </span>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="w-full flex items-center justify-between">
               <span>Paid Amount</span>
               <Input
                 type="number"

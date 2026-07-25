@@ -8,8 +8,6 @@ import {
   updateStoreSettings,
   uploadStoreLogo,
   uploadInvoicePaymentQrCode,
-  getCategoriesByStore,
-  createCategory,
 } from "../controllers/store.controller";
 import {
   getStoreUsers,
@@ -63,12 +61,6 @@ router.post(
   upload.single("qrCode"),
   uploadInvoicePaymentQrCode,
 );
-router.get(
-  "/:storeId/category-list",
-  verifyEmployeeLevelAccess,
-  getCategoriesByStore,
-);
-router.post("/:storeId/add-category", verifyManagerLevelAccess, createCategory);
 
 // Store access routes
 router.get("/:storeId/users", verifyManagerLevelAccess, getStoreUsers);

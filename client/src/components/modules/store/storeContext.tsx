@@ -6,8 +6,8 @@ import {
 } from "@/store/features/currentStoreSlice";
 import {
   fetchCategoriesThunk,
-  selectProductState,
-} from "@/store/features/productSlice";
+  selectInventoryState,
+} from "@/store/features/inventorySlice";
 import { useParams } from "next/navigation";
 import React, { createContext, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
@@ -23,7 +23,7 @@ export const StoreContextProvider = ({
   const storeId = params?.store_id;
   const dispatch = useDispatch();
   const { status: listStatus, categoryStatus } =
-    useSelector(selectProductState);
+    useSelector(selectInventoryState);
 
   useEffect(() => {
     if (storeId) {

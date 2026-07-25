@@ -7,8 +7,12 @@ import { ProductSearchInput } from "./ProductSearchInput";
 import { StockInput } from "@/components/ui/StockInput";
 import { Input } from "@/components/ui/Input";
 import { Trash2 } from "lucide-react";
-import { ProductDto } from "@/types/dto/productDto";
+import { ProductDto, UnitGroupType } from "@/types/dto/productDto";
 import { Button } from "@/components/ui/Button";
+import { useSelector } from "react-redux";
+import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
+import { convertUnit } from "@/utils/conversion";
+import { SelectOptionType } from "@/types/SelectType";
 
 export function BillingSectionRow({
   id,
@@ -24,7 +28,12 @@ export function BillingSectionRow({
   onRemoveItem: (id: string) => void;
 }) {
   const baseId = useId();
+  const {
+    data: { storeSettings },
+  } = useSelector(selectCurrentStoreState);
+
   const [selectedItem, setSelectedItem] = useState<ProductDto | null>(null);
+  const [selectedUnit, setSelectedUnit] = useState<string>("");
   const [productFields, setProductFields] = useState<BillItemType>(item);
 
   // We maintain a separate state for input strings to allow "0." or "0.05"
@@ -33,10 +42,31 @@ export function BillingSectionRow({
     totalPrice: String(item.totalPrice || 0),
   });
 
+  // Build unit options from product's unitGroups + stockUnit
+  const groupUnitOptions: SelectOptionType[] = selectedItem
+    ? [
+        ...(selectedItem.unitGroups ?? []).map((ug: UnitGroupType) => ({
+          key: ug.unit,
+          value: convertUnit(ug.unit, storeSettings.customUnits),
+        })),
+        {
+          key: selectedItem.stockUnit,
+          value: convertUnit(selectedItem.stockUnit, storeSettings.customUnits),
+        },
+      ]
+    : [];
+
   useEffect(() => {
     if (selectedItem) {
+      // Reset selected unit to base unit when product changes
+      setSelectedUnit(selectedItem.stockUnit);
+
       const quantity = 1;
-      const calc = calculatePrice(quantity, selectedItem.pricePerQuantity);
+      const calc = calculatePrice(quantity, selectedItem.pricePerQuantity, {
+        baseUnit: selectedItem.stockUnit,
+        selectedUnit: selectedItem.stockUnit,
+        unitGroups: selectedItem.unitGroups ?? [],
+      });
 
       const newItem: BillItemType = {
         ...item,
@@ -62,6 +92,27 @@ export function BillingSectionRow({
     }
   }, [selectedItem]);
 
+  const handleUnitChange = (unit: string) => {
+    setSelectedUnit(unit);
+    const quantity = parseFloat(localInputs.netQuantity) || 0;
+    if (selectedItem) {
+      const calc = calculatePrice(quantity, selectedItem.pricePerQuantity, {
+        baseUnit: selectedItem.stockUnit,
+        selectedUnit: unit,
+        unitGroups: selectedItem.unitGroups ?? [],
+      });
+      const withTotal = {
+        ...productFields,
+        pricePerQuantity: calc.chosenTier,
+        totalPrice: calc.price,
+        totalProfit: calc.profit,
+      };
+      setProductFields(withTotal);
+      setLocalInputs((prev) => ({ ...prev, totalPrice: String(calc.price) }));
+      onFieldUpdate(withTotal);
+    }
+  };
+
   const handleInputChange = (key: keyof BillItemType, rawValue: string) => {
     if (key === "netQuantity" || key === "totalPrice") {
       setLocalInputs((prev) => ({ ...prev, [key]: rawValue }));
@@ -75,7 +126,11 @@ export function BillingSectionRow({
     onFieldUpdate(updated);
 
     if (key === "netQuantity" && selectedItem) {
-      const calc = calculatePrice(safeValue, selectedItem.pricePerQuantity);
+      const calc = calculatePrice(safeValue, selectedItem.pricePerQuantity, {
+        baseUnit: selectedItem.stockUnit,
+        selectedUnit,
+        unitGroups: selectedItem.unitGroups ?? [],
+      });
 
       const withTotal = {
         ...updated,
@@ -111,7 +166,10 @@ export function BillingSectionRow({
           placeholder="0.00"
           value={localInputs.netQuantity}
           onChange={(e) => handleInputChange("netQuantity", e)}
-          unit={selectedItem?.stockUnit}
+          isSelect={true}
+          options={groupUnitOptions}
+          unit={selectedUnit}
+          onUnitChange={handleUnitChange}
           className="w-30"
         />
       </td>

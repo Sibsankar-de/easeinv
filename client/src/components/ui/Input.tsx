@@ -11,24 +11,35 @@ export interface InputType extends Omit<
   onChange?: (e: string) => void;
   isInvalid?: boolean;
   icon?: React.ReactElement;
+  errorMessage?: string;
 }
 
 export const Input = ({
   className,
-  id,
-  value,
   onChange,
-  placeholder,
-  type = "text",
-  disabled = false,
   isInvalid = false,
   icon,
+  errorMessage,
   ...props
 }: InputType) => {
   const [showPassword, setShowPassword] = useState(false);
-  const isTypePassword = type === "password";
+  const isTypePassword = props.type === "password";
+  const hasError = isInvalid || !!errorMessage;
+
   return (
-    <div className="flex items-center relative group w-full">
+    <div
+      className={cn(
+        "relative group w-full flex items-center",
+        "pl-3 pr-4 py-2 border border-gray-300 rounded-lg",
+        "focus-within:outline-none focus-within:ring-2 focus-within:ring-primary transition-all duration-200",
+        hasError && "border-red-300 focus-within:ring-red-200",
+        props.disabled && "bg-gray-100 cursor-not-allowed",
+        icon && "pl-10",
+        (isTypePassword || hasError) && "pr-10",
+        errorMessage && "mb-7",
+        className,
+      )}
+    >
       {icon && (
         <div
           className={cn(
@@ -40,30 +51,16 @@ export const Input = ({
         </div>
       )}
       <input
-        id={id}
-        type={showPassword ? "text" : type}
-        placeholder={placeholder || ""}
-        value={value}
-        className={cn(
-          "w-full pl-3 pr-4 py-1.5 border border-gray-300 rounded-lg",
-          "focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200",
-          isInvalid && "border-red-300 focus:ring-red-200 pr-10",
-          isTypePassword && "pr-10",
-          icon && "pl-10",
-          disabled && "bg-gray-100 cursor-not-allowed",
-          className,
-        )}
-        disabled={disabled}
+        className="w-full h-full bg-transparent outline-none border-none"
         onChange={(e) => onChange?.(e.target.value)}
         onWheel={(e) => e.currentTarget.blur()}
         {...props}
+        type={showPassword ? "text" : (props.type ?? "text")}
       />
       {isTypePassword && (
         <button
           type="button"
-          onClick={(e) => {
-            setShowPassword(!showPassword);
-          }}
+          onClick={() => setShowPassword(!showPassword)}
           className="absolute right-3 text-gray-400 hover:text-gray-600 cursor-pointer"
         >
           {showPassword ? (
@@ -73,10 +70,15 @@ export const Input = ({
           )}
         </button>
       )}
-      {isInvalid && (
+      {hasError && (
         <div className="absolute right-3">
           <OctagonAlert className="w-5 h-5 text-red-300" />
         </div>
+      )}
+      {errorMessage && (
+        <p className="absolute left-0 top-full mt-1 text-red-400 text-xs">
+          {errorMessage}
+        </p>
       )}
     </div>
   );

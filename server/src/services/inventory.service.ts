@@ -4,119 +4,19 @@ import { StatusCodes } from "http-status-codes";
 import { generateGTIN } from "../utils/gtin-generator";
 import { productLimits } from "../constants/limits.constants";
 import { paginate } from "../utils/paginate";
-import { CreateProductDTO, UpdateProductDTO } from "../schemas/product.schema";
-import { TransactionClient } from "../utils/transactionHandler";
-import { Product, Store, User } from "@prisma/client";
+import {
+  ProductCreateUpdateDTO,
+  ProductExtraData,
+} from "../schemas/product.schema";
+import { toProductDto, toProductSummaryDto } from "../dto/product.dto";
+import {
+  prismaTransaction,
+  TransactionClient,
+} from "../utils/transactionHandler";
+import { Product, ProductStockStatus, Store, User } from "@prisma/client";
 import * as transactionalEmailService from "./transactionalEmail.service";
 import { clientPages } from "../constants/client.constant";
-
-export const getOrCreateCategory = async (
-  categoryName: string,
-  storeId: string,
-): Promise<string> => {
-  let category = await prisma.category.findFirst({
-    where: { name: { equals: categoryName, mode: "insensitive" }, storeId },
-  });
-  if (!category) {
-    category = await prisma.category.create({
-      data: { name: categoryName, storeId },
-    });
-  }
-  return category.id;
-};
-
-export const getProductImages = async (productId: string) => {
-  const images = await prisma.productImage.findMany({
-    where: { productId },
-    orderBy: { priority: "asc" },
-    include: {
-      image: { select: { id: true, url: true, name: true } },
-    },
-  });
-
-  return images.map((img) => ({
-    id: img.id,
-    priority: img.priority,
-    imageId: img.imageId,
-    url: img.image.url,
-    name: img.image.name,
-  }));
-};
-
-export const getPopulatedProductData = async (productId: string) => {
-  const product = await prisma.product.findUnique({
-    where: { id: productId },
-    include: {
-      categories: {
-        include: {
-          category: { select: { id: true, name: true, storeId: true } },
-        },
-      },
-    },
-  });
-
-  if (!product) throw new ApiError(StatusCodes.NOT_FOUND, "Product not found");
-
-  const images = await getProductImages(productId);
-
-  return {
-    ...product,
-    categories: product.categories.map((pc) => pc.category),
-    images,
-  };
-};
-
-export const addOrRemoveProductImages = async (
-  productId: string,
-  imageIds: string[],
-) => {
-  if (imageIds.length > productLimits.MAX_IMAGES) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      `You can add maximum ${productLimits.MAX_IMAGES} images to a product.`,
-    );
-  }
-
-  const existingImages = await prisma.productImage.findMany({
-    where: { productId },
-  });
-  const existingImageIds = existingImages.map((img) => img.imageId);
-
-  const imagesToRemove = existingImageIds.filter(
-    (id) => !imageIds.includes(id),
-  );
-  const imagesToAdd = imageIds.filter((id) => !existingImageIds.includes(id));
-
-  if (imagesToRemove.length > 0) {
-    await prisma.productImage.deleteMany({
-      where: { productId, imageId: { in: imagesToRemove } },
-    });
-  }
-
-  if (imagesToAdd.length > 0) {
-    await prisma.productImage.createMany({
-      data: imagesToAdd.map((imageId) => ({
-        productId,
-        imageId,
-        priority: imageIds.indexOf(imageId) + 1,
-      })),
-    });
-  }
-
-  // Update thumbnail
-  if (imageIds.length > 0) {
-    const thumbnailImageId = imageIds[0];
-    await prisma.product.update({
-      where: { id: productId },
-      data: { thumbnailImageId },
-    });
-  } else {
-    await prisma.product.update({
-      where: { id: productId },
-      data: { thumbnailImageId: null },
-    });
-  }
-};
+import { productExtraDataConverter } from "../converters/product.converter";
 
 export const getProducts = async (params: {
   storeId: string;
@@ -144,141 +44,44 @@ export const getProducts = async (params: {
     { page, limit },
     {
       categories: {
-        include: {
-          category: { select: { id: true, name: true, storeId: true } },
-        },
-      },
-      images: {
-        include: { image: { select: { id: true, url: true, name: true } } },
-        orderBy: { priority: "asc" as const },
+        include: { category: true },
       },
     },
   );
 
-  // Flatten category/image relations
-  const docs = (result.docs as any[]).map((p) => ({
-    ...p,
-    categories: p.categories.map((pc: any) => pc.category),
-    images: p.images.map((pi: any) => ({
-      id: pi.id,
-      priority: pi.priority,
-      imageId: pi.imageId,
-      url: pi.image.url,
-      name: pi.image.name,
-    })),
-  }));
-
-  return { ...result, docs };
+  return {
+    ...result,
+    docs: result.docs.map(toProductSummaryDto),
+  };
 };
 
 export const createProduct = async (
   userId: string,
-  productData: CreateProductDTO,
-) => {
-  const {
-    storeId,
-    name,
-    sku,
-    gtin,
-    buyingPricePerQuantity,
-    trackInventory,
-    totalStock,
-    alertThreshold,
-    emailAlert,
-    stockUnit,
-    pricePerQuantity,
-    categories,
-    imageIds,
-    description,
-  } = productData;
-
-  // Resolve categories
-  const categoryIds: string[] = [];
-  if (categories && categories.length > 0) {
-    for (const category of categories) {
-      const categoryId = await getOrCreateCategory(category.name, storeId);
-      categoryIds.push(categoryId);
-    }
-  }
-
-  const product = await prisma.product.create({
-    data: {
-      userId,
-      storeId,
+  storeId: string,
+  productData: ProductCreateUpdateDTO,
+) =>
+  prismaTransaction(async (tx) => {
+    const {
       name,
       sku,
-      gtin: gtin || generateGTIN(),
-      description,
+      gtin,
       buyingPricePerQuantity,
-      trackInventory: trackInventory ?? false,
-      totalStock: totalStock ?? 0,
-      alertThreshold: alertThreshold ?? 0,
-      emailAlert: emailAlert ?? false,
+      trackInventory,
+      totalStock,
+      alertThreshold,
+      emailAlert,
       stockUnit,
-      pricePerQuantity: pricePerQuantity as any,
-      categories: {
-        create: categoryIds.map((categoryId) => ({ categoryId })),
-      },
-    },
-  });
-
-  if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
-    await addOrRemoveProductImages(product.id, imageIds);
-  }
-
-  return getPopulatedProductData(product.id);
-};
-
-export const updateProduct = async (
-  productId: string,
-  productData: UpdateProductDTO,
-) => {
-  const {
-    storeId,
-    name,
-    sku,
-    gtin,
-    buyingPricePerQuantity,
-    trackInventory,
-    totalStock,
-    alertThreshold,
-    emailAlert,
-    stockUnit,
-    pricePerQuantity,
-    categories,
-    imageIds,
-    description,
-  } = productData;
-
-  if (
-    [
-      storeId,
-      name,
-      sku,
-      buyingPricePerQuantity,
-      stockUnit,
+      unitGroups,
       pricePerQuantity,
-    ].some((e) => !e) ||
-    (trackInventory && (totalStock === undefined || totalStock === null))
-  ) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "All fields are required.");
-  }
+      categoryIds,
+      imageIds,
+      description,
+    } = productData;
 
-  // Resolve categories
-  const categoryIds: string[] = [];
-  if (categories && categories.length > 0) {
-    for (const category of categories) {
-      const categoryId = await getOrCreateCategory(category?.name, storeId);
-      categoryIds.push(categoryId);
-    }
-  }
-
-  // Update product + replace category relations
-  await prisma.$transaction([
-    prisma.productCategory.deleteMany({ where: { productId } }),
-    prisma.product.update({
-      where: { id: productId },
+    const product = await tx.product.create({
       data: {
+        userId,
+        storeId,
         name,
         sku,
         gtin: gtin || generateGTIN(),
@@ -288,69 +91,288 @@ export const updateProduct = async (
         totalStock: totalStock ?? 0,
         alertThreshold: alertThreshold ?? 0,
         emailAlert: emailAlert ?? false,
+        stockStatus: getProductStockStatus(totalStock, alertThreshold),
         stockUnit,
-        pricePerQuantity: pricePerQuantity as any,
-        categories: {
-          create: categoryIds.map((categoryId) => ({ categoryId })),
-        },
+        unitGroups: unitGroups,
+        pricePerQuantity: pricePerQuantity,
+        extraData: productExtraDataConverter({}),
       },
-    }),
-  ]);
+    });
 
-  if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
-    await addOrRemoveProductImages(productId, imageIds);
-  }
+    // add categories
+    if (categoryIds && categoryIds.length > 0) {
+      await addOrRemoveProductCategories(product.id, categoryIds, tx);
+    }
 
-  return getPopulatedProductData(productId);
-};
+    // add images
+    if (imageIds && imageIds.length > 0) {
+      await addOrRemoveProductImages(product.id, imageIds, tx);
+    }
+
+    return await getPopulatedProductById(product.id, tx);
+  });
+
+export const updateProduct = async (
+  productId: string,
+  productData: ProductCreateUpdateDTO,
+) =>
+  prismaTransaction(async (tx) => {
+    const {
+      name,
+      sku,
+      gtin,
+      buyingPricePerQuantity,
+      trackInventory,
+      totalStock,
+      alertThreshold,
+      emailAlert,
+      stockUnit,
+      unitGroups,
+      pricePerQuantity,
+      categoryIds,
+      imageIds,
+      description,
+    } = productData;
+
+    if (!gtin) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Gtin isrequired.");
+    }
+
+    const product = await tx.product.findFirst({ where: { id: productId } });
+    if (!product) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Product not found.");
+    }
+
+    // update last stock update status
+    let extraData: ProductExtraData = productExtraDataConverter(
+      product.extraData,
+    );
+    if (trackInventory && product.totalStock !== totalStock) {
+      extraData = {
+        ...extraData,
+        lastStockAmount: product.totalStock,
+        lastStockAddedAt: new Date(),
+      };
+    }
+
+    await tx.product.update({
+      where: { id: productId },
+      data: {
+        name,
+        sku,
+        gtin,
+        description,
+        buyingPricePerQuantity,
+        trackInventory: trackInventory ?? false,
+        totalStock: totalStock ?? 0,
+        alertThreshold: alertThreshold ?? 0,
+        emailAlert: emailAlert ?? false,
+        stockStatus: getProductStockStatus(totalStock, alertThreshold),
+        stockUnit,
+        unitGroups: unitGroups as any,
+        pricePerQuantity: pricePerQuantity as any,
+        extraData,
+      },
+    });
+
+    // add categories
+    if (categoryIds && categoryIds.length > 0) {
+      await addOrRemoveProductCategories(productId, categoryIds, tx);
+    }
+
+    // add images
+    if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
+      await addOrRemoveProductImages(productId, imageIds, tx);
+    }
+
+    return await getPopulatedProductById(productId, tx);
+  });
 
 export const getProductById = async (productId: string) => {
-  const product = await prisma.product.findUnique({ where: { id: productId } });
-  if (!product) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid product id");
-  }
-  return getPopulatedProductData(productId);
+  return getPopulatedProductById(productId);
 };
 
 export const deleteProduct = async (productId: string) => {
-  // ProductImage cascades via schema; delete product
+  // Related fields are cascade via relation
   await prisma.product.delete({ where: { id: productId } });
   return { productId };
+};
+
+export const getProductStockStatus = (
+  totalStock: number,
+  threshold: number,
+): ProductStockStatus => {
+  if (totalStock <= 0) return ProductStockStatus.OUT_OF_STOCK;
+  if (totalStock <= threshold) return ProductStockStatus.LOW_STOCK;
+  return ProductStockStatus.AVAILABLE;
+};
+
+export const addOrRemoveProductCategories = async (
+  productId: string,
+  categoryIds: string[],
+  tx: TransactionClient = prisma,
+) => {
+  const existingCategories = await tx.productCategory.findMany({
+    where: { productId },
+  });
+  const existingCategoryIds = existingCategories.map((c) => c.categoryId);
+
+  const categoriesToAdd = categoryIds.filter(
+    (c) => !existingCategoryIds.includes(c),
+  );
+  const categoriesToRemove = existingCategoryIds.filter(
+    (c) => !categoryIds.includes(c),
+  );
+
+  // create required categories
+  if (categoriesToAdd.length > 0) {
+    await tx.productCategory.createMany({
+      data: categoriesToAdd.map((categoryId) => ({
+        productId,
+        categoryId,
+      })),
+    });
+  }
+
+  // delete categories
+  if (categoriesToRemove.length > 0) {
+    await tx.productCategory.deleteMany({
+      where: {
+        productId,
+        categoryId: { in: categoriesToRemove },
+      },
+    });
+  }
+};
+
+export const addOrRemoveProductImages = async (
+  productId: string,
+  imageIds: string[],
+  tx: TransactionClient = prisma,
+) => {
+  if (imageIds.length > productLimits.MAX_IMAGES) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      `You can add maximum ${productLimits.MAX_IMAGES} images to a product.`,
+    );
+  }
+
+  const existingImages = await tx.productImage.findMany({
+    where: { productId },
+  });
+  const existingImageIds = existingImages.map((img) => img.imageId);
+
+  const imagesToRemove = existingImageIds.filter(
+    (id) => !imageIds.includes(id),
+  );
+  const imagesToAdd = imageIds.filter((id) => !existingImageIds.includes(id));
+
+  if (imagesToRemove.length > 0) {
+    await tx.productImage.deleteMany({
+      where: { productId, imageId: { in: imagesToRemove } },
+    });
+  }
+
+  if (imagesToAdd.length > 0) {
+    await tx.productImage.createMany({
+      data: imagesToAdd.map((imageId) => ({
+        productId,
+        imageId,
+        priority: imageIds.indexOf(imageId) + 1,
+      })),
+    });
+  }
+
+  // Update thumbnail
+  if (imageIds.length > 0) {
+    const thumbnailImageId = imageIds[0];
+    await tx.product.update({
+      where: { id: productId },
+      data: { thumbnailImageId },
+    });
+  } else {
+    await tx.product.update({
+      where: { id: productId },
+      data: { thumbnailImageId: null },
+    });
+  }
+};
+
+export const getProductImages = async (
+  productId: string,
+  tx: TransactionClient = prisma,
+) => {
+  return await tx.productImage.findMany({
+    where: { productId },
+    orderBy: { priority: "asc" },
+    include: {
+      image: true,
+    },
+  });
+};
+
+export const getPopulatedProductById = async (
+  productId: string,
+  tx: TransactionClient = prisma,
+) => {
+  const product = await tx.product.findUnique({
+    where: { id: productId },
+    include: {
+      categories: {
+        include: {
+          category: true,
+        },
+      },
+      images: {
+        include: {
+          image: true,
+        },
+      },
+    },
+  });
+
+  if (!product) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Product not found");
+  }
+  const categories = product.categories.map((pc) => pc.category);
+
+  return toProductDto(product, categories, product.images);
 };
 
 export const rearrangeProductImages = async (
   productId: string,
   imagePriorities: Record<string, number>,
-) => {
-  if (!imagePriorities || typeof imagePriorities !== "object") {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Image priorities map is required.",
+) =>
+  prismaTransaction(async (tx) => {
+    if (!imagePriorities || typeof imagePriorities !== "object") {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Image priorities map is required.",
+      );
+    }
+
+    await Promise.all(
+      Object.entries(imagePriorities).map(([imageId, priority]) =>
+        tx.productImage.updateMany({
+          where: { productId, imageId },
+          data: { priority: Number(priority) },
+        }),
+      ),
     );
-  }
 
-  await Promise.all(
-    Object.entries(imagePriorities).map(([imageId, priority]) =>
-      prisma.productImage.updateMany({
-        where: { productId, imageId },
-        data: { priority: Number(priority) },
-      }),
-    ),
-  );
+    // Set thumbnail to priority=1 image
+    const thumbnailImageId = Object.keys(imagePriorities).find(
+      (key) => imagePriorities[key] === 1,
+    );
+    if (thumbnailImageId) {
+      await tx.product.update({
+        where: { id: productId },
+        data: { thumbnailImageId },
+      });
+    }
 
-  // Set thumbnail to priority=1 image
-  const thumbnailImageId = Object.keys(imagePriorities).find(
-    (key) => imagePriorities[key] === 1,
-  );
-  if (thumbnailImageId) {
-    await prisma.product.update({
-      where: { id: productId },
-      data: { thumbnailImageId },
-    });
-  }
-
-  return getProductImages(productId);
-};
+    return getProductImages(productId, tx);
+  });
 
 export const searchProducts = async (storeId: string, query: string) => {
   if (!storeId) {
@@ -371,7 +393,7 @@ export const searchProducts = async (storeId: string, query: string) => {
     take: 10,
     include: {
       categories: {
-        include: { category: { select: { id: true, name: true } } },
+        include: { category: true },
       },
     },
   });
@@ -390,7 +412,7 @@ export const searchProducts = async (storeId: string, query: string) => {
       (a, b) => b.searchScore - a.searchScore || a.name.localeCompare(b.name),
     );
 
-  return scored;
+  return scored.map(toProductSummaryDto);
 };
 
 export const updateInventoryStock = async (
@@ -417,7 +439,13 @@ export const updateInventoryStock = async (
       where: {
         id: productId,
       },
-      data: { totalStock: { decrement: quantity } },
+      data: {
+        totalStock: { decrement: quantity },
+        stockStatus: getProductStockStatus(
+          product.totalStock - quantity,
+          product.alertThreshold,
+        ),
+      },
       include: { user: true },
     });
   }

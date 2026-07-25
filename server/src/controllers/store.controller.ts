@@ -8,7 +8,6 @@ import {
   createStoreSchema,
   updateStoreSchema,
   updateStoreSettingsSchema,
-  createCategorySchema,
 } from "../schemas/store.schema";
 
 export const createStore = asyncHandler(async (req: Request, res: Response) => {
@@ -167,36 +166,5 @@ export const getProductsByStore = asyncHandler(
     return res
       .status(StatusCodes.OK)
       .json(new ApiResponse(StatusCodes.OK, productList, "Products fetched"));
-  },
-);
-
-export const createCategory = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { storeId } = req.params;
-
-    const validatedBody = validateBody(createCategorySchema, req.body);
-
-    const category = await storeService.createCategory(
-      storeId as string,
-      validatedBody.name,
-    );
-
-    return res
-      .status(StatusCodes.OK)
-      .json(new ApiResponse(StatusCodes.OK, category, "Category created"));
-  },
-);
-
-export const getCategoriesByStore = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { storeId } = req.params;
-
-    const categories = await storeService.getCategoriesByStore(
-      storeId as string,
-    );
-
-    return res
-      .status(StatusCodes.OK)
-      .json(new ApiResponse(StatusCodes.OK, categories, "Categories fetched"));
   },
 );

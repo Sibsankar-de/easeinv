@@ -7,8 +7,8 @@ import { CategoryDto } from "@/types/dto/categoryDto";
 import { useDispatch, useSelector } from "react-redux";
 import {
   createCategoryThunk,
-  selectProductState,
-} from "@/store/features/productSlice";
+  selectInventoryState,
+} from "@/store/features/inventorySlice";
 import { useParams } from "next/navigation";
 import { LocalSearchableInput } from "@/components/ui/LocalSearchableInputDropdown";
 import { SelectableItem } from "@/components/ui/SelectableInputDropdown";
@@ -28,7 +28,7 @@ export const CategorySelector = ({
   const {
     data: { categoryList },
     categoryStatus,
-  } = useSelector(selectProductState);
+  } = useSelector(selectInventoryState);
 
   const [inputValue, setInputValue] = useState<string>("");
 

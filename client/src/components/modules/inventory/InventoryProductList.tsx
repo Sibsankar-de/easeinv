@@ -8,9 +8,9 @@ import { SelectOptionType } from "@/types/SelectType";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchProducts,
-  selectProductState,
+  selectInventoryState,
   clearProductList,
-} from "@/store/features/productSlice";
+} from "@/store/features/inventorySlice";
 import { ProductDto } from "@/types/dto/productDto";
 import { Button } from "@/components/ui/Button";
 import { useStoreNavigation } from "@/hooks/store-navigation";
@@ -26,6 +26,11 @@ import { getTableSearchDebounceTime } from "@/utils/get-debounce";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { NavActionButton } from "../navbar/Navbar";
 import { useNavContext } from "@/contexts/NavContext";
+import { Badge } from "@/components/ui/Badge";
+import {
+  StockStatusBadgeVariantMap,
+  StockStatusMap,
+} from "@/constants/productConstants";
 
 const categories: SelectOptionType[] = [
   { value: "All Categories", key: "all" },
@@ -74,7 +79,7 @@ export const InventoryProductList = () => {
   const {
     data: { productList },
     status,
-  } = useSelector(selectProductState);
+  } = useSelector(selectInventoryState);
   const {
     data: { storeSettings, currencySymbol },
   } = useSelector(selectCurrentStoreState);
@@ -159,13 +164,24 @@ export const InventoryProductList = () => {
         ),
         meta: { className: "text-center" },
       }),
-      columnHelper.accessor("createdAt", {
-        header: "Date added",
-        cell: (info) => (
-          <span className="text-gray-600">
-            {info.getValue() ? formatDateStr(info.getValue()!).dashedDate : "-"}
-          </span>
-        ),
+      columnHelper.accessor("categories", {
+        header: "Category",
+        enableSorting: false,
+        cell: (info) => {
+          const categories = info.getValue();
+          return categories ? (
+            <div className="flex flex-wrap gap-2 items-center justify-center">
+              <Badge>{categories[0].name}</Badge>
+              {categories.length > 1 && (
+                <p className="text-gray-400 text-xs font-semibold">
+                  +{(info.getValue()?.length || 0) - 1}
+                </p>
+              )}
+            </div>
+          ) : (
+            <span className="text-gray-400">Not provided</span>
+          );
+        },
         meta: { className: "text-center" },
       }),
       columnHelper.display({
@@ -185,6 +201,29 @@ export const InventoryProductList = () => {
                 storeSettings.customUnits,
               )}
             </span>
+          </span>
+        ),
+        meta: { className: "text-center" },
+      }),
+      columnHelper.accessor("stockStatus", {
+        header: "Status",
+        cell: (info) => {
+          const stockStatus = info.getValue();
+          return (
+            <div className="flex items-center justify-center">
+              <Badge variant={StockStatusBadgeVariantMap[stockStatus]}>
+                {StockStatusMap[stockStatus]}
+              </Badge>
+            </div>
+          );
+        },
+        meta: { className: "text-center" },
+      }),
+      columnHelper.accessor("createdAt", {
+        header: "Date added",
+        cell: (info) => (
+          <span className="text-gray-600">
+            {info.getValue() ? formatDateStr(info.getValue()!).dashedDate : "-"}
           </span>
         ),
         meta: { className: "text-center" },

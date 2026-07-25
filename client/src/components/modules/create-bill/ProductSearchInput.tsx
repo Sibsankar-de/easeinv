@@ -3,8 +3,8 @@
 import { useDispatch, useSelector } from "react-redux";
 import {
   searchProductsThunk,
-  selectProductState,
-} from "@/store/features/productSlice";
+  selectInventoryState,
+} from "@/store/features/inventorySlice";
 import { ProductDto } from "@/types/dto/productDto";
 import { SelectableItem } from "@/components/ui/SelectableInputDropdown";
 import { calculatePrice } from "@/utils/price-calculator";
@@ -13,6 +13,11 @@ import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 import { useEffect, useRef, useState } from "react";
 import { SearchableInput } from "@/components/ui/SearchableInput";
 import { useStoreNavigation } from "@/hooks/store-navigation";
+import { Badge } from "@/components/ui/Badge";
+import {
+  StockStatusBadgeVariantMap,
+  StockStatusMap,
+} from "@/constants/productConstants";
 
 export function ProductSearchInput({
   onSelect,
@@ -25,7 +30,7 @@ export function ProductSearchInput({
 }) {
   const { storeId } = useStoreNavigation();
   const dispatch = useDispatch();
-  const { searchStatus } = useSelector(selectProductState);
+  const { searchStatus } = useSelector(selectInventoryState);
   const {
     data: { storeSettings, currencySymbol },
   } = useSelector(selectCurrentStoreState);
@@ -83,14 +88,29 @@ export function ProductSearchInput({
             className="flex justify-between"
           >
             <div>
-              <p className="text-[15px]">{p.name}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-[15px]">{p.name}</p>
+                <Badge variant={StockStatusBadgeVariantMap[p.stockStatus]}>
+                  {StockStatusMap[p.stockStatus]}
+                </Badge>
+              </div>
               <p className="text-sm text-gray-600">{p.sku}</p>
             </div>
-            <div>
-              <p className="text-green-800">
+            <div className="font-normal text-right">
+              <p className="text-green-800 text-sm">
                 {currencySymbol}
-                {calculatePrice(1, p.pricePerQuantity).price} /{" "}
-                {convertUnit(p.stockUnit, storeSettings.customUnits)}
+                {
+                  calculatePrice(1, p.pricePerQuantity, {
+                    baseUnit: p.stockUnit,
+                    selectedUnit: p.stockUnit,
+                    unitGroups: p.unitGroups ?? [],
+                  }).price
+                }{" "}
+                / {convertUnit(p.stockUnit, storeSettings.customUnits)}
+              </p>
+              <p className="text-sm">
+                {p.totalStock}{" "}
+                {convertUnit(p.stockUnit, storeSettings.customUnits)} left
               </p>
             </div>
           </SelectableItem>

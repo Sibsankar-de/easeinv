@@ -2,7 +2,7 @@ import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import { paginate } from "../utils/paginate";
-import { CreateInvoiceDTO } from "../schemas/invoice.schema";
+import { InvoiceCreateDto } from "../schemas/invoice.schema";
 import {
   prismaTransaction,
   TransactionClient,
@@ -16,7 +16,7 @@ import { toInvoiceDto, toInvoiceSummaryDto } from "../dto/invoice.dto";
 export const createInvoice = async (
   userId: string,
   storeId: string,
-  billData: CreateInvoiceDTO,
+  billData: InvoiceCreateDto,
 ) =>
   prismaTransaction(async (tx) => {
     const { invoiceNumber, issueDate, customer: customerDetails } = billData;
@@ -28,7 +28,7 @@ export const createInvoice = async (
       include: { settings: true },
     });
 
-    const storeSettings = store.settings;
+    const storeSettings = store.settings!;
 
     // Fetch products
     const productIds = billData.billItems.map((item) => item.productId);
@@ -45,13 +45,7 @@ export const createInvoice = async (
 
     // Perform calculations
     const calculations = calculateInvoiceDetails(
-      {
-        billItems: billData.billItems,
-        discountPercent: billData.discountPercent,
-        taxRate: billData.taxRate,
-        paidAmount: billData.paidAmount,
-        roundupTotal: billData.roundupTotal,
-      },
+      billData,
       products,
       storeSettings,
     );
@@ -98,6 +92,7 @@ export const createInvoice = async (
         invoiceId: invoice.id,
         sortOrder: i + 1,
         productId: item.productId,
+        productName: products.find((p) => p.id === item.productId)?.name || "",
         pricePerQty: item.pricePerQuantity as any,
         netQuantity: item.netQuantity,
         totalPrice: item.totalPrice,
@@ -167,7 +162,9 @@ export const getInvoiceById = async (
       customer: true,
       billItems: {
         include: {
-          product: true,
+          product: {
+            select: { id: true, name: true, sku: true },
+          },
         },
       },
     },

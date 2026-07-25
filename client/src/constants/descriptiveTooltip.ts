@@ -13,6 +13,8 @@ const descriptiveTooltip = {
     "The stock level at which a low stock alert will be triggered for this product.",
   EMAIL_ALERT:
     "When enabled, an email notification will be sent to the store managers when stock falls below the threshold.",
+  UNIT_GROUPS:
+    "Unit groups let you sell this product in alternate units (e.g. packets or cartons) that each represent a fixed quantity of the base unit. During billing, staff can pick the group unit and the quantity will be converted to base units automatically.",
 };
 
 export default descriptiveTooltip;
