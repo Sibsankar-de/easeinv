@@ -3,23 +3,58 @@ import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Label";
 import { Modal, ModalHeader, ModalProps } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
-import { InvoiceSummaryDto } from "@/types/dto/invoiceDto";
-import { PrinterCheck, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { InvoiceSummaryDto, InvoiceDto } from "@/types/dto/invoiceDto";
+import { Download, PrinterCheck, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { pageSizes } from "@/constants/pageSizeMaps";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  selectInvoiceState,
+  fetchInvoiceByIdThunk,
+} from "@/store/features/invoiceSlice";
+import { useStoreNavigation } from "@/hooks/store-navigation";
+import { InvoiceDocumentSkeleton } from "@/components/ui/Skeleton";
+import { useInvoiceDownload } from "@/hooks/use-invoice-download";
 
 interface InvoiceViewModalProps extends ModalProps {
-  invoice: InvoiceSummaryDto;
+  invoice?: InvoiceSummaryDto | InvoiceDto;
+  invoiceId?: string;
+  fetchInvoice?: boolean;
 }
 
 export const InvoiceViewModal = ({
   openState,
   onClose,
-  invoice,
+  invoice: propInvoice,
+  invoiceId: propInvoiceId,
+  fetchInvoice = false,
 }: InvoiceViewModalProps) => {
+  const dispatch = useDispatch();
+  const { storeId } = useStoreNavigation();
+  const {
+    data: { invoiceListData },
+    getStatus,
+  } = useSelector(selectInvoiceState);
+
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [pageSize, setPageSize] = useState("80mm");
+
+  const invoiceId = propInvoiceId || propInvoice?.id;
+  const cachedInvoice = invoiceListData.find(
+    (inv: InvoiceDto) => inv.id === invoiceId,
+  );
+  const isLoading = getStatus === "loading" && !cachedInvoice;
+  const displayInvoice = fetchInvoice ? cachedInvoice : propInvoice;
+
+  useEffect(() => {
+    if (openState && fetchInvoice && invoiceId && !cachedInvoice && storeId) {
+      dispatch(fetchInvoiceByIdThunk({ storeId, invoiceId }));
+    }
+  }, [openState, fetchInvoice, invoiceId, cachedInvoice, storeId, dispatch]);
+
+  const { isDownloading, downloadInvoice, hiddenInvoiceComponent } =
+    useInvoiceDownload();
 
   const handlePrint = useReactToPrint({
     contentRef: invoiceRef,
@@ -55,16 +90,40 @@ export const InvoiceViewModal = ({
         />
       </div>
       <div className="max-h-[70vh] overflow-y-auto flex justify-center">
-        <InvoiceDocument
-          invoice={invoice}
-          ref={invoiceRef}
-          pageSize={pageSize}
-        />
+        {isLoading ? (
+          <InvoiceDocumentSkeleton />
+        ) : displayInvoice ? (
+          <InvoiceDocument
+            invoice={displayInvoice}
+            ref={invoiceRef}
+            pageSize={pageSize}
+          />
+        ) : (
+          <p className="text-gray-500 py-4 text-center">
+            No invoice details found.
+          </p>
+        )}
       </div>
-      <div className="flex gap-3 sticky bottom-0">
-        <Button className="w-full justify-center flex-1" onClick={handlePrint}>
+
+      {hiddenInvoiceComponent}
+
+      <div className="flex gap-2 sticky bottom-0">
+        <Button
+          className="justify-center flex-1"
+          onClick={handlePrint}
+          disabled={isLoading || isDownloading || !displayInvoice}
+        >
           <PrinterCheck size={18} />
           Print bill
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => displayInvoice && downloadInvoice(displayInvoice)}
+          disabled={isLoading || isDownloading || !displayInvoice}
+          loading={isDownloading}
+        >
+          <Download size={18} />
+          Download
         </Button>
       </div>
     </Modal>

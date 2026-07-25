@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { FileText, Pen, Eye, Download } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,6 +9,7 @@ import {
   fetchInvoiceListThunk,
   selectInvoiceState,
   clearInvoiceList,
+  fetchInvoiceByIdThunk,
 } from "@/store/features/invoiceSlice";
 import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 import { useStoreNavigation } from "@/hooks/store-navigation";
@@ -25,6 +26,7 @@ import { InvoiceViewModal } from "./InvoiceViewModal";
 import { getTableSearchDebounceTime } from "@/utils/get-debounce";
 import { cn } from "@/components/utils";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { useInvoiceDownload } from "@/hooks/use-invoice-download";
 
 const filterOptions: SelectOptionType[] = [
   { value: "All", key: "all" },
@@ -44,9 +46,11 @@ const InvoiceActions = ({
 }) => {
   const [editOpen, setEditOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
+  const { isDownloading, downloadInvoice, hiddenInvoiceComponent } =
+    useInvoiceDownload();
 
   return (
-    <div className="flex items-center justify-end gap-1">
+    <div className="flex items-center justify-end gap-1 relative">
       <Button
         variant="outline"
         className="p-2 text-primary"
@@ -63,9 +67,18 @@ const InvoiceActions = ({
       >
         <Eye className="w-4 h-4" />
       </Button>
-      <Button variant="outline" className="p-2" tooltip="Download">
+      <Button
+        variant="outline"
+        className="p-2"
+        tooltip={isDownloading ? "Downloading..." : "Download"}
+        onClick={() => downloadInvoice(invoice)}
+        disabled={isDownloading}
+        loading={isDownloading}
+      >
         <Download className="w-4 h-4" />
       </Button>
+
+      {hiddenInvoiceComponent}
 
       <InvoiceDueEditModal
         openState={editOpen}
@@ -77,6 +90,7 @@ const InvoiceActions = ({
       <InvoiceViewModal
         openState={viewOpen}
         invoice={invoice}
+        fetchInvoice={true}
         onClose={() => setViewOpen(false)}
       />
     </div>
@@ -87,7 +101,7 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
   const { storeId } = useStoreNavigation();
   const dispatch = useDispatch();
   const {
-    data: { invoiceListData },
+    data: { invoicePagedData },
     status: invoiceFetchStatus,
   } = useSelector(selectInvoiceState);
   const {
@@ -124,7 +138,7 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
   }, [searchTerm, debouncedSearchTerm, dispatch]);
 
   useEffect(() => {
-    if (!invoiceListData.pages[currentPage]) {
+    if (!invoicePagedData.pages[currentPage]) {
       const sortField = sorting[0]?.id;
       const sortOrder = sorting[0]?.desc ? "desc" : "asc";
 
@@ -147,7 +161,7 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
     currentPage,
     pagination.pageSize,
     filterStatus,
-    invoiceListData.pages,
+    invoicePagedData.pages,
     debouncedSearchTerm,
     sorting,
     customerId,
@@ -223,8 +237,8 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
   );
 
   const pageData = useMemo(
-    () => invoiceListData.pages[currentPage]?.docs || [],
-    [invoiceListData, currentPage],
+    () => invoicePagedData.pages[currentPage]?.docs || [],
+    [invoicePagedData, currentPage],
   );
 
   return (
@@ -251,7 +265,7 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
         columns={columns}
         data={pageData}
         isLoading={invoiceFetchStatus === "loading"}
-        pageCount={invoiceListData.totalPages}
+        pageCount={invoicePagedData.totalPages}
         pagination={pagination}
         onPaginationChange={setPagination}
         sorting={sorting}

@@ -73,7 +73,8 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
       storeSettings?.invoiceStoreName || currentStore?.name || "Invoice";
     const storeAddress =
       storeSettings?.invoiceStoreAddress || currentStore?.addressLine;
-    const isCompact = pageSize !== "112mm";
+    const isCompact =
+      pageSize !== "112mm" && pageSize !== "210mm" && pageSize !== "216mm";
 
     return (
       <div
@@ -97,7 +98,7 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-500">
+                <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-500 pr-1">
                   Invoice
                 </p>
                 <h1
@@ -144,7 +145,9 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
                 >
                   {currentStore.contactNo}
                 </ConditionalDiv>
-                <Dot size={15} />
+                {currentStore?.contactEmail && currentStore?.contactNo && (
+                  <Dot size={15} />
+                )}
                 <ConditionalDiv
                   condition={currentStore?.contactEmail}
                   className="wrap-break-word"
@@ -171,7 +174,7 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
 
         <section
           className={cn(
-            "border-b border-gray-200 py-2",
+            "py-2",
             isCompact ? "space-y-2" : "grid grid-cols-2 gap-4",
           )}
         >
@@ -224,7 +227,12 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
         </section>
 
         <section className="py-2">
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse table-fixed">
+            <colgroup>
+              <col className="w-7/12" />
+              <col className="w-2/12" />
+              <col className="w-3/12" />
+            </colgroup>
             <thead>
               <tr className="border-b border-gray-300 text-[9px] uppercase tracking-wide text-gray-500">
                 <th className="py-1.5 pr-2 text-left font-semibold">Item</th>
@@ -241,7 +249,7 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
                 >
                   <td className="py-1.5 pr-2 align-top">
                     <p className="font-medium leading-tight text-gray-950 wrap-break-word">
-                      {item.product.name}
+                      {item.product?.name || item.productName}
                     </p>
                   </td>
                   <td className="px-1 py-1.5 text-center align-top text-gray-700">
@@ -259,7 +267,7 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
           </table>
         </section>
 
-        <section className="border-t border-gray-200 pt-2">
+        <section className="pt-2">
           <div className="ml-auto space-y-0.5">
             <DetailLine
               label="Subtotal"

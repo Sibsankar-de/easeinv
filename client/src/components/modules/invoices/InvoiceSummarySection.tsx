@@ -67,7 +67,7 @@ export const InvoiceSummarySection = () => {
 
       <MetricCard
         label="Total Pending Payment"
-        value={String(summaryData.totalDue)}
+        value={compactCurrency(summaryData.totalDue, currencyCode)}
         helper={`${summaryData.dueCount} pending invoices`}
         icon={ClockAlert}
         tone="danger"

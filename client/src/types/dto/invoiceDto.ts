@@ -5,6 +5,7 @@ export type BillItemType = {
     name: string;
     sku: string;
   };
+  productName?: string;
   pricePerQuantity?: {
     id: number;
     price: number;

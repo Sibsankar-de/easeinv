@@ -122,3 +122,51 @@ export const ProfileSkeleton = () => {
     </div>
   );
 };
+
+export const InvoiceDocumentSkeleton = () => {
+  return (
+    <div className="w-[80mm] p-4 space-y-4 border border-gray-200 rounded-lg bg-white animate-pulse">
+      {/* Header */}
+      <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-3.5 w-32" />
+        </div>
+        <Skeleton className="h-6 w-16" />
+      </div>
+      {/* Customer Info */}
+      <div className="space-y-2 py-2">
+        <Skeleton className="h-3.5 w-16" />
+        <Skeleton className="h-3.5 w-28" />
+        <Skeleton className="h-3.5 w-40" />
+      </div>
+      {/* Table header */}
+      <div className="border-t border-b border-gray-100 py-2 flex justify-between">
+        <Skeleton className="h-4 w-20" />
+        <Skeleton className="h-4 w-12" />
+      </div>
+      {/* Items */}
+      <div className="space-y-3 py-2">
+        <div className="flex justify-between">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-8" />
+        </div>
+        <div className="flex justify-between">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-4 w-8" />
+        </div>
+      </div>
+      {/* Summary */}
+      <div className="border-t border-gray-100 pt-3 space-y-2">
+        <div className="flex justify-between">
+          <Skeleton className="h-3.5 w-14" />
+          <Skeleton className="h-3.5 w-12" />
+        </div>
+        <div className="flex justify-between font-semibold">
+          <Skeleton className="h-4 w-10" />
+          <Skeleton className="h-4 w-14" />
+        </div>
+      </div>
+    </div>
+  );
+};
