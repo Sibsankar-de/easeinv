@@ -39,7 +39,10 @@ export const StoreListSection = () => {
             Manage and switch between your business stores
           </p>
         </div>
-        <Button onClick={() => setIsStoreModalOpen((p) => !p)}>
+        <Button
+          className="justify-center"
+          onClick={() => setIsStoreModalOpen((p) => !p)}
+        >
           <Plus size={16} />
           Create Store
         </Button>

@@ -64,10 +64,10 @@ export function HeaderNavbar() {
       ref={navRef}
       className="bg-white border-b border-gray-200 px-8 py-1 sticky top-0 z-50 h-fit"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <AppLogoFull size={120} />
 
-        <div className="flex-1 max-w-2xl flex items-center gap-2">
+        <div className="flex-1 max-w-2xl flex items-center gap-2 max-md:hidden">
           <div className="flex items-center gap-1">
             <Button
               onClick={() => router.back()}
@@ -92,7 +92,7 @@ export function HeaderNavbar() {
           {actionButtons}
         </div>
 
-        <div className="flex items-center gap-4 ml-8">
+        <div className="flex items-center gap-4">
           <Button
             variant="none"
             className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
