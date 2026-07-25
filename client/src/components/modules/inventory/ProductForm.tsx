@@ -7,7 +7,7 @@ import { CategorySelector } from "./CategorySelector";
 import { StockUnitInput } from "../../ui/StockUnitInput";
 import { PriceBreakdownInput } from "./PriceBreakdownInput";
 import { Button } from "../../ui/Button";
-import { CloudCheck, Info } from "lucide-react";
+import { CloudCheck, Info, Clock, Package, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   PricePerQuantityType,
@@ -40,6 +40,7 @@ import { UnitGroupsSection } from "./UnitGroupsSection";
 import { SelectOptionType } from "@/types/SelectType";
 import { convertUnit } from "@/utils/conversion";
 import { unitMap } from "@/constants/UnitMaps";
+import { formatDateStr } from "@/utils/formatDate";
 import { PriceInput } from "@/components/ui/PriceInput";
 
 export const ProductForm = ({ formFor }: { formFor: string }) => {
@@ -167,8 +168,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     dispatch(updateProductThunk({ ...formData, productId, storeId }))
       .unwrap()
       .then(() => {
-        toast.success("Product updated");
-        navigate(`/inventory`);
+        toast.success("Product saved.");
       });
   };
 
@@ -407,6 +407,14 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
               onChange={(e) => handleNumberChange("totalStock", e)}
               disabled={!formData.trackInventory || isLoading}
             />
+            {formData.trackInventory && formData.lastStockAddedAt && (
+              <p className="mt-1.5 text-xs text-gray-500">
+                Last stock update: {formData.lastStockAmount}{" "}
+                {convertUnit(formData.stockUnit, storeSettings.customUnits)} on{" "}
+                {formatDateStr(formData.lastStockAddedAt).dateStr} at{" "}
+                {formatDateStr(formData.lastStockAddedAt).timeStr}
+              </p>
+            )}
           </div>
 
           <div>
@@ -484,7 +492,8 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
 
       <div className="mt-10 flex items-center gap-3 justify-end">
         <Button variant="outline" onClick={() => router.back()}>
-          Cancel
+          <ArrowLeft size={15} />
+          Back
         </Button>
         <Button
           onClick={handleSaveProduct}

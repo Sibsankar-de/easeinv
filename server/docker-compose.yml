@@ -13,6 +13,8 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: root
       POSTGRES_DB: easeinv
+      TZ: UTC
+      PGTZ: UTC
 
   rabbitmq:
     image: rabbitmq:3-management

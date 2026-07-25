@@ -4,12 +4,11 @@ import { StatusCodes } from "http-status-codes";
 import { generateGTIN } from "../utils/gtin-generator";
 import { productLimits } from "../constants/limits.constants";
 import { paginate } from "../utils/paginate";
-import { ProductCreateUpdateDTO } from "../schemas/product.schema";
 import {
-  toProductDto,
-  ProductResponseDto,
-  toProductSummaryDto,
-} from "../dto/product.dto";
+  ProductCreateUpdateDTO,
+  ProductExtraData,
+} from "../schemas/product.schema";
+import { toProductDto, toProductSummaryDto } from "../dto/product.dto";
 import {
   prismaTransaction,
   TransactionClient,
@@ -17,6 +16,7 @@ import {
 import { Product, ProductStockStatus, Store, User } from "@prisma/client";
 import * as transactionalEmailService from "./transactionalEmail.service";
 import { clientPages } from "../constants/client.constant";
+import { productExtraDataConverter } from "../converters/product.converter";
 
 export const getProducts = async (params: {
   storeId: string;
@@ -93,8 +93,9 @@ export const createProduct = async (
         emailAlert: emailAlert ?? false,
         stockStatus: getProductStockStatus(totalStock, alertThreshold),
         stockUnit,
-        unitGroups: unitGroups as any,
-        pricePerQuantity: pricePerQuantity as any,
+        unitGroups: unitGroups,
+        pricePerQuantity: pricePerQuantity,
+        extraData: productExtraDataConverter({}),
       },
     });
 
@@ -137,6 +138,23 @@ export const updateProduct = async (
       throw new ApiError(StatusCodes.BAD_REQUEST, "Gtin isrequired.");
     }
 
+    const product = await tx.product.findFirst({ where: { id: productId } });
+    if (!product) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Product not found.");
+    }
+
+    // update last stock update status
+    let extraData: ProductExtraData = productExtraDataConverter(
+      product.extraData,
+    );
+    if (trackInventory && product.totalStock !== totalStock) {
+      extraData = {
+        ...extraData,
+        lastStockAmount: product.totalStock,
+        lastStockAddedAt: new Date(),
+      };
+    }
+
     await tx.product.update({
       where: { id: productId },
       data: {
@@ -153,6 +171,7 @@ export const updateProduct = async (
         stockUnit,
         unitGroups: unitGroups as any,
         pricePerQuantity: pricePerQuantity as any,
+        extraData,
       },
     });
 

@@ -48,6 +48,8 @@ export type ProductDto = {
   unitGroups?: UnitGroupType[];
   images?: ProductImageType[];
   imageIds?: string[];
+  lastStockAmount: number;
+  lastStockAddedAt: Date | null;
   createdAt?: Date;
   updatedAt?: Date;
 };

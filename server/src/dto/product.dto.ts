@@ -7,6 +7,7 @@ import {
   ProductStockStatus,
 } from "@prisma/client";
 import { PricePerQuantityDto, UnitGroupDto } from "../schemas/product.schema";
+import { productExtraDataConverter } from "../converters/product.converter";
 
 export interface CategoryDto {
   id: string;
@@ -49,6 +50,8 @@ export interface ProductResponseDto {
   pricePerQuantity: PricePerQuantityDto[];
   categories: CategoryDto[];
   images: ProductImageDto[];
+  lastStockAmount: number;
+  lastStockAddedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -73,6 +76,7 @@ export const toProductDto = (
   categories: Category[],
   images: (ProductImage & { image: GalleryImage })[],
 ): ProductResponseDto => {
+  const extraData = productExtraDataConverter(product.extraData);
   return {
     id: product.id,
     userId: product.userId,
@@ -103,6 +107,8 @@ export const toProductDto = (
       url: img.image.url,
       name: img.image.name,
     })),
+    lastStockAmount: extraData.lastStockAmount,
+    lastStockAddedAt: extraData.lastStockAddedAt,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
   };

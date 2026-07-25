@@ -61,7 +61,14 @@ export const rearrangeImagesSchema = z.object({
   imagePriorities: z.record(z.string(), z.number()),
 });
 
+export const productExtraDataSchema = z.object({
+  lastStockAddedAt: z.coerce.date().nullable().default(null),
+  lastStockAmount: z.number().default(0),
+});
+
 export type PricePerQuantityDto = z.infer<typeof pricePerQuantityItemSchema>;
 export type UnitGroupDto = z.infer<typeof unitGroupSchema>;
 export type ProductCreateUpdateDTO = z.infer<typeof productCreateUpdateSchema>;
 export type RearrangeImagesDTO = z.infer<typeof rearrangeImagesSchema>;
+
+export type ProductExtraData = z.infer<typeof productExtraDataSchema>;

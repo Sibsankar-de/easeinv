@@ -38,6 +38,7 @@ model Product {
   stockUnit              String
   unitGroups             Json               @default("[]") // {id, name, unit, multiplier}
   pricePerQuantity       Json               @default("[]") // {id, price, quantity, profitMargin}
+  extraData              Json               @default("{}") // {last stock update details}
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 
