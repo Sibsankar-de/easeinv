@@ -1,7 +1,7 @@
 import React from "react";
 
 export function PageContainer({ children }: { children: React.ReactNode }) {
-  return <div className="p-8 max-w-7xl mx-auto">{children}</div>;
+  return <div className="p-8 max-w-7xl mx-auto max-md:p-4">{children}</div>;
 }
 
 export function StorePageContainer({
