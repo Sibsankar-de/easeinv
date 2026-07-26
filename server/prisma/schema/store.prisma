@@ -10,6 +10,7 @@ enum StoreStatus {
   ACTIVE
   INACTIVE
   SUSPENDED
+  DELETED
 }
 
 model Store {

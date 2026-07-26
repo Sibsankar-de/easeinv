@@ -9,7 +9,7 @@ import {
   UpdateStoreDTO,
   UpdateStoreSettingsDTO,
 } from "../schemas/store.schema";
-import { StoreUserRole, User } from "@prisma/client";
+import { StoreStatus, StoreUserRole, User } from "@prisma/client";
 import {
   prismaTransaction,
   TransactionClient,
@@ -147,14 +147,12 @@ const getStoreByUserAndId = async (
   return toStoreDto(storeUser.store, storeUser.role);
 };
 
-export const deleteStore = async (storeId: string) => {
-  const store = await prisma.store.findUnique({ where: { id: storeId } });
-  if (!store) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Store not found");
-  }
-
-  // Cascade deletes are handled by Prisma schema onDelete: Cascade
-  await prisma.store.delete({ where: { id: storeId } });
+export const markStoreDeletedById = async (storeId: string) => {
+  // mark store as deleted.
+  await prisma.store.update({
+    where: { id: storeId },
+    data: { status: StoreStatus.DELETED },
+  });
   return null;
 };
 
@@ -232,7 +230,7 @@ export const uploadInvoicePaymentQrCode = async (
 
 export const getStoreList = async (userId: string) => {
   const storeUsers = await prisma.storeUser.findMany({
-    where: { userId },
+    where: { userId, store: { status: { not: StoreStatus.DELETED } } },
     include: {
       store: true,
     },

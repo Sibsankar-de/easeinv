@@ -7,7 +7,7 @@ import {
   ManagerLevelRoles,
   OwnerLevelRoles,
 } from "../constants/userStoreRoles";
-import { StoreUserRole } from "@prisma/client";
+import { StoreStatus } from "@prisma/client";
 
 export const verifyStoreAccess = (allowed_roles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -19,9 +19,18 @@ export const verifyStoreAccess = (allowed_roles: string[]) => {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Store ID is required");
       }
 
-      const store = await prisma.store.findUnique({ where: { id: storeId } });
+      const store = await prisma.store.findUnique({
+        where: { id: storeId, status: { not: StoreStatus.DELETED } },
+      });
       if (!store) {
         throw new ApiError(StatusCodes.NOT_FOUND, "Store not found");
+      }
+
+      if (store.status === StoreStatus.SUSPENDED) {
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          "Store suspended. Contact to customer service.",
+        );
       }
 
       const storeUser = await prisma.storeUser.findFirst({

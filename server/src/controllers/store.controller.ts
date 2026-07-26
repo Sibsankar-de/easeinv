@@ -46,7 +46,7 @@ export const updateStore = asyncHandler(async (req: Request, res: Response) => {
 export const deleteStore = asyncHandler(async (req: Request, res: Response) => {
   const { storeId } = req.params;
 
-  await storeService.deleteStore(storeId as string);
+  await storeService.markStoreDeletedById(storeId as string);
 
   return res
     .status(StatusCodes.OK)
