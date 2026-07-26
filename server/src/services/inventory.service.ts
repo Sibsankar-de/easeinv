@@ -78,6 +78,16 @@ export const createProduct = async (
       description,
     } = productData;
 
+    // add last stock update status
+    let extraData: ProductExtraData = productExtraDataConverter({});
+    if (trackInventory && totalStock) {
+      extraData = {
+        ...extraData,
+        lastStockAmount: totalStock,
+        lastStockAddedAt: new Date(),
+      };
+    }
+
     const product = await tx.product.create({
       data: {
         userId,
@@ -95,7 +105,7 @@ export const createProduct = async (
         stockUnit,
         unitGroups: unitGroups,
         pricePerQuantity: pricePerQuantity,
-        extraData: productExtraDataConverter({}),
+        extraData: extraData,
       },
     });
 

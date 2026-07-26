@@ -1,4 +1,9 @@
 import { Invoice, InvoiceItem, Product, Customer } from "@prisma/client";
+import {
+  CustomerSummaryResponseDto,
+  toCustomerSummaryDto,
+} from "./customer.dto";
+import { invoiceExtraDataConverter } from "../converters/invoice.converter";
 
 export type InvoiceItemWithProduct = InvoiceItem & {
   product?: Pick<Product, "id" | "name" | "sku"> | null;
@@ -28,13 +33,7 @@ export interface InvoiceResponseDto {
   id: string;
   storeId: string;
   customerId?: string;
-  customer?: {
-    id?: string;
-    name: string;
-    phoneNumber?: string;
-    address?: string;
-    email?: string;
-  };
+  customer?: CustomerSummaryResponseDto;
   invoiceNumber: string;
   issueDate: Date;
   billItems: BillItemDto[];
@@ -74,6 +73,31 @@ export const toBillItemDto = (item: InvoiceItemWithProduct): BillItemDto => {
   };
 };
 
+const getInvoiceCustomer = (
+  customerRelation?: Customer | null,
+  rawExtraData?: any,
+): CustomerSummaryResponseDto | undefined => {
+  if (customerRelation) {
+    return toCustomerSummaryDto(customerRelation);
+  }
+  if (rawExtraData) {
+    const extraData = invoiceExtraDataConverter(rawExtraData);
+    if (extraData.customer && extraData.customer.name) {
+      return {
+        id: "",
+        name: extraData.customer.name,
+        phoneNumber: extraData.customer.phoneNumber,
+        address: extraData.customer.address,
+        email: "",
+        totalDue: 0,
+        totalInvoices: 0,
+        dueCount: 0,
+      };
+    }
+  }
+  return undefined;
+};
+
 export const toInvoiceDto = (
   invoice: InvoiceWithRelations,
 ): InvoiceResponseDto => {
@@ -81,15 +105,7 @@ export const toInvoiceDto = (
     id: invoice.id,
     storeId: invoice.storeId,
     customerId: invoice.customerId || undefined,
-    customer: invoice.customer
-      ? {
-          id: invoice.customer.id,
-          name: invoice.customer.name,
-          phoneNumber: invoice.customer.phoneNumber || undefined,
-          address: invoice.customer.address || undefined,
-          email: invoice.customer.email || undefined,
-        }
-      : undefined,
+    customer: getInvoiceCustomer(invoice.customer, invoice.extraData),
     invoiceNumber: invoice.invoiceNumber,
     issueDate: invoice.issueDate,
     billItems: (invoice.billItems || []).map(toBillItemDto),
@@ -111,26 +127,10 @@ export const toInvoiceDto = (
   };
 };
 
-export const toInvoiceListDto = (
-  invoices: InvoiceWithRelations[],
-): InvoiceResponseDto[] => {
-  return invoices.map(toInvoiceDto);
-};
-
-export const toPaginatedInvoicesDto = (paginatedResult: any) => {
-  return {
-    ...paginatedResult,
-    docs: toInvoiceListDto(paginatedResult.docs),
-  };
-};
-
 export interface InvoiceSummaryResponseDto {
   id: string;
   invoiceNumber: string;
-  customer?: {
-    id: string;
-    name: string;
-  };
+  customer?: CustomerSummaryResponseDto;
   issueDate: Date;
   subTotal: number;
   total: number;
@@ -146,10 +146,7 @@ export const toInvoiceSummaryDto = (
   return {
     id: invoice.id,
     invoiceNumber: invoice.invoiceNumber,
-    customer: {
-      id: invoice?.customer.id,
-      name: invoice?.customer.name,
-    },
+    customer: getInvoiceCustomer(invoice.customer, invoice.extraData),
     issueDate: invoice.issueDate,
     subTotal: invoice.subTotal,
     total: invoice.total,

@@ -18,7 +18,7 @@ export const SecondaryInput = ({
   const id = propId ?? reactId;
 
   return (
-    <div className="flex h-full w-full">
+    <div className="flex h-fit w-full">
       <Input
         id={id}
         type="number"

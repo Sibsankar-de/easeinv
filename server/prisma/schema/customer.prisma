@@ -1,4 +1,5 @@
 enum PaymentBehaviour {
+  NEUTRAL
   ADVANCE
   OVERDUE
 }
@@ -10,18 +11,18 @@ enum CustomerMark {
 }
 
 model Customer {
-  id               String            @id @default(uuid()) @db.Uuid
-  storeId          String            @db.Uuid
+  id               String           @id @default(uuid()) @db.Uuid
+  storeId          String           @db.Uuid
   name             String
-  phoneNumber      String?           @default("")
-  email            String?           @default("")
-  address          String?           @default("")
-  totalDue         Float             @default(0)
-  advance          Float             @default(0)
-  paymentBehaviour PaymentBehaviour?
-  mark             CustomerMark?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  phoneNumber      String?          @default("")
+  email            String?          @default("")
+  address          String?          @default("")
+  totalDue         Float            @default(0)
+  advance          Float            @default(0)
+  paymentBehaviour PaymentBehaviour @default(NEUTRAL)
+  mark             CustomerMark     @default(REGULAR)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   // Relations
   store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)

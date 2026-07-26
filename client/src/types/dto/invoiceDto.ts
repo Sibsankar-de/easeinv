@@ -45,7 +45,7 @@ export interface CreateInvoiceDto {
   taxRate?: number;
   roundupTotal?: boolean;
   note?: string;
-  status?: string;
+  status?: InvoiceStatus;
   billItems: {
     productId: string;
     netQuantity: number;
@@ -65,6 +65,11 @@ export interface CreateInvoiceDto {
     address?: string | null;
     email?: string | null;
   };
+}
+
+export enum InvoiceStatus {
+  ISSUED = "ISSUED",
+  DRAFTED = "DRAFTED",
 }
 
 export interface InvoiceDto {
@@ -92,7 +97,7 @@ export interface InvoiceDto {
   paidAmount: number;
   roundupTotal?: boolean;
   note?: string;
-  status: string;
+  status: InvoiceStatus;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -109,5 +114,5 @@ export interface InvoiceSummaryDto {
   total: number;
   dueAmount: number;
   paidAmount: number;
-  status: string;
+  status: InvoiceStatus;
 }

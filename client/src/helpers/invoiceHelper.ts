@@ -1,8 +1,8 @@
-import { BillItemType, CreateInvoiceDto } from "@/types/dto/invoiceDto";
+import { BillItemType, CreateInvoiceDto, InvoiceStatus } from "@/types/dto/invoiceDto";
 
 export type InvoiceFormState = {
   storeId?: string;
-  status?: string;
+  status?: InvoiceStatus;
   invoiceNumber: string;
   issueDate: string | Date;
   subTotal: number;
@@ -28,7 +28,7 @@ export type InvoiceFormState = {
 
 export const transformInvoicePayload = (
   payload: InvoiceFormState,
-): CreateInvoiceDto & { storeId: string; status: string } => {
+): CreateInvoiceDto & { storeId: string; status: InvoiceStatus } => {
   const { storeId, status, billItems, customer, ...rest } = payload;
 
   const transformedItems = (billItems || []).map((item) => ({
@@ -49,7 +49,7 @@ export const transformInvoicePayload = (
 
   return {
     storeId: storeId ?? "",
-    status: status ?? "",
+    status: status ?? InvoiceStatus.DRAFTED,
     invoiceNumber: rest.invoiceNumber,
     issueDate: rest.issueDate,
     paidAmount: rest.paidAmount,

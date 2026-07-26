@@ -85,6 +85,7 @@ export const createInvoice = async (
           customer: {
             name: customerDetails.name,
             phoneNumber: customerDetails.phoneNumber,
+            email: customerDetails.email,
             address: customerDetails.address,
           },
         },

@@ -17,7 +17,7 @@ export const getCustomers = asyncHandler(
     const sortBy = (req.query.sortBy as string) || "createdAt";
     const sortOrder = req.query.sortOrder === "desc" ? "desc" : "asc";
 
-    const paginatedList = await customerService.getCustomers({
+    const result = await customerService.getCustomers({
       storeId,
       page,
       limit,
@@ -27,9 +27,7 @@ export const getCustomers = asyncHandler(
 
     return res
       .status(StatusCodes.OK)
-      .json(
-        new ApiResponse(StatusCodes.OK, paginatedList, "Customers fetched"),
-      );
+      .json(new ApiResponse(StatusCodes.OK, result, "Customers fetched"));
   },
 );
 

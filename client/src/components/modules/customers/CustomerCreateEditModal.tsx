@@ -10,6 +10,7 @@ import {
   updateCustomerThunk,
   selectCustomerState,
   createCustomerThunk,
+  invalidateCustomerPages,
 } from "@/store/features/customerSlice";
 import { CustomerDto } from "@/types/dto/customerDto";
 import { X } from "lucide-react";
@@ -50,13 +51,13 @@ export function CustomerCreateEditModal({
     }
   }, [customer, openState]);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!formData.name.trim()) {
       toast.warn("Customer name is required");
       return;
     }
 
-    dispatch(
+    await dispatch(
       createCustomerThunk({
         storeId,
         data: formData,
@@ -65,17 +66,18 @@ export function CustomerCreateEditModal({
       .unwrap()
       .then(() => {
         toast.success("Customer created successfully!");
+        dispatch(invalidateCustomerPages());
         onClose();
       });
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!customer || !formData.name.trim()) {
       toast.warn("Customer name is required");
       return;
     }
 
-    dispatch(
+    await dispatch(
       updateCustomerThunk({
         storeId,
         customerId: customer.id,
@@ -89,15 +91,15 @@ export function CustomerCreateEditModal({
       });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!storeId) return;
 
     switch (mode) {
       case "create":
-        handleCreate();
+        await handleCreate();
         break;
       case "edit":
-        handleUpdate();
+        await handleUpdate();
         break;
     }
   };

@@ -1,5 +1,5 @@
 enum InvoiceStatus {
-  PRINTED
+  ISSUED
   DRAFTED
 }
 
@@ -29,7 +29,7 @@ model Invoice {
   note            String?
   status          InvoiceStatus        @default(DRAFTED)
   paymentStatus   InvoicePaymentStatus @default(PAID)
-  extraData       Json?
+  extraData       Json                 @default("{}")
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
 
