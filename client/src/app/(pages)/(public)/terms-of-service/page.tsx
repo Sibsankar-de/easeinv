@@ -25,7 +25,7 @@ export default function TermsOfServicePage() {
           badgeLabel="Fair Rules For Scaling Teams"
           badgeIcon={Scale}
           title="Terms of Service"
-          description="Please review the licensing terms, subscription models, and limits that govern your billing workspaces."
+          description="Please review the licensing terms, subscription models, and limits that govern your billing stores."
         />
 
         {/* Detailed Terms Content */}

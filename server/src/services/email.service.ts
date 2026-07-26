@@ -140,3 +140,26 @@ export const getStockAlertEmail = async (
 
   return emailJob;
 };
+
+export const getPasswordResetEmail = async (
+  user: User,
+  resetLink: string,
+): Promise<EmailJob> => {
+  const data = {
+    recipientName: user.userName,
+    resetLink,
+  };
+
+  const body = await renderEmail({
+    templateName: emailTemplates.PASSWORD_RESET_TEMPLATE,
+    data,
+  });
+
+  const emailJob: EmailJob = {
+    to: user.email,
+    subject: "Reset your password - EaseInv",
+    html: body,
+  };
+
+  return emailJob;
+};

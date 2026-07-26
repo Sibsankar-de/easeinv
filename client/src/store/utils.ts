@@ -20,7 +20,7 @@ export const createApiThunk = (
       const status = error?.response?.status;
       const message = error?.response?.data?.message;
 
-      if (status && status >= 400 && status < 500) {
+      if (status && status >= 400) {
         toast.error(message || "Something went wrong!");
       }
 

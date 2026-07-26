@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, X, ArrowRight, ChevronRight } from "lucide-react";
 import clsx from "clsx";
-import { AppLogoFull } from "@/components/ui/AppLogo";
+import { AppLogo, AppLogoFull } from "@/components/ui/AppLogo";
+import { useResize } from "@/contexts/ResizeContext";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSelector } from "react-redux";
@@ -14,6 +15,7 @@ import { Avatar } from "@/components/ui/Avatar";
 export const TopNav = () => {
   const { isAuthenticated } = useAuth();
   const { data: user } = useSelector(selectUserSate);
+  const { md } = useResize();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -43,11 +45,19 @@ export const TopNav = () => {
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
-          <AppLogoFull
-            size={140}
-            className="transition-transform duration-300 group-hover:scale-105"
-            priority
-          />
+          {md ? (
+            <AppLogoFull
+              size={140}
+              className="transition-transform duration-300 group-hover:scale-105"
+              priority
+            />
+          ) : (
+            <AppLogo
+              size={35}
+              className="transition-transform duration-300 group-hover:scale-105"
+              priority
+            />
+          )}
         </Link>
 
         {/* Desktop Navigation */}

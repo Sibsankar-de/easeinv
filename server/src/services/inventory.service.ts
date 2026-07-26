@@ -78,6 +78,16 @@ export const createProduct = async (
       description,
     } = productData;
 
+    // add last stock update status
+    let extraData: ProductExtraData = productExtraDataConverter({});
+    if (trackInventory && totalStock) {
+      extraData = {
+        ...extraData,
+        lastStockAmount: totalStock,
+        lastStockAddedAt: new Date(),
+      };
+    }
+
     const product = await tx.product.create({
       data: {
         userId,
@@ -95,7 +105,7 @@ export const createProduct = async (
         stockUnit,
         unitGroups: unitGroups,
         pricePerQuantity: pricePerQuantity,
-        extraData: productExtraDataConverter({}),
+        extraData: extraData,
       },
     });
 
@@ -434,17 +444,15 @@ export const updateInventoryStock = async (
     return product;
   }
 
-  if (product.totalStock >= quantity) {
+  if (product.totalStock > 0) {
+    const newStock = Math.max(product.totalStock - quantity, 0);
     product = await tx.product.update({
       where: {
         id: productId,
       },
       data: {
-        totalStock: { decrement: quantity },
-        stockStatus: getProductStockStatus(
-          product.totalStock - quantity,
-          product.alertThreshold,
-        ),
+        totalStock: newStock,
+        stockStatus: getProductStockStatus(newStock, product.alertThreshold),
       },
       include: { user: true },
     });

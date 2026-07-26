@@ -3,6 +3,7 @@ import { CustomerDto } from "@/types/dto/customerDto";
 import { PaginatedPages } from "@/types/PageableType";
 import { createApiThunk, setState, transformPaginatedResponse } from "../utils";
 import { createSlice } from "@reduxjs/toolkit";
+import { createInvoiceThunk } from "./invoiceSlice";
 
 export const fetchCustomerListThunk: any = createApiThunk(
   "/customers/list",
@@ -80,17 +81,19 @@ const customerSlice = createSlice({
   name: "customers",
   initialState,
   reducers: {
-    clearCustomerListData: (state) => {
+    invalidateCustomerPages: (state) => {
       state.data.customerListData = {
         pages: {},
         totalDocs: 0,
         totalPages: 0,
       };
+      state.status = "idle";
     },
     clearCurrentCustomer: (state) => {
       state.data.currentCustomer = null;
       state.fetchStatus = "idle";
     },
+    invalidate: () => initialState,
   },
   extraReducers(builder) {
     builder
@@ -168,6 +171,6 @@ const customerSlice = createSlice({
 });
 
 export const selectCustomerState = (state: any) => state.customers;
-export const { clearCustomerListData, clearCurrentCustomer } =
+export const { invalidateCustomerPages, clearCurrentCustomer, invalidate } =
   customerSlice.actions;
 export default customerSlice.reducer;

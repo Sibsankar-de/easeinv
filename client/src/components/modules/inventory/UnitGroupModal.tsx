@@ -130,7 +130,7 @@ export const UnitGroupModal = ({
             setForm((p) => ({ ...p, unit: v }));
             if (errors.unit) setErrors((e) => ({ ...e, unit: "" }));
           }}
-          errorMessage={errors.name}
+          errorMessage={errors.unit}
         />
       </div>
 

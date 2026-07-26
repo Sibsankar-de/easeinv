@@ -124,38 +124,59 @@ export default function InteractiveMockup() {
                   USD ($)
                 </span>
               </div>
-              <div className="flex items-end justify-between h-full gap-2 pt-4">
-                {[30, 45, 25, 60, 50, 75, 90, 80, 95, 65, 85, 100].map(
-                  (height, i) => (
-                    <div
-                      key={i}
-                      className="flex-1 flex flex-col items-center gap-1.5"
-                    >
-                      <div
-                        className="w-full bg-primary/80 hover:bg-primary transition-all duration-300 rounded-t-sm"
-                        style={{ height: `${height * 0.8}%`, minHeight: "4px" }}
-                      />
-                      <span className="text-[9px] text-muted-foreground font-medium hidden sm:inline">
-                        {
-                          [
-                            "J",
-                            "F",
-                            "M",
-                            "A",
-                            "M",
-                            "J",
-                            "J",
-                            "A",
-                            "S",
-                            "O",
-                            "N",
-                            "D",
-                          ][i]
-                        }
-                      </span>
-                    </div>
-                  ),
-                )}
+              <div className="h-full w-full pt-4 flex flex-col justify-between flex-1 min-h-[110px]">
+                <div className="relative w-full flex-1">
+                  <svg
+                    viewBox="0 0 500 100"
+                    className="w-full h-full overflow-visible"
+                    preserveAspectRatio="none"
+                  >
+                    <defs>
+                      <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--color-primary, #4f39f6)" stopOpacity="0.2" />
+                        <stop offset="100%" stopColor="var(--color-primary, #4f39f6)" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    
+                    {/* Background Grid Lines */}
+                    <line x1="0" y1="20" x2="500" y2="20" stroke="var(--color-border, rgba(0,0,0,0.06))" strokeDasharray="4 4" strokeWidth="1" />
+                    <line x1="0" y1="50" x2="500" y2="50" stroke="var(--color-border, rgba(0,0,0,0.06))" strokeDasharray="4 4" strokeWidth="1" />
+                    <line x1="0" y1="80" x2="500" y2="80" stroke="var(--color-border, rgba(0,0,0,0.06))" strokeDasharray="4 4" strokeWidth="1" />
+
+                    {/* Gradient Area */}
+                    <path
+                      d="M 0.0 68.0 L 45.5 54.5 L 90.9 72.5 L 136.4 41.0 L 181.8 50.0 L 227.3 30.0 L 272.7 14.0 L 318.2 23.0 L 363.6 9.5 L 409.1 36.5 L 454.5 18.5 L 500.0 5.0 L 500 100 L 0 100 Z"
+                      fill="url(#chartGradient)"
+                    />
+
+                    {/* Line Stroke */}
+                    <path
+                      d="M 0.0 68.0 L 45.5 54.5 L 90.9 72.5 L 136.4 41.0 L 181.8 50.0 L 227.3 30.0 L 272.7 14.0 L 318.2 23.0 L 363.6 9.5 L 409.1 36.5 L 454.5 18.5 L 500.0 5.0"
+                      fill="none"
+                      stroke="var(--color-primary, #4f39f6)"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+
+                    {/* Active Point Circle */}
+                    <circle
+                      cx="500"
+                      cy="5.0"
+                      r="4"
+                      fill="var(--color-primary, #4f39f6)"
+                      stroke="var(--background, #ffffff)"
+                      strokeWidth="1.5"
+                    />
+                  </svg>
+                </div>
+                <div className="flex justify-between w-full pt-2">
+                  {["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"].map((m, i) => (
+                    <span key={i} className="text-[9px] text-muted-foreground font-semibold w-6 text-center">
+                      {m}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

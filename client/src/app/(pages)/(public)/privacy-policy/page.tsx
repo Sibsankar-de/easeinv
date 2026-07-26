@@ -9,7 +9,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Privacy Policy | EaseInv",
   description:
-    "Review EaseInv's privacy practices, security protocols, encryption details, workspace data separation, and user rights policies.",
+    "Review EaseInv's privacy practices, security protocols, encryption details, store data separation, and user rights policies.",
 };
 
 export default function PrivacyPolicyPage() {

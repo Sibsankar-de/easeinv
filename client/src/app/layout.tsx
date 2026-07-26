@@ -6,6 +6,7 @@ import { ToastProvider } from "./toastProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NavContextProvider } from "@/contexts/NavContext";
 import { AppLoadingLayout } from "@/components/layout/AppLoadingLayout";
+import { ResizeProvider } from "@/contexts/ResizeContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
     template: "%s | EaseInv",
   },
   description:
-    "EaseInv helps businesses manage billing, invoices, customers, and inventory from one streamlined workspace.",
+    "EaseInv helps businesses manage billing, invoices, customers, and inventory from one streamlined store.",
   applicationName: "EaseInv",
   keywords: [
     "billing software",
@@ -60,15 +61,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ToastProvider>
-          <NavContextProvider>
-            <StoreProvider>
-              <AuthProvider>
-                <AppLoadingLayout>{children}</AppLoadingLayout>
-              </AuthProvider>
-            </StoreProvider>
-          </NavContextProvider>
-        </ToastProvider>
+        <ResizeProvider>
+          <ToastProvider>
+            <NavContextProvider>
+              <StoreProvider>
+                <AuthProvider>
+                  <AppLoadingLayout>{children}</AppLoadingLayout>
+                </AuthProvider>
+              </StoreProvider>
+            </NavContextProvider>
+          </ToastProvider>
+        </ResizeProvider>
       </body>
     </html>
   );

@@ -19,6 +19,7 @@ export type {
   PaymentBehaviour,
   CustomerMark,
   InvoiceStatus,
+  InvoicePaymentStatus,
   ApiKeyStatus,
 } from "@prisma/client";
 

@@ -36,9 +36,9 @@ const menuItems: NavMenuType[] = [
     icon: CreditCard,
   },
   {
-    id: "access-control",
-    basePath: "/settings/access-control",
-    label: "Access Control",
+    id: "security-access",
+    basePath: "/settings/security-access",
+    label: "Security & access",
     icon: Lock,
   },
   {

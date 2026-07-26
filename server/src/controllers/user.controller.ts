@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { User } from "@prisma/client";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiResponse } from "../utils/apiResponseHandler";
 import { StatusCodes } from "http-status-codes";
@@ -11,6 +12,7 @@ import {
   updateUserSchema,
   updatePasswordSchema,
   validateAndResetPasswordSchema,
+  requestPasswordResetSchema,
 } from "../schemas/user.schema";
 import {
   accessTokenCookieOptions,
@@ -119,6 +121,23 @@ export const updateAvatar = asyncHandler(
   },
 );
 
+export const requestPasswordReset = asyncHandler(
+  async (req: Request, res: Response) => {
+    const validatedBody = validateBody(requestPasswordResetSchema, req.body);
+    await authService.requestPasswordReset(validatedBody.email);
+
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        new ApiResponse(
+          StatusCodes.OK,
+          {},
+          "If the email exists, a password reset link has been sent.",
+        ),
+      );
+  },
+);
+
 export const validateAndResetPassword = asyncHandler(
   async (req: Request, res: Response) => {
     const validatedBody = validateBody(
@@ -130,7 +149,9 @@ export const validateAndResetPassword = asyncHandler(
 
     return res
       .status(StatusCodes.OK)
-      .json(new ApiResponse(StatusCodes.OK, {}, "Password reset successfully"));
+      .json(
+        new ApiResponse(StatusCodes.OK, null, "Password reset successfully"),
+      );
   },
 );
 
@@ -143,5 +164,26 @@ export const getCurrentUser = asyncHandler(
     return res
       .status(StatusCodes.OK)
       .json(new ApiResponse(StatusCodes.OK, user, "User fetched"));
+  },
+);
+
+export const resendEmailVerification = asyncHandler(
+  async (req: Request, res: Response) => {
+    const user = req.user as User;
+    if (!user) {
+      throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorized request");
+    }
+
+    await authService.resendVerificationEmail(user);
+
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        new ApiResponse(
+          StatusCodes.OK,
+          null,
+          "Verification email has been resent.",
+        ),
+      );
   },
 );

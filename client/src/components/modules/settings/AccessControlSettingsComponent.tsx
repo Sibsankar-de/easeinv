@@ -29,6 +29,7 @@ import { RoleBadgeVarient } from "@/constants/storeUserRole";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { getTableSearchDebounceTime } from "@/utils/get-debounce";
 import { createIndex, search, SearchRule } from "@/utils/genericSearch";
+import { TabContent } from "@/components/ui/Tabs";
 
 const ROLES = [
   { key: "MANAGER", value: "Manager" },
@@ -133,6 +134,7 @@ export const AccessControlSettingsComponent = () => {
         New invite
       </NavActionButton>,
     );
+    return () => setActionButtons(null);
   }, [setActionButtons]);
 
   const columns = useMemo<ColumnDef<StoreAccessorDto>[]>(
@@ -177,7 +179,7 @@ export const AccessControlSettingsComponent = () => {
   const isLoading = accessorsStatus === "loading";
 
   return (
-    <div className="space-y-6">
+    <TabContent tabId="access-control" className="space-y-6">
       <div className="flex items-center gap-3 mb-4">
         <div className="flex-1">
           <SearchInput
@@ -217,7 +219,7 @@ export const AccessControlSettingsComponent = () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
       />
-    </div>
+    </TabContent>
   );
 };
 
@@ -415,7 +417,7 @@ const UserDeleteModal = ({
       <p className="text-gray-600">
         Are you sure you want to remove <strong>{userData.userName}</strong>'s
         access to this store? They will no longer be able to view or manage any
-        data in this workspace.
+        data in this store.
       </p>
       <div className="flex justify-end gap-3 mt-6">
         <Button variant="none" onClick={onClose}>

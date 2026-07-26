@@ -6,7 +6,7 @@ import { Store } from "lucide-react";
 export const metadata: Metadata = {
   title: "General Settings",
   description:
-    "Update store information, contact details, and business identity settings for this workspace.",
+    "Update store information, contact details, and business identity settings for this store.",
 };
 
 export default function GeneralSettings() {

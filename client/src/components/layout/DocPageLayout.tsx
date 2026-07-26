@@ -76,7 +76,7 @@ export function DocPageLayout({ children }: { children: React.ReactNode }) {
       <HeaderNavbar />
 
       <div className="flex-1 flex flex-row">
-        <div className="hidden md:block sticky top-[69px] h-[calc(100vh-69px)] shrink-0 z-20">
+        <div className="hidden md:block sticky top-[57px] h-[calc(100vh-69px)] shrink-0 z-20">
           <DocsSidebar />
         </div>
 

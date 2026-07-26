@@ -26,6 +26,11 @@ export const acceptStoreUserInviteThunk: any = createApiThunk(
     await api.post(`/stores/user-invite/accept?token=${inviteToken}`),
 );
 
+export const deleteStoreThunk: any = createApiThunk(
+  "/stores/delete",
+  async (storeId: string) => await api.delete(`/stores/${storeId}`),
+);
+
 const initialState = {
   data: {
     storeList: [] as StoreDto[],
@@ -35,6 +40,7 @@ const initialState = {
   createStatus: "idle",
   userInviteGetStatus: "idle",
   userInviteAcceptStatus: "idle",
+  deleteStatus: "idle",
   error: null,
 };
 
@@ -82,6 +88,20 @@ const storeSlice = createSlice({
       .addCase(acceptStoreUserInviteThunk.fulfilled, (state, action) => {
         state.userInviteAcceptStatus = "success";
         state.data.userInvite = {} as StoreUserInviteDto;
+        state.error = null;
+      })
+      .addCase(deleteStoreThunk.pending, (state, action) =>
+        setState(state, action, "deleteStatus"),
+      )
+      .addCase(deleteStoreThunk.rejected, (state, action) =>
+        setState(state, action, "deleteStatus"),
+      )
+      .addCase(deleteStoreThunk.fulfilled, (state, action) => {
+        state.deleteStatus = "success";
+        const deletedStoreId = action.meta.arg;
+        state.data.storeList = state.data.storeList.filter(
+          (store) => store.id !== deletedStoreId,
+        );
         state.error = null;
       });
   },

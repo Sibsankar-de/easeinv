@@ -1,8 +1,7 @@
-import type { JwtPayload } from "jsonwebtoken";
 import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
-import { signAccessToken, verifyPasswordResetToken } from "./jwt.service";
+import { signAccessToken } from "./jwt.service";
 import type {
   CreateUserDTO,
   LoginUserDTO,
@@ -15,6 +14,7 @@ import { VerificationTokenType } from "../enums/verificationToken.enum";
 import {
   sendEmailVerificationEmail,
   sendWelcomeEmail,
+  sendPasswordResetEmail,
 } from "./transactionalEmail.service";
 import { env } from "../configs/env";
 import {
@@ -22,7 +22,7 @@ import {
   hashPassword,
   hashStringSha,
 } from "../utils/hash-utils";
-import { addDays, addHours, addMinutes } from "../utils/date-utils";
+import { addDays, addHours } from "../utils/date-utils";
 
 // Token pair helper
 
@@ -98,7 +98,7 @@ export const verifyEmail = async (token: string) => {
       token,
       type: VerificationTokenType.EMAIL_VERIFICATION_TOKEN,
       expiresAt: {
-        gte: new Date(),
+        gt: new Date(),
       },
     },
   });
@@ -154,36 +154,106 @@ export const logoutUser = async (userId: string, refreshToken: string) => {
   });
 };
 
+export const requestPasswordReset = async (email: string) => {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return null;
+
+  const existingToken = await prisma.verificationToken.findFirst({
+    where: {
+      userId: user.id,
+      type: VerificationTokenType.PASSWORD_RESET_TOKEN,
+      expiresAt: { gt: new Date() },
+    },
+  });
+
+  let token = existingToken?.token;
+  if (!token) {
+    token = generateSecureToken(128);
+    await prisma.verificationToken.create({
+      data: {
+        userId: user.id,
+        token,
+        type: VerificationTokenType.PASSWORD_RESET_TOKEN,
+        expiresAt: addHours(new Date(), env.PASSWORD_RESET_TOKEN_EXPIRY),
+      },
+    });
+  }
+
+  const resetLink = clientPages.constructPasswordResetPageUrl(token);
+  sendPasswordResetEmail(user, resetLink);
+
+  return null;
+};
+
 export const validateAndResetPassword = async (
   body: ValidateAndResetPasswordDTO,
 ) => {
   const { token, password } = body;
-  if (!token || !password) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Token and password are required",
-    );
+
+  const verificationToken = await prisma.verificationToken.findFirst({
+    where: {
+      token,
+      type: VerificationTokenType.PASSWORD_RESET_TOKEN,
+      expiresAt: { gt: new Date() },
+    },
+  });
+
+  if (!verificationToken) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid or expired token.");
   }
 
-  let decoded: JwtPayload;
-  try {
-    decoded = verifyPasswordResetToken(token) as JwtPayload;
-  } catch (error: any) {
-    if (error?.name === "TokenExpiredError") {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, "Token expired");
-    }
-    throw error;
+  const user = await prisma.user.findUnique({
+    where: { id: verificationToken.userId },
+  });
+
+  if (!user) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "User not found.");
   }
 
-  if (!decoded || !decoded.id) {
-    throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid token");
-  }
-
-  const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-  if (!user) throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid token");
-
+  const hashedPassword = await hashPassword(password);
   await prisma.user.update({
     where: { id: user.id },
-    data: { password: await hashPassword(password) },
+    data: { password: hashedPassword },
   });
+
+  await prisma.verificationToken.delete({
+    where: { id: verificationToken.id },
+  });
+};
+
+export const resendVerificationEmail = async (user: User) => {
+  if (user.isEmailVerified) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Email is already verified.");
+  }
+
+  const existingToken = await prisma.verificationToken.findFirst({
+    where: {
+      userId: user.id,
+      type: VerificationTokenType.EMAIL_VERIFICATION_TOKEN,
+      expiresAt: {
+        gt: new Date(),
+      },
+    },
+  });
+
+  let token = existingToken?.token;
+
+  if (!existingToken) {
+    token = generateSecureToken(128);
+    await prisma.verificationToken.create({
+      data: {
+        userId: user.id,
+        token,
+        type: VerificationTokenType.EMAIL_VERIFICATION_TOKEN,
+        expiresAt: addHours(new Date(), env.EMAIL_VERIFICATION_TOKEN_EXPIRY),
+      },
+    });
+  }
+
+  const verificationLink = clientPages.constructEmailVerificationPageUrl(
+    token!,
+  );
+  sendEmailVerificationEmail(user, verificationLink);
+
+  return null;
 };

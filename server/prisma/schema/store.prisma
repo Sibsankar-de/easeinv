@@ -10,6 +10,7 @@ enum StoreStatus {
   ACTIVE
   INACTIVE
   SUSPENDED
+  DELETED
 }
 
 model Store {
@@ -59,7 +60,7 @@ model StoreSettings {
   invoiceStoreAddress     String   @default("")
   invoiceFooterNote       String   @default("")
   invoiceStoreLogoUrl     String   @default("")
-  enableInventoryTracking Boolean  @default(false)
+  enableInventoryTracking Boolean  @default(true)
   roundupInvoiceTotal     Boolean  @default(false)
   defaultDiscountRate     Float    @default(0)
   defaultTaxRate          Float    @default(0)

@@ -1,19 +1,14 @@
-import { InvoiceSummaryDto } from "@/types/dto/invoiceDto";
+import { InvoiceSummaryDto, InvoiceDto } from "@/types/dto/invoiceDto";
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import {
-  concatPaginatedData,
-  createApiThunk,
-  setState,
-  transformPaginatedResponse,
-} from "../utils";
+import { createApiThunk, setState, transformPaginatedResponse } from "../utils";
 import api from "@/configs/axios-config";
 import { PaginatedPages } from "@/types/PageableType";
 import { InvoiceSummary } from "@/types/InvoiceSummaryType";
 
 const initialState = {
   data: {
-    invoiceListData: {
+    invoicePagedData: {
       pages: {} as PaginatedPages<InvoiceSummaryDto>,
       totalDocs: 0,
       totalPages: 0,
@@ -24,8 +19,10 @@ const initialState = {
       totalDue: 0,
       totalPaid: 0,
     } as InvoiceSummary,
+    invoiceListData: [] as InvoiceDto[],
   },
   status: "idle",
+  getStatus: "idle",
   createStatus: "idle",
   updateStatus: "idle",
   summaryStatus: "idle",
@@ -66,20 +63,27 @@ export const fetchInvoiceSummaryThunk: any = createApiThunk(
   async (payload: any) => await api.get(`/invoices/${payload.storeId}/summary`),
 );
 
+export const fetchInvoiceByIdThunk: any = createApiThunk(
+  "/invoices/fetch-by-id",
+  async (payload: { storeId: string; invoiceId: string }) =>
+    await api.get(`/invoices/${payload.storeId}/${payload.invoiceId}`),
+);
+
 const invoiceSlice = createSlice({
   name: "invoices",
   initialState,
   reducers: {
-    clearInvoiceList: (state) => {
-      state.data.invoiceListData = {
+    invalidateInvoicePages: (state) => {
+      state.data.invoicePagedData = {
         pages: {},
         totalDocs: 0,
         totalPages: 0,
       };
+      state.status = "idle";
     },
     updateInvoiceDue: (state, action) => {
       const { page, invoiceId, newDueAmount } = action.payload;
-      const pageData = state.data.invoiceListData.pages[page];
+      const pageData = state.data.invoicePagedData.pages[page];
       if (pageData) {
         const invoiceIndex = pageData.docs.findIndex(
           (inv) => inv.id === invoiceId,
@@ -89,6 +93,7 @@ const invoiceSlice = createSlice({
         }
       }
     },
+    invalidate: () => initialState,
   },
   extraReducers(builder) {
     builder
@@ -100,10 +105,6 @@ const invoiceSlice = createSlice({
       )
       .addCase(createInvoiceThunk.fulfilled, (state, action) => {
         state.createStatus = "success";
-        state.data.invoiceListData = concatPaginatedData(
-          state.data.invoiceListData,
-          action.payload,
-        );
         state.error = null;
       })
       .addCase(fetchInvoiceListThunk.pending, setState)
@@ -111,9 +112,9 @@ const invoiceSlice = createSlice({
       .addCase(fetchInvoiceListThunk.fulfilled, (state, action) => {
         state.status = "success";
         const { docs, pageable } = transformPaginatedResponse(action.payload);
-        state.data.invoiceListData = {
+        state.data.invoicePagedData = {
           pages: {
-            ...state.data.invoiceListData.pages,
+            ...state.data.invoicePagedData.pages,
             [pageable.page]: {
               docs: docs as InvoiceSummaryDto[],
               pageable,
@@ -133,6 +134,14 @@ const invoiceSlice = createSlice({
       .addCase(updateInvoiceDueThunk.fulfilled, (state, action) => {
         state.updateStatus = "success";
         state.error = null;
+        // update invoice list invoice
+        const updatedInvoice = action.payload;
+        const existingIndex = state.data.invoiceListData.findIndex(
+          (inv) => inv.id === updatedInvoice.id,
+        );
+        if (existingIndex !== -1) {
+          state.data.invoiceListData[existingIndex] = updatedInvoice;
+        }
       })
       .addCase(fetchInvoiceSummaryThunk.pending, (state, action) =>
         setState(state, action, "summaryStatus"),
@@ -144,10 +153,30 @@ const invoiceSlice = createSlice({
         state.summaryStatus = "success";
         state.data.summaryData = action.payload;
         state.error = null;
+      })
+      .addCase(fetchInvoiceByIdThunk.pending, (state, action) =>
+        setState(state, action, "getStatus"),
+      )
+      .addCase(fetchInvoiceByIdThunk.rejected, (state, action) =>
+        setState(state, action, "getStatus"),
+      )
+      .addCase(fetchInvoiceByIdThunk.fulfilled, (state, action) => {
+        state.getStatus = "success";
+        state.error = null;
+        const fetchedInvoice = action.payload;
+        const existingIndex = state.data.invoiceListData.findIndex(
+          (inv) => inv.id === fetchedInvoice.id,
+        );
+        if (existingIndex !== -1) {
+          state.data.invoiceListData[existingIndex] = fetchedInvoice;
+        } else {
+          state.data.invoiceListData.push(fetchedInvoice);
+        }
       });
   },
 });
 
 export const selectInvoiceState = (state: RootState) => state.invoice;
-export const { updateInvoiceDue, clearInvoiceList } = invoiceSlice.actions;
+export const { updateInvoiceDue, invalidateInvoicePages, invalidate } =
+  invoiceSlice.actions;
 export default invoiceSlice.reducer;

@@ -45,12 +45,24 @@ export const updateInvoiceDueAmount = asyncHandler(
   },
 );
 
+export const getInvoiceById = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { invoiceId } = req.params;
+    const invoice = await invoiceService.getInvoiceById(invoiceId as string);
+
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(StatusCodes.OK, invoice, "Invoice fetched"));
+  },
+);
+
 export const searchInvoice = asyncHandler(
   async (req: Request, res: Response) => {
     const { storeId } = req.params as { storeId: string };
     const page = parseInt((req.query.page as string) || "1");
     const limit = parseInt((req.query.limit as string) || "10");
     const status = req.query.status as string;
+    const paymentStatus = req.query.paymentStatus as string;
     const customerPrefix = req.query.customerPrefix as string;
     const customerId = req.query.customerId as string;
     const sortBy = (req.query.sortBy as string) || "createdAt";
@@ -61,6 +73,7 @@ export const searchInvoice = asyncHandler(
       page,
       limit,
       status,
+      paymentStatus,
       customerPrefix,
       customerId,
       sortBy,

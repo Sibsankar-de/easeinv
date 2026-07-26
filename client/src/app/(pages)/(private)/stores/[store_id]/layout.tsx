@@ -6,11 +6,11 @@ import React from "react";
 
 export const metadata: Metadata = {
   title: {
-    default: "Store Workspace",
+    default: "Store Dashboard",
     template: "%s | EaseInv",
   },
   description:
-    "Manage invoices, products, customers, and store settings from your EaseInv business workspace.",
+    "Manage invoices, products, customers, and store settings from your EaseInv business store dashboard.",
 };
 
 export default function StoreLayout({

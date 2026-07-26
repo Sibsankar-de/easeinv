@@ -2,19 +2,25 @@
 CREATE TYPE "ApiKeyStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'EXPIRED');
 
 -- CreateEnum
-CREATE TYPE "PaymentBehaviour" AS ENUM ('ADVANCE', 'OVERDUE');
+CREATE TYPE "PaymentBehaviour" AS ENUM ('NEUTRAL', 'ADVANCE', 'OVERDUE');
 
 -- CreateEnum
 CREATE TYPE "CustomerMark" AS ENUM ('REGULAR', 'BLACKLISTED', 'INACTIVE');
 
 -- CreateEnum
-CREATE TYPE "InvoiceStatus" AS ENUM ('PRINTED', 'DRAFTED');
+CREATE TYPE "InvoiceStatus" AS ENUM ('ISSUED', 'DRAFTED');
+
+-- CreateEnum
+CREATE TYPE "InvoicePaymentStatus" AS ENUM ('PAID', 'DUE', 'OVERDUE');
+
+-- CreateEnum
+CREATE TYPE "ProductStockStatus" AS ENUM ('AVAILABLE', 'LOW_STOCK', 'OUT_OF_STOCK');
 
 -- CreateEnum
 CREATE TYPE "StoreType" AS ENUM ('RETAIL', 'WHOLESALE', 'ONLINE', 'FRANCHISE', 'HYBRID');
 
 -- CreateEnum
-CREATE TYPE "StoreStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED');
+CREATE TYPE "StoreStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED', 'DELETED');
 
 -- CreateEnum
 CREATE TYPE "StoreUserRole" AS ENUM ('OWNER', 'ADMIN', 'MANAGER', 'EMPLOYEE');
@@ -51,13 +57,13 @@ CREATE TABLE "customers" (
     "id" UUID NOT NULL,
     "storeId" UUID NOT NULL,
     "name" TEXT NOT NULL,
-    "phoneNumber" TEXT,
-    "email" TEXT,
-    "address" TEXT,
+    "phoneNumber" TEXT DEFAULT '',
+    "email" TEXT DEFAULT '',
+    "address" TEXT DEFAULT '',
     "totalDue" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "advance" DOUBLE PRECISION NOT NULL DEFAULT 0,
-    "paymentBehaviour" "PaymentBehaviour",
-    "mark" "CustomerMark",
+    "paymentBehaviour" "PaymentBehaviour" NOT NULL DEFAULT 'NEUTRAL',
+    "mark" "CustomerMark" NOT NULL DEFAULT 'REGULAR',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -90,6 +96,7 @@ CREATE TABLE "invoices" (
     "subTotal" DOUBLE PRECISION NOT NULL,
     "total" DOUBLE PRECISION NOT NULL,
     "discountAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "discountPercent" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "dueAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "paidAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "taxAmount" DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -98,7 +105,8 @@ CREATE TABLE "invoices" (
     "roundupTotal" BOOLEAN NOT NULL DEFAULT false,
     "note" TEXT,
     "status" "InvoiceStatus" NOT NULL DEFAULT 'DRAFTED',
-    "extraData" JSONB,
+    "paymentStatus" "InvoicePaymentStatus" NOT NULL DEFAULT 'PAID',
+    "extraData" JSONB NOT NULL DEFAULT '{}',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -110,8 +118,9 @@ CREATE TABLE "invoice_items" (
     "id" UUID NOT NULL,
     "invoiceId" UUID NOT NULL,
     "sortOrder" INTEGER NOT NULL DEFAULT 1,
-    "productId" UUID NOT NULL,
-    "pricePerQty" JSONB NOT NULL,
+    "productId" UUID,
+    "productName" TEXT NOT NULL DEFAULT '',
+    "pricePerQty" JSONB,
     "netQuantity" DOUBLE PRECISION NOT NULL,
     "totalPrice" DOUBLE PRECISION NOT NULL,
     "stockUnit" TEXT NOT NULL,
@@ -146,8 +155,11 @@ CREATE TABLE "products" (
     "trackInventory" BOOLEAN NOT NULL DEFAULT false,
     "alertThreshold" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "emailAlert" BOOLEAN NOT NULL DEFAULT false,
+    "stockStatus" "ProductStockStatus" NOT NULL DEFAULT 'AVAILABLE',
     "stockUnit" TEXT NOT NULL,
+    "unitGroups" JSONB NOT NULL DEFAULT '[]',
     "pricePerQuantity" JSONB NOT NULL DEFAULT '[]',
+    "extraData" JSONB NOT NULL DEFAULT '{}',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -222,7 +234,7 @@ CREATE TABLE "store_settings" (
     "invoiceStoreAddress" TEXT NOT NULL DEFAULT '',
     "invoiceFooterNote" TEXT NOT NULL DEFAULT '',
     "invoiceStoreLogoUrl" TEXT NOT NULL DEFAULT '',
-    "enableInventoryTracking" BOOLEAN NOT NULL DEFAULT false,
+    "enableInventoryTracking" BOOLEAN NOT NULL DEFAULT true,
     "roundupInvoiceTotal" BOOLEAN NOT NULL DEFAULT false,
     "defaultDiscountRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "defaultTaxRate" DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -334,6 +346,9 @@ CREATE INDEX "invoices_invoiceNumber_idx" ON "invoices"("invoiceNumber");
 CREATE INDEX "invoices_storeId_status_idx" ON "invoices"("storeId", "status");
 
 -- CreateIndex
+CREATE INDEX "invoices_storeId_paymentStatus_idx" ON "invoices"("storeId", "paymentStatus");
+
+-- CreateIndex
 CREATE INDEX "invoices_storeId_customerId_idx" ON "invoices"("storeId", "customerId");
 
 -- CreateIndex
@@ -439,7 +454,7 @@ ALTER TABLE "invoices" ADD CONSTRAINT "invoices_customerId_fkey" FOREIGN KEY ("c
 ALTER TABLE "invoice_items" ADD CONSTRAINT "invoice_items_invoiceId_fkey" FOREIGN KEY ("invoiceId") REFERENCES "invoices"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "invoice_items" ADD CONSTRAINT "invoice_items_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE NO ACTION ON UPDATE CASCADE;
+ALTER TABLE "invoice_items" ADD CONSTRAINT "invoice_items_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "categories" ADD CONSTRAINT "categories_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "stores"("id") ON DELETE CASCADE ON UPDATE CASCADE;

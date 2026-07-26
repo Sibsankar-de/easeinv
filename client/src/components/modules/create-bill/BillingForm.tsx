@@ -265,7 +265,8 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
               <Input
                 type="number"
                 placeholder="0.00"
-                className="w-32 text-right"
+                className="w-32"
+                inputClass="text-right"
                 value={calculations.paidAmount}
                 onChange={(e) =>
                   setCalculations((p) => ({

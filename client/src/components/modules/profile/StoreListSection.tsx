@@ -10,12 +10,16 @@ import { StoreCard } from "./StoreCard";
 import { StoreCardSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/components/utils";
+import { selectUserSate } from "@/store/features/userSlice";
 
 export const StoreListSection = () => {
   const dispatch = useDispatch();
   const storeState = useSelector(selectStoreState);
   const storeStatus = storeState.status;
   const { storeList } = storeState.data;
+
+  const { data: user } = useSelector(selectUserSate);
+  const isEmailVerified = user?.isEmailVerified;
 
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
 
@@ -39,7 +43,12 @@ export const StoreListSection = () => {
             Manage and switch between your business stores
           </p>
         </div>
-        <Button onClick={() => setIsStoreModalOpen((p) => !p)}>
+        <Button
+          className="justify-center"
+          disabled={!isEmailVerified}
+          onClick={() => setIsStoreModalOpen((p) => !p)}
+          tooltip={!isEmailVerified ? "Verify your email to create a store" : undefined}
+        >
           <Plus size={16} />
           Create Store
         </Button>
@@ -58,7 +67,11 @@ export const StoreListSection = () => {
             title="No stores found"
             description="You haven't created any stores yet. Create your first store to start managing your business."
             action={
-              <Button onClick={() => setIsStoreModalOpen(true)}>
+              <Button
+                disabled={!isEmailVerified}
+                onClick={() => setIsStoreModalOpen(true)}
+                tooltip={!isEmailVerified ? "Verify your email to create a store" : undefined}
+              >
                 <Plus size={15} />
                 Create Store
               </Button>

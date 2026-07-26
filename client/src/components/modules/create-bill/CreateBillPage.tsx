@@ -17,7 +17,10 @@ import { useStoreNavigation } from "@/hooks/store-navigation";
 import {
   createInvoiceThunk,
   selectInvoiceState,
+  invalidateInvoicePages,
 } from "@/store/features/invoiceSlice";
+import { invalidateCustomerPages } from "@/store/features/customerSlice";
+import { InvoiceStatus } from "@/types/dto/invoiceDto";
 import { transformInvoicePayload } from "@/helpers/invoiceHelper";
 import { toast } from "react-toastify";
 import { FormSkeleton } from "@/components/ui/Skeleton";
@@ -104,7 +107,9 @@ export const CreateBillPage = () => {
   }, [currentStore, invoiceNumber, isInvoiceSaved]);
 
   // handle invoice save
-  const handleInvoiceSave = (status: string = "DRAFTED") => {
+  const handleInvoiceSave = async (
+    status: InvoiceStatus = InvoiceStatus.DRAFTED,
+  ) => {
     if (!storeId || isInvoiceSaved) return;
 
     setIsInvoiceSaved(true);
@@ -113,10 +118,12 @@ export const CreateBillPage = () => {
       status,
       ...formData,
     });
-    dispatch(createInvoiceThunk(apiPayload))
+    await dispatch(createInvoiceThunk(apiPayload))
       .unwrap()
       .then(() => {
         toast.success(`Invoice saved`);
+        dispatch(invalidateInvoicePages());
+        dispatch(invalidateCustomerPages());
       })
       .catch(() => {
         setIsInvoiceSaved(false);

@@ -178,6 +178,7 @@ export function BillingSectionRow({
         <Input
           type="number"
           placeholder="0.00"
+          inputClass="text-right"
           value={localInputs.totalPrice}
           onChange={(e) => handleInputChange("totalPrice", e)}
         />

@@ -6,8 +6,9 @@ import { useSelector } from "react-redux";
 import { selectUserSate } from "@/store/features/userSlice";
 import { Avatar } from "../../ui/Avatar";
 import { ProfileDropdown } from "./ProfileDropdown";
-import { use, useEffect, useRef, useState } from "react";
-import { AppLogoFull } from "../../ui/AppLogo";
+import { useEffect, useRef, useState } from "react";
+import { AppLogo, AppLogoFull } from "../../ui/AppLogo";
+import { useResize } from "@/contexts/ResizeContext";
 import { NavbarSearch } from "./NavbarSearch";
 import { useRouter } from "next/navigation";
 import { Button, ButtonType } from "../../ui/Button";
@@ -53,22 +54,23 @@ export function HeaderNavbar() {
   const { data: user } = useSelector(selectUserSate);
   const router = useRouter();
   const { actionButtons, setNavHeight } = useNavContext();
+  const { md } = useResize();
 
   const navRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
-    if (navRef.current) setNavHeight(navRef.current?.clientHeight || 0);
-  }, [navRef.current]);
+    if (navRef.current) setNavHeight(navRef.current.clientHeight || 0);
+  }, [setNavHeight]);
 
   return (
     <header
       ref={navRef}
-      className="bg-white border-b border-gray-200 px-8 py-1 sticky top-0 z-50 h-fit"
+      className="bg-white border-b border-gray-200 px-8 max-lg:px-4 py-1 sticky top-0 z-50 h-fit"
     >
-      <div className="flex items-center justify-between">
-        <AppLogoFull size={120} />
+      <div className="flex items-center justify-between gap-4">
+        {md ? <AppLogoFull size={120} /> : <AppLogo size={35} />}
 
-        <div className="flex-1 max-w-2xl flex items-center gap-2">
-          <div className="flex items-center gap-1">
+        <div className="flex-1 max-w-2xl max-lg:max-w-lg flex items-center gap-2 max-md:hidden">
+          <div className="flex items-center gap-1 max-lg:hidden">
             <Button
               onClick={() => router.back()}
               variant="outline"
@@ -92,7 +94,7 @@ export function HeaderNavbar() {
           {actionButtons}
         </div>
 
-        <div className="flex items-center gap-4 ml-8">
+        <div className="flex items-center gap-4">
           <Button
             variant="none"
             className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"

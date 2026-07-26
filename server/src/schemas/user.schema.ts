@@ -13,7 +13,6 @@ export const loginUserSchema = z.object({
 
 export const updateUserSchema = z.object({
   userName: z.string().trim().min(1, "Username is required"),
-  email: z.email("Invalid email address"),
 });
 
 export const updatePasswordSchema = z.object({
@@ -32,4 +31,12 @@ export type UpdateUserDTO = z.infer<typeof updateUserSchema>;
 export type UpdatePasswordDTO = z.infer<typeof updatePasswordSchema>;
 export type ValidateAndResetPasswordDTO = z.infer<
   typeof validateAndResetPasswordSchema
+>;
+
+export const requestPasswordResetSchema = z.object({
+  email: z.email("Invalid email address"),
+});
+
+export type RequestPasswordResetDTO = z.infer<
+  typeof requestPasswordResetSchema
 >;

@@ -17,6 +17,9 @@ export const clientPages = {
   constructEmailVerificationPageUrl: (token: string) =>
     `${FRONTEND_URL}/verify-email?token=${token}`,
 
+  constructPasswordResetPageUrl: (token: string) =>
+    `${FRONTEND_URL}/reset-password?tab=reset&token=${token}`,
+
   constructProductEditPageUrl: (storeId: string, productId: string) =>
     clientPages.constructStorePageUrl(
       storeId,

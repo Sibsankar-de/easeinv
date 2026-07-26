@@ -5,7 +5,7 @@ export default function FaqSection() {
   const faqData = [
     {
       q: "Is my store data protected by encryption?",
-      a: "Yes. All database connections and transit requests utilize bank-grade AES-256 encryption. We partition workspaces securely so your invoices, inventory records, and customer details are accessible only to you and your authorized staff.",
+      a: "Yes. All database connections and transit requests utilize bank-grade AES-256 encryption. We partition stores securely so your invoices, inventory records, and customer details are accessible only to you and your authorized staff.",
     },
     {
       q: "Can I manage multiple warehouse locations or stores?",

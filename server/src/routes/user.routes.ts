@@ -9,6 +9,9 @@ import {
   updateAvatar,
   checkAuth,
   verifyUserEmail,
+  requestPasswordReset,
+  validateAndResetPassword,
+  resendEmailVerification,
 } from "../controllers/user.controller";
 import { verifyAuth } from "../middlewares/auth.middleware";
 import { upload } from "../middlewares/multer.middleware";
@@ -17,6 +20,8 @@ const router = Router();
 
 router.route("/register").post(createUser);
 router.route("/verify-email").post(verifyUserEmail);
+router.route("/forgot-password").post(requestPasswordReset);
+router.route("/reset-password").post(validateAndResetPassword);
 router.route("/login").post(loginUser);
 router.route("/logout").post(verifyAuth, logoutUser);
 router.route("/current-user").get(verifyAuth, getCurrentUser);
@@ -26,5 +31,6 @@ router
   .route("/update-avatar")
   .patch(verifyAuth, upload.single("avatar"), updateAvatar);
 router.route("/check-auth").get(verifyAuth, checkAuth);
+router.route("/resend-verification").post(verifyAuth, resendEmailVerification);
 
 export default router;

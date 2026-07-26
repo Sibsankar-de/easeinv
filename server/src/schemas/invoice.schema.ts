@@ -41,7 +41,31 @@ export const updateInvoiceDueSchema = z.object({
   paidAmount: z.number().gt(0, "Paid amount must be greater than zero"),
 });
 
+export const invoiceExtraDataSchema = z.object({
+  customer: z
+    .object({
+      name: z.string().default(""),
+      phoneNumber: z
+        .string()
+        .nullish()
+        .transform((val) => val ?? "")
+        .default(""),
+      address: z
+        .string()
+        .nullish()
+        .transform((val) => val ?? "")
+        .default(""),
+      email: z
+        .string()
+        .nullish()
+        .transform((val) => val ?? "")
+        .default(""),
+    })
+    .default({ name: "", phoneNumber: "", address: "", email: "" }),
+});
+
 export type BillItemCreateDto = z.infer<typeof billItemSchema>;
 export type InvoiceCustomerDto = z.infer<typeof customerDetailsSchema>;
 export type InvoiceCreateDto = z.infer<typeof createInvoiceSchema>;
 export type InvoiceUpdateDueDto = z.infer<typeof updateInvoiceDueSchema>;
+export type InvoiceExtraData = z.infer<typeof invoiceExtraDataSchema>;

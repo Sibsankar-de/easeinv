@@ -20,7 +20,7 @@ export default function CtaBanner() {
             href="/auth/signup"
             className="group flex items-center justify-center gap-2 bg-primary text-primary-foreground px-10 py-4.5 rounded-lg text-base font-extrabold hover:bg-primary/95 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 duration-200"
           >
-            Create Free Workspace
+            Create Free Store
             <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
           </Link>
           <Link

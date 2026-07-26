@@ -4,4 +4,5 @@ export const emailTemplates = {
   WELCOME_EMAIL_TEMPLATE: "welcomeEmail.mjml",
   STORE_CREATED_EMAIL_TEMPLATE: "storeCreatedEmail.mjml",
   STOCK_ALERT_EMAIL_TEMPLATE: "stockAlertEmail.mjml",
+  PASSWORD_RESET_TEMPLATE: "passwordReset.mjml",
 } as const;

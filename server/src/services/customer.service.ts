@@ -9,6 +9,7 @@ import {
 import { TransactionClient } from "../utils/transactionHandler";
 import { Customer } from "@prisma/client";
 import { InvoiceCustomerDto } from "../schemas/invoice.schema";
+import { toCustomerDto, toCustomerSummaryDto } from "../dto/customer.dto";
 
 export const getCustomers = async (params: {
   storeId: string;
@@ -30,12 +31,8 @@ export const getCustomers = async (params: {
   // Augment with computed stats
   const docs = customers.docs.map((c: any) => {
     const invoices: any[] = c.invoices ?? [];
-    return {
-      ...c,
-      invoices: undefined,
-      totalInvoices: invoices.length,
-      dueCount: invoices.filter((inv) => inv.dueAmount > 0).length,
-    };
+    const dueCount = invoices.filter((inv) => inv.dueAmount > 0).length;
+    return toCustomerSummaryDto(c, invoices.length, dueCount);
   });
 
   return { ...customers, docs };
@@ -65,17 +62,25 @@ export const searchCustomers = async (params: {
     ],
   };
 
-  return paginate(
+  const result = await paginate(
     prisma.customer,
     where,
     [{ [sortBy]: sortOrder }, { name: "asc" }],
     { page, limit },
   );
+
+  const docs = result.docs.map((c: any) => {
+    const invoices: any[] = c.invoices ?? [];
+    const dueCount = invoices.filter((inv) => inv.dueAmount > 0).length;
+    return toCustomerSummaryDto(c, invoices.length, dueCount);
+  });
+
+  return { ...result, docs };
 };
 
 export const getCustomerById = async (storeId: string, customerId: string) => {
   if (!customerId) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "customerId is required");
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Customer id is required");
   }
 
   const customer = await prisma.customer.findFirst({
@@ -89,22 +94,20 @@ export const getCustomerById = async (storeId: string, customerId: string) => {
     throw new ApiError(StatusCodes.NOT_FOUND, "Customer not found");
   }
 
-  const { invoices, ...rest } = customer;
-  return {
-    ...rest,
-    totalInvoices: invoices.length,
-    dueCount: invoices.filter((inv) => inv.dueAmount > 0).length,
-  };
+  const invoices = customer.invoices;
+  const dueCount = invoices.filter((inv) => inv.dueAmount > 0).length;
+  return toCustomerDto(customer, invoices.length, dueCount);
 };
 
 export const deleteCustomer = async (storeId: string, customerId: string) => {
   if (!customerId) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "customerId is required");
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Customer id is required");
   }
 
   const customer = await prisma.customer.findFirst({
     where: { id: customerId, storeId },
   });
+
   if (!customer) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Customer not found");
   }
@@ -131,10 +134,15 @@ export const updateCustomer = async (
     throw new ApiError(StatusCodes.NOT_FOUND, "Customer not found");
   }
 
-  return prisma.customer.update({
+  const updatedCustomer = await prisma.customer.update({
     where: { id: customerId },
     data: { name, phoneNumber, email, address },
+    include: { invoices: true },
   });
+
+  const invoices = updatedCustomer.invoices;
+  const dueCount = invoices.filter((inv) => inv.dueAmount > 0).length;
+  return toCustomerDto(customer, invoices.length, dueCount);
 };
 
 export const createCustomer = async (
@@ -150,9 +158,11 @@ export const createCustomer = async (
     );
   }
 
-  return prisma.customer.create({
+  const customer = await prisma.customer.create({
     data: { name, phoneNumber, email, address, storeId },
   });
+
+  return toCustomerDto(customer);
 };
 
 export const getOrCreateInvoiceCustomer = async (

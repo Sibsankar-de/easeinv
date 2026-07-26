@@ -10,13 +10,14 @@ import { InvoiceFormState } from "@/helpers/invoiceHelper";
 import { CloudCheck, PrinterCheck, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
+import { InvoiceStatus } from "@/types/dto/invoiceDto";
 
 type PrintModalType = {
   openState: boolean;
   invoiceData: InvoiceFormState;
   isSaving: boolean;
   isInvoiceSaved: boolean;
-  onSave: (status: string) => void;
+  onSave: (status: InvoiceStatus) => void;
   onClose: () => void;
 };
 
@@ -50,7 +51,7 @@ export const PrintModal = ({
 
   const handleSaveAndPrint = () => {
     if (!isInvoiceSaved) {
-      onSave("PRINTED");
+      onSave(InvoiceStatus.ISSUED);
     }
     handlePrint();
   };
@@ -94,7 +95,7 @@ export const PrintModal = ({
           className="text-green-700 bg-gray-100"
           disabled={isSaving || isInvoiceSaved}
           loading={isSaving}
-          onClick={() => onSave("DRAFTED")}
+          onClick={() => onSave(InvoiceStatus.DRAFTED)}
         >
           <CloudCheck size={18} />
           Save as Draft

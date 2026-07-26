@@ -24,7 +24,7 @@ export default function CompanyStory() {
                 We set out to construct a unified hub. One that matches
                 compliance workflows in multiple countries while keeping
                 transactions fast and intuitive. Today, EaseInv powers thousands
-                of workspaces, simplifying invoice compliance, warehouse sync,
+                of stores, simplifying invoice compliance, warehouse sync,
                 and commerce ledger reporting.
               </p>
             </div>
@@ -40,7 +40,7 @@ export default function CompanyStory() {
                 </h4>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   To build the most accessible, high-performance financial
-                  workspace for growing businesses.
+                  store platform for growing businesses.
                 </p>
               </div>
 
