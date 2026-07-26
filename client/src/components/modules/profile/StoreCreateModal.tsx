@@ -64,7 +64,7 @@ export const StoreCreateModal = ({
   const { createStatus } = useSelector(selectStoreState);
   const isLoading = createStatus === "loading";
 
-  const handleCreateStore = () => {
+  const handleCreateStore = async () => {
     if (
       !formData.name ||
       !formData.type ||
@@ -74,7 +74,7 @@ export const StoreCreateModal = ({
       toast.error("Stared fields are required!");
       return;
     }
-    dispatch(createNewStoreThunk(formData))
+    await dispatch(createNewStoreThunk(formData))
       .unwrap()
       .then(() => {
         toast.success("Store created successfully");

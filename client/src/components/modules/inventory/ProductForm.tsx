@@ -154,9 +154,9 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     handleFormData(key, safeValue);
   };
 
-  const handleCreateProduct = () => {
+  const handleCreateProduct = async () => {
     if (!formData || !storeId) return;
-    dispatch(addNewProductThunk({ ...formData, storeId }))
+    await dispatch(addNewProductThunk({ ...formData, storeId }))
       .unwrap()
       .then(() => {
         toast.success("Product created");
@@ -165,12 +165,13 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
       });
   };
 
-  const handleUpdateProduct = () => {
+  const handleUpdateProduct = async () => {
     if (!formData || !storeId) return;
-    dispatch(updateProductThunk({ ...formData, productId, storeId }))
+    await dispatch(updateProductThunk({ ...formData, productId, storeId }))
       .unwrap()
       .then(() => {
         toast.success("Product saved.");
+        dispatch(invalidateProductPages());
       });
   };
 

@@ -107,7 +107,9 @@ export const CreateBillPage = () => {
   }, [currentStore, invoiceNumber, isInvoiceSaved]);
 
   // handle invoice save
-  const handleInvoiceSave = (status: InvoiceStatus = InvoiceStatus.DRAFTED) => {
+  const handleInvoiceSave = async (
+    status: InvoiceStatus = InvoiceStatus.DRAFTED,
+  ) => {
     if (!storeId || isInvoiceSaved) return;
 
     setIsInvoiceSaved(true);
@@ -116,7 +118,7 @@ export const CreateBillPage = () => {
       status,
       ...formData,
     });
-    dispatch(createInvoiceThunk(apiPayload))
+    await dispatch(createInvoiceThunk(apiPayload))
       .unwrap()
       .then(() => {
         toast.success(`Invoice saved`);
