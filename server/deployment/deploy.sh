@@ -16,7 +16,7 @@ REMOTE_CURRENT="$REMOTE_ROOT/current"
 REMOTE_TMP="/tmp/easeinv-backend"
 
 ARCHIVE_NAME="release.tar.gz"
-KEEP_RELEASES=5
+KEEP_RELEASES=3
 
 # Helpers
 
@@ -79,6 +79,8 @@ rm -rf .deploy/*
 cp -R dist/ .deploy/dist/
 cp package.json .deploy/
 cp package-lock.json .deploy/
+cp prisma.config.ts .deploy/
+cp -R prisma .deploy/
 
 if [[ -d "public" ]]; then
     cp -R public .deploy/
@@ -116,6 +118,16 @@ sudo -u easeinv tar -xzf "$REMOTE_TMP/$ARCHIVE_NAME" -C "\$RELEASE_DIR"
 cd "\$RELEASE_DIR"
 sudo -u easeinv env PATH="/home/easeinv/.nvm/versions/node/v24.18.0/bin:$PATH" \
 npm ci --omit=dev --ignore-scripts
+
+# Link shared environment file
+sudo -u easeinv ln -sfn /opt/easeinv/backend/shared/.env "\$RELEASE_DIR/.env"
+
+# Run database migrations and generate Prisma client
+sudo -u easeinv env PATH="/home/easeinv/.nvm/versions/node/v24.18.0/bin:$PATH" \
+npx prisma migrate deploy --schema=prisma/schema
+
+sudo -u easeinv env PATH="/home/easeinv/.nvm/versions/node/v24.18.0/bin:$PATH" \
+npx prisma generate --schema=prisma/schema
 
 sudo -u easeinv ln -sfn "\$RELEASE_DIR" "$REMOTE_CURRENT"
 

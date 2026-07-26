@@ -16,7 +16,7 @@ REMOTE_CURRENT="$REMOTE_ROOT/current"
 REMOTE_TMP="/tmp/easeinv"
 
 ARCHIVE_NAME="release.tar.gz"
-KEEP_RELEASES=5
+KEEP_RELEASES=3
 
 # Helpers
 
