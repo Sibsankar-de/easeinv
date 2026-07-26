@@ -138,3 +138,7 @@ dist
 
 # SvelteKit build / generate output
 .svelte-kit
+
+# Deployment
+.deploy
+release.tar.gz

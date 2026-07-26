@@ -21,7 +21,8 @@ interface RenderEmailOptions<T = Record<string, unknown>> {
 
 // Resolve template path safely
 const getTemplatePath = (templateName: string) => {
-  return path.join(process.cwd(), "src/templates/emails", templateName);
+  const baseDir = process.env.NODE_ENV === "production" ? "dist/resources" : "resources";
+  return path.join(process.cwd(), baseDir, "templates/emails", templateName);
 };
 
 // Read file safely
