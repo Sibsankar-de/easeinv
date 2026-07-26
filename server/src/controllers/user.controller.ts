@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import { User } from "@prisma/client";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiResponse } from "../utils/apiResponseHandler";
 import { StatusCodes } from "http-status-codes";
@@ -163,5 +164,26 @@ export const getCurrentUser = asyncHandler(
     return res
       .status(StatusCodes.OK)
       .json(new ApiResponse(StatusCodes.OK, user, "User fetched"));
+  },
+);
+
+export const resendEmailVerification = asyncHandler(
+  async (req: Request, res: Response) => {
+    const user = req.user as User;
+    if (!user) {
+      throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorized request");
+    }
+
+    await authService.resendVerificationEmail(user);
+
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        new ApiResponse(
+          StatusCodes.OK,
+          null,
+          "Verification email has been resent.",
+        ),
+      );
   },
 );

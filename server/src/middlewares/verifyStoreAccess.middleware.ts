@@ -7,13 +7,21 @@ import {
   ManagerLevelRoles,
   OwnerLevelRoles,
 } from "../constants/userStoreRoles";
-import { StoreStatus } from "@prisma/client";
+import { StoreStatus, User } from "@prisma/client";
 
 export const verifyStoreAccess = (allowed_roles: string[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       const storeId = req.params.storeId as string;
-      const userId = req.user?.id;
+      const user = req.user;
+      const userId = user?.id;
+
+      if (!user || !user.isEmailVerified) {
+        throw new ApiError(
+          StatusCodes.FORBIDDEN,
+          "Email verification is required.",
+        );
+      }
 
       if (!storeId) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Store ID is required");

@@ -11,6 +11,13 @@ export const fetchCurrentUser: any = createApiThunk("/users/get", async () => {
   } catch {}
 });
 
+export const resendVerificationThunk: any = createApiThunk(
+  "/users/resend-verification",
+  async () => {
+    return await api.post("/users/resend-verification");
+  },
+);
+
 export const updateUserThunk: any = createApiThunk(
   "/users/update",
   async (payload: { userName: string; email: string }) => {
@@ -30,6 +37,7 @@ const initialState = {
   status: "idle",
   updateProfileStatus: "idle",
   updatePasswordStatus: "idle",
+  resendVerificationStatus: "idle",
   error: null,
 };
 
@@ -39,6 +47,9 @@ const userSlice = createSlice({
   reducers: {
     setCurrentUser: (state, action) => {
       if (action.payload) state.data = action.payload;
+    },
+    resetResendVerificationStatus: (state) => {
+      state.resendVerificationStatus = "idle";
     },
   },
   extraReducers(builder) {
@@ -72,10 +83,23 @@ const userSlice = createSlice({
       .addCase(updatePasswordThunk.fulfilled, (state) => {
         state.updatePasswordStatus = "success";
         state.error = null;
+      })
+      .addCase(resendVerificationThunk.pending, (state) => {
+        state.resendVerificationStatus = "loading";
+        state.error = null;
+      })
+      .addCase(resendVerificationThunk.rejected, (state, action) => {
+        state.resendVerificationStatus = "failed";
+        state.error = action.payload;
+      })
+      .addCase(resendVerificationThunk.fulfilled, (state) => {
+        state.resendVerificationStatus = "success";
+        state.error = null;
       });
   },
 });
 
 export const selectUserSate = (state: RootState) => state.user;
-export const { setCurrentUser } = userSlice.actions;
+export const { setCurrentUser, resetResendVerificationStatus } =
+  userSlice.actions;
 export default userSlice.reducer;

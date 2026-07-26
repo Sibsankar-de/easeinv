@@ -9,9 +9,17 @@ import {
   updateStoreSchema,
   updateStoreSettingsSchema,
 } from "../schemas/store.schema";
+import { ApiError } from "../utils/apiErrorHandler";
 
 export const createStore = asyncHandler(async (req: Request, res: Response) => {
   const user = req.user;
+
+  if (!user.isEmailVerified) {
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      "Email verification is required to create a store.",
+    );
+  }
 
   const validatedBody = validateBody(createStoreSchema, req.body);
 

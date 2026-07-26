@@ -1,4 +1,6 @@
 import { prisma } from "../lib/prisma";
+import { toUserDto } from "../dto/user.dto";
+import { User } from "@prisma/client";
 import { deleteFromCloudinary, uploadToCloudinary } from "./cloudinary.service";
 import { cloudinaryFolders } from "../constants/cloudinary.constant";
 import { ApiError } from "../utils/apiErrorHandler";
@@ -12,17 +14,18 @@ export const getCurrentUser = async (userId: string) => {
     omit: { password: true },
   });
   if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
-  return user;
+  return toUserDto(user as User);
 };
 
 export const updateUser = async (userId: string, data: UpdateUserDTO) => {
   const { userName } = data;
 
-  return prisma.user.update({
+  const user = await prisma.user.update({
     where: { id: userId },
     data: { userName },
     omit: { password: true },
   });
+  return toUserDto(user as User);
 };
 
 export const updatePassword = async (
@@ -76,9 +79,11 @@ export const updateAvatar = async (
     await deleteFromCloudinary(user.avatar);
   }
 
-  return prisma.user.update({
+  const userWithNewAvatar = await prisma.user.update({
     where: { id: userId },
     data: { avatar: uploadData.url },
     omit: { password: true },
   });
+
+  return toUserDto(userWithNewAvatar as User);
 };

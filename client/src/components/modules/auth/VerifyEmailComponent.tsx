@@ -23,7 +23,7 @@ export const VerifyEmailComponent = ({ token }: { token?: string }) => {
       return;
     }
 
-    const verifyToken = requestHandler(async (token: string) => {
+    const verifyToken = requestHandler(async () => {
       await api
         .post(`/users/verify-email?token=${token}`)
         .then(() => {

@@ -98,7 +98,7 @@ export const verifyEmail = async (token: string) => {
       token,
       type: VerificationTokenType.EMAIL_VERIFICATION_TOKEN,
       expiresAt: {
-        gte: new Date(),
+        gt: new Date(),
       },
     },
   });
@@ -219,4 +219,41 @@ export const validateAndResetPassword = async (
   await prisma.verificationToken.delete({
     where: { id: verificationToken.id },
   });
+};
+
+export const resendVerificationEmail = async (user: User) => {
+  if (user.isEmailVerified) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Email is already verified.");
+  }
+
+  const existingToken = await prisma.verificationToken.findFirst({
+    where: {
+      userId: user.id,
+      type: VerificationTokenType.EMAIL_VERIFICATION_TOKEN,
+      expiresAt: {
+        gt: new Date(),
+      },
+    },
+  });
+
+  let token = existingToken?.token;
+
+  if (!existingToken) {
+    token = generateSecureToken(128);
+    await prisma.verificationToken.create({
+      data: {
+        userId: user.id,
+        token,
+        type: VerificationTokenType.EMAIL_VERIFICATION_TOKEN,
+        expiresAt: addHours(new Date(), env.EMAIL_VERIFICATION_TOKEN_EXPIRY),
+      },
+    });
+  }
+
+  const verificationLink = clientPages.constructEmailVerificationPageUrl(
+    token!,
+  );
+  sendEmailVerificationEmail(user, verificationLink);
+
+  return null;
 };

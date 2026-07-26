@@ -11,6 +11,7 @@ import {
   verifyUserEmail,
   requestPasswordReset,
   validateAndResetPassword,
+  resendEmailVerification,
 } from "../controllers/user.controller";
 import { verifyAuth } from "../middlewares/auth.middleware";
 import { upload } from "../middlewares/multer.middleware";
@@ -30,5 +31,6 @@ router
   .route("/update-avatar")
   .patch(verifyAuth, upload.single("avatar"), updateAvatar);
 router.route("/check-auth").get(verifyAuth, checkAuth);
+router.route("/resend-verification").post(verifyAuth, resendEmailVerification);
 
 export default router;
