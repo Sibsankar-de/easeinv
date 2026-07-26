@@ -29,7 +29,7 @@ export default function PrivacyContent() {
           </p>
           <ul className="list-disc pl-5 mt-3 space-y-2 text-xs text-muted-foreground leading-relaxed">
             <li>
-              <strong>Workspace & Account Information:</strong> Your name, store name, email address, password hashes, and company profile configurations.
+              <strong>Store & Account Information:</strong> Your name, store name, email address, password hashes, and company profile configurations.
             </li>
             <li>
               <strong>Billing & Invoicing Ledger Data:</strong> Customer details (names, contact info), VAT/GST tax profiles, discount rules, product listings, pricing sheets, and historical sales transactions.
@@ -56,7 +56,7 @@ export default function PrivacyContent() {
           <ul className="list-disc pl-5 mt-3 space-y-2 text-xs text-muted-foreground leading-relaxed">
             <li>To compile and format invoices and thermal receipts.</li>
             <li>To alert store managers when product items fall below configured low-stock thresholds.</li>
-            <li>To process database records dynamically in your dashboard workspace.</li>
+            <li>To process database records dynamically in your store dashboard.</li>
             <li>To authorize API requests securely via developer tokens.</li>
             <li>To monitor security, prevent fraudulent entries, and audit actions.</li>
           </ul>
@@ -77,7 +77,7 @@ export default function PrivacyContent() {
               <strong>Encryption:</strong> All transit data utilizes TLS 1.3 encryption, and database tables are encrypted at rest using AES-256 keys.
             </li>
             <li>
-              <strong>Role-based Authorization:</strong> Workspace permissions prevent team members from viewing unauthorized pages (e.g. settings vs billing panels).
+              <strong>Role-based Authorization:</strong> Store permissions prevent team members from viewing unauthorized pages (e.g. settings vs billing panels).
             </li>
             <li>
               <strong>Safe Sandboxing:</strong> Our API sandboxes and testing environments are separated from production databases to avoid leakage.
@@ -96,7 +96,7 @@ export default function PrivacyContent() {
             EaseInv does not sell or lease your business files, inventory data, or client contacts to third parties. We share data only with verified sub-processors (e.g., cloud hosting, email deliverability APIs, payment handlers) necessary to operate our service.
           </p>
           <p className="text-muted-foreground text-sm leading-relaxed mt-4">
-            Under global laws like GDPR and CCPA, you retain full rights to request exports of your business ledger, delete your workspace records completely, or modify inaccurate billing profiles at any time from your Store Settings panel.
+            Under global laws like GDPR and CCPA, you retain full rights to request exports of your business ledger, delete your store records completely, or modify inaccurate billing profiles at any time from your Store Settings panel.
           </p>
         </>
       ),

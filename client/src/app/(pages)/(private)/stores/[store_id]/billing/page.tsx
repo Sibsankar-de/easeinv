@@ -6,7 +6,7 @@ import React from "react";
 export const metadata: Metadata = {
   title: "Create Invoice",
   description:
-    "Create, review, and generate professional invoices for your customers from your store workspace.",
+    "Create, review, and generate professional invoices for your customers from your store.",
 };
 
 export default function BillingPage() {

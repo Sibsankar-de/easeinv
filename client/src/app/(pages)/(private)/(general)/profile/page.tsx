@@ -7,7 +7,7 @@ import { cn } from "@/components/utils";
 export const metadata: Metadata = {
   title: "Profile and Stores",
   description:
-    "Manage your account details, review your connected stores, and organize business workspaces in EaseInv.",
+    "Manage your account details, review your connected stores, and organize business stores in EaseInv.",
 };
 
 export default function ProfilePage() {
@@ -18,7 +18,7 @@ export default function ProfilePage() {
           Profile & Stores
         </h1>
         <p className="text-sm text-gray-500">
-          Manage your personal account details, review connected workspaces, and
+          Manage your personal account details, review connected stores, and
           build new business storefronts.
         </p>
       </div>

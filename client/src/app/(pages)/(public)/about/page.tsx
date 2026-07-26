@@ -35,7 +35,7 @@ export default function AboutPage() {
               </span>
             </>
           }
-          description="EaseInv was founded with a singular purpose: to replace complex spreadsheets, disconnected inventory systems, and manual invoicing with a unified, compliant, and beautifully simple workspace."
+          description="EaseInv was founded with a singular purpose: to replace complex spreadsheets, disconnected inventory systems, and manual invoicing with a unified, compliant, and beautifully simple store."
         />
 
         {/* Company History / Story Section */}

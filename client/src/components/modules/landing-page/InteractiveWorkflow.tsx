@@ -10,12 +10,12 @@ export default function InteractiveWorkflow() {
     {
       title: "Set up in 60 Seconds",
       description:
-        "Enter your business name, logo, currency, and tax structure to generate your workspace.",
+        "Enter your business name, logo, currency, and tax structure to generate your store.",
       preview: (
         <div className="bg-card/90 border border-border/60 rounded-xl p-6 shadow-lg space-y-4 text-left transition-all duration-300">
           <div className="flex items-center justify-between border-b border-border/40 pb-3">
             <span className="text-xs font-bold uppercase tracking-wider text-primary">
-              Workspace Generator
+              Store Generator
             </span>
             <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span>
           </div>
@@ -48,7 +48,7 @@ export default function InteractiveWorkflow() {
             </div>
             <div className="pt-2">
               <div className="w-full bg-primary text-primary-foreground font-semibold text-center text-xs py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5" /> Setting Up Workspace...
+                <Sparkles className="w-3.5 h-3.5" /> Setting Up Store...
               </div>
             </div>
           </div>

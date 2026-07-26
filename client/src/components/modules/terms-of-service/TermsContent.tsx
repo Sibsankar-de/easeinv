@@ -10,7 +10,7 @@ export default function TermsContent() {
       content: (
         <>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            By creating an account, launching a workspace, or using EaseInv (referred to as the "Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.
+            By creating an account, launching a store, or using EaseInv (referred to as the "Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.
           </p>
           <p className="text-muted-foreground text-sm leading-relaxed mt-4">
             These terms govern all users, store owners, developers using our API, and team members accessing EaseInv dashboards.
@@ -19,13 +19,13 @@ export default function TermsContent() {
       ),
     },
     {
-      id: "workspaces",
-      title: "2. Accounts & Workspaces",
+      id: "stores",
+      title: "2. Accounts & Stores",
       icon: Shield,
       content: (
         <>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            To unlock our billing and inventory capabilities, you must register a workspace:
+            To unlock our billing and inventory capabilities, you must register a store:
           </p>
           <ul className="list-disc pl-5 mt-3 space-y-2 text-xs text-muted-foreground leading-relaxed">
             <li>You must provide accurate, current, and complete registration information.</li>
@@ -43,11 +43,11 @@ export default function TermsContent() {
       content: (
         <>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            All paid plans (Starter, Pro, and Enterprise) are subject to standard payment schedules:
+            All subscription plans (Starter, Pro, and Enterprise) are subject to standard schedules:
           </p>
           <ul className="list-disc pl-5 mt-3 space-y-2 text-xs text-muted-foreground leading-relaxed">
             <li>
-              <strong>Free Trial:</strong> New workspaces enjoy a 14-day free trial on our Pro tier. No credit card is required to begin.
+              <strong>Starter Plan:</strong> Our Starter plan is completely free to use. No credit card is required to begin.
             </li>
             <li>
               <strong>Subscriptions:</strong> Fees are billed in advance on a recurring monthly or annual cycle. Selecting annual billing grants a 20% discount.

@@ -13,7 +13,7 @@ export default function StatsSection() {
     },
     {
       value: "15k+",
-      label: "Active Workspaces",
+      label: "Active Stores",
       description:
         "SMEs, digital creators, and warehouse hubs managing inventory daily.",
       icon: Users2,

@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Simple & Transparent Pricing Plans | EaseInv",
   description:
-    "Review our flexible pricing tiers—Starter, Pro, and Enterprise. Save 20% on annual cycles. Get started on a 14-day free trial today.",
+    "Review our flexible pricing plans—Starter, Pro, and Enterprise. Save 20% on annual cycles. Get started on our free Starter plan today.",
 };
 
 export default function PricingPage() {
@@ -20,8 +20,8 @@ export default function PricingPage() {
       category: "Usage Details",
       items: [
         {
-          name: "Monthly Invoices",
-          starter: "50",
+          name: "Invoices Allowed",
+          starter: "50 / Day",
           pro: "Unlimited",
           enterprise: "Unlimited",
         },
@@ -32,14 +32,14 @@ export default function PricingPage() {
           enterprise: "Unlimited",
         },
         {
-          name: "Inventory Products",
-          starter: "200",
-          pro: "2,000",
+          name: "Product Listings",
+          starter: "25",
+          pro: "1,000",
           enterprise: "Unlimited",
         },
         {
           name: "Team Members Access",
-          starter: "1",
+          starter: "1 (Single User)",
           pro: "5",
           enterprise: "Unlimited",
         },
@@ -106,15 +106,15 @@ export default function PricingPage() {
     },
     {
       q: "Is there a free trial period?",
-      a: "All new workspaces start on a 14-day free trial of our Pro tier. No credit card information is required to get started.",
+      a: "Our Starter plan is completely free to use, and you can get started right away. Pro and Enterprise plans are coming soon.",
     },
     {
       q: "Do you offer discounts for annual commitments?",
-      a: "Yes. Selecting our annual billing cycle grants you a 20% discount across all paid subscription tiers.",
+      a: "Yes. Selecting our annual billing cycle grants you a 20% discount across our plans when Pro and Enterprise tiers are released.",
     },
     {
       q: "What happens if I reach the inventory limit?",
-      a: "If your stock registry exceeds your plan limits (e.g. 200 items on Starter), you can still bill existing items, but you won't be able to list new SKU variants until you delete older entries or upgrade to Pro.",
+      a: "If your stock registry exceeds your plan limits (e.g. 25 items on Starter), you can still bill existing items, but you won't be able to list new SKU variants until you delete older entries or upgrade to Pro once it becomes available.",
     },
   ];
 
@@ -128,7 +128,7 @@ export default function PricingPage() {
           badgeLabel="Flexible Business Subscriptions"
           badgeIcon={Gem}
           title="Fair Pricing, Built To Scale With You"
-          description="Start on our feature-packed 14-day free trial. Choose a plan that matches your current commerce and billing operations."
+          description="Get started completely free with our Starter plan. Choose a plan that matches your current commerce and billing operations."
         />
 
         {/* Pricing toggle & grid (Client component leaf) */}
@@ -205,7 +205,7 @@ export default function PricingPage() {
               Unify Your Billing & Stock Operations Now
             </h2>
             <p className="text-muted-foreground text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
-              Create your workspace in seconds. All new signups enjoy 14 days of
+              Create your store in seconds. All new signups enjoy 14 days of
               Pro-tier features for free.
             </p>
             <div className="flex justify-center">
@@ -213,7 +213,7 @@ export default function PricingPage() {
                 href="/auth/signup"
                 className="group flex items-center justify-center gap-2 bg-primary text-primary-foreground px-10 py-4.5 rounded-lg text-base font-extrabold hover:bg-primary/95 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 duration-200"
               >
-                Create Workspace
+                Create Store
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>

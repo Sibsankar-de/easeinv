@@ -36,7 +36,7 @@ export const Footer = () => {
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-sm">
               The all-in-one billing, inventory, and customer management
-              workspace built to scale your business. Unified workflows for
+              store platform built to scale your business. Unified workflows for
               modern enterprises.
             </p>
             <div className="flex gap-4">
@@ -73,6 +73,9 @@ export const Footer = () => {
                 </li>
                 <li>
                   <FooterLink href="/docs">Docs</FooterLink>
+                </li>
+                <li>
+                  <FooterLink href="/faq">FAQs</FooterLink>
                 </li>
                 <li>
                   <FooterLink href="/docs/api">API Explorer</FooterLink>

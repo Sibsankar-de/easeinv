@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: "%s | EaseInv",
   },
   description:
-    "EaseInv helps businesses manage billing, invoices, customers, and inventory from one streamlined workspace.",
+    "EaseInv helps businesses manage billing, invoices, customers, and inventory from one streamlined store.",
   applicationName: "EaseInv",
   keywords: [
     "billing software",

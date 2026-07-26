@@ -83,7 +83,7 @@ export default function ContactForm() {
               <div>
                 <h4 className="font-bold text-sm text-foreground">Average Response Time</h4>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Under 2 hours for Enterprise partners; under 24 hours for Pro and Starter workspaces.
+                  Under 2 hours for Enterprise partners; under 24 hours for Pro and Starter stores.
                 </p>
               </div>
             </div>

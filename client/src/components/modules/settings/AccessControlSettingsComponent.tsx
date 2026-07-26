@@ -417,7 +417,7 @@ const UserDeleteModal = ({
       <p className="text-gray-600">
         Are you sure you want to remove <strong>{userData.userName}</strong>'s
         access to this store? They will no longer be able to view or manage any
-        data in this workspace.
+        data in this store.
       </p>
       <div className="flex justify-end gap-3 mt-6">
         <Button variant="none" onClick={onClose}>

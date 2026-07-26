@@ -19,7 +19,7 @@ export default function BentoGrid() {
           </h2>
           <p className="text-muted-foreground text-sm sm:text-base leading-relaxed">
             We have consolidated billing tools and inventory systems into one
-            unified workspace, discarding the need to jump between disconnected
+            unified store dashboard, discarding the need to jump between disconnected
             platforms.
           </p>
         </div>
