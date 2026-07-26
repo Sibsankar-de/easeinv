@@ -8,7 +8,7 @@ import { useStoreNavigation } from "@/hooks/store-navigation";
 import {
   deleteCustomerThunk,
   selectCustomerState,
-  clearCustomerListData,
+  invalidateCustomerPages,
 } from "@/store/features/customerSlice";
 import { CustomerDto } from "@/types/dto/customerDto";
 import { X } from "lucide-react";
@@ -44,7 +44,7 @@ export function CustomerDeleteModal({
       .unwrap()
       .then(() => {
         toast.success("Customer removed successfully!");
-        dispatch(clearCustomerListData());
+        dispatch(invalidateCustomerPages());
         onClose();
       });
   };

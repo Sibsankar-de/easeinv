@@ -9,7 +9,7 @@ import { pageLimits } from "@/constants/pageLimits";
 import {
   fetchCustomerListThunk,
   selectCustomerState,
-  clearCustomerListData,
+  invalidateCustomerPages,
 } from "@/store/features/customerSlice";
 import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -95,7 +95,7 @@ export const CustomerListTable = () => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(trimmed);
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-      dispatch(clearCustomerListData());
+      dispatch(invalidateCustomerPages());
     }, delay);
 
     return () => clearTimeout(timer);
@@ -242,7 +242,7 @@ export const CustomerListTable = () => {
             typeof updater === "function" ? updater(sorting) : updater;
           setSorting(nextState);
           setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-          dispatch(clearCustomerListData());
+          dispatch(invalidateCustomerPages());
         }}
         emptyState={
           <EmptyState

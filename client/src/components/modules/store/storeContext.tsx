@@ -1,16 +1,15 @@
 "use client";
 
-import {
-  fetchCurrentStore,
-  selectCurrentStoreState,
-} from "@/store/features/currentStoreSlice";
+import { fetchCurrentStore } from "@/store/features/currentStoreSlice";
 import {
   fetchCategoriesThunk,
-  selectInventoryState,
+  invalidate as invalidateProducts,
 } from "@/store/features/inventorySlice";
+import { invalidate as invalidateCustomers } from "@/store/features/customerSlice";
+import { invalidate as invalidateInvoices } from "@/store/features/invoiceSlice";
 import { useParams } from "next/navigation";
 import React, { createContext, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 
 const storeContext = createContext<undefined>(undefined);
 
@@ -22,16 +21,14 @@ export const StoreContextProvider = ({
   const params = useParams();
   const storeId = params?.store_id;
   const dispatch = useDispatch();
-  const { status: listStatus, categoryStatus } =
-    useSelector(selectInventoryState);
 
   useEffect(() => {
     if (storeId) {
       dispatch(fetchCurrentStore(storeId));
-
-      if (categoryStatus === "idle") {
-        dispatch(fetchCategoriesThunk(storeId));
-      }
+      dispatch(invalidateProducts());
+      dispatch(invalidateCustomers());
+      dispatch(invalidateInvoices());
+      dispatch(fetchCategoriesThunk(storeId));
     }
   }, [storeId, dispatch]);
 

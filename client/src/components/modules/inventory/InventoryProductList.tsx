@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   fetchProducts,
   selectInventoryState,
-  clearProductList,
+  invalidateProductPages,
 } from "@/store/features/inventorySlice";
 import { ProductDto } from "@/types/dto/productDto";
 import { Button } from "@/components/ui/Button";
@@ -107,7 +107,7 @@ export const InventoryProductList = () => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-      dispatch(clearProductList());
+      dispatch(invalidateProductPages());
     }, delay);
 
     return () => clearTimeout(timer);
@@ -271,7 +271,7 @@ export const InventoryProductList = () => {
           onChange={(val) => {
             setSelectedCategory(val);
             setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-            dispatch(clearProductList());
+            dispatch(invalidateProductPages());
           }}
           placeholder="Select category"
           className="min-w-40"
@@ -291,7 +291,7 @@ export const InventoryProductList = () => {
             typeof updater === "function" ? updater(sorting) : updater;
           setSorting(nextState);
           setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-          dispatch(clearProductList());
+          dispatch(invalidateProductPages());
         }}
         emptyState={
           <EmptyState

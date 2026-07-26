@@ -21,6 +21,7 @@ import {
   getProductDetailsThunk,
   selectInventoryState,
   updateProductThunk,
+  invalidateProductPages,
 } from "@/store/features/inventorySlice";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
@@ -159,6 +160,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
       .unwrap()
       .then(() => {
         toast.success("Product created");
+        dispatch(invalidateProductPages());
         navigate(`/inventory`);
       });
   };

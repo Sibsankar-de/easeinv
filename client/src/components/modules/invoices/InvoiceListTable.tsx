@@ -8,7 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   fetchInvoiceListThunk,
   selectInvoiceState,
-  clearInvoiceList,
+  invalidateInvoicePages,
   fetchInvoiceByIdThunk,
 } from "@/store/features/invoiceSlice";
 import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
@@ -131,7 +131,7 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-      dispatch(clearInvoiceList());
+      dispatch(invalidateInvoicePages());
     }, delay);
 
     return () => clearTimeout(timer);
@@ -256,7 +256,7 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
           onChange={(val) => {
             setFilterStatus(val);
             setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-            dispatch(clearInvoiceList());
+            dispatch(invalidateInvoicePages());
           }}
         />
       </div>
@@ -274,7 +274,7 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
             typeof updater === "function" ? updater(sorting) : updater;
           setSorting(nextState);
           setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-          dispatch(clearInvoiceList());
+          dispatch(invalidateInvoicePages());
         }}
         emptyState={
           <EmptyState

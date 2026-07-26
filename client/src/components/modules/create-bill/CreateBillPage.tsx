@@ -17,7 +17,9 @@ import { useStoreNavigation } from "@/hooks/store-navigation";
 import {
   createInvoiceThunk,
   selectInvoiceState,
+  invalidateInvoicePages,
 } from "@/store/features/invoiceSlice";
+import { invalidateCustomerPages } from "@/store/features/customerSlice";
 import { transformInvoicePayload } from "@/helpers/invoiceHelper";
 import { toast } from "react-toastify";
 import { FormSkeleton } from "@/components/ui/Skeleton";
@@ -117,6 +119,8 @@ export const CreateBillPage = () => {
       .unwrap()
       .then(() => {
         toast.success(`Invoice saved`);
+        dispatch(invalidateInvoicePages());
+        dispatch(invalidateCustomerPages());
       })
       .catch(() => {
         setIsInvoiceSaved(false);

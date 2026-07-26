@@ -12,6 +12,7 @@ export interface InputType extends Omit<
   isInvalid?: boolean;
   icon?: React.ReactElement;
   errorMessage?: string;
+  inputClass?: string;
 }
 
 export const Input = ({
@@ -20,6 +21,7 @@ export const Input = ({
   isInvalid = false,
   icon,
   errorMessage,
+  inputClass,
   ...props
 }: InputType) => {
   const [showPassword, setShowPassword] = useState(false);
@@ -30,7 +32,7 @@ export const Input = ({
     <div
       className={cn(
         "relative group w-full flex items-center",
-        "pl-3 pr-4 py-2 border border-gray-300 rounded-lg",
+        "pl-3 pr-4 py-1 border border-gray-300 rounded-lg",
         "focus-within:outline-none focus-within:ring-2 focus-within:ring-primary transition-all duration-200",
         hasError && "border-red-300 focus-within:ring-red-200",
         props.disabled && "bg-gray-100 cursor-not-allowed",
@@ -51,7 +53,10 @@ export const Input = ({
         </div>
       )}
       <input
-        className="w-full h-full bg-transparent outline-none border-none"
+        className={cn(
+          "w-full h-full py-1 bg-transparent outline-none border-none",
+          inputClass,
+        )}
         onChange={(e) => onChange?.(e.target.value)}
         onWheel={(e) => e.currentTarget.blur()}
         {...props}

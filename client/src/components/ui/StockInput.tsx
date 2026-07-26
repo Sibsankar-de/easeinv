@@ -35,7 +35,7 @@ export const StockInput = ({
   const resolvedUnit = convertUnit(unit || "", storeSettings.customUnits);
 
   return (
-    <div className="grid grid-cols-[1fr_auto] w-full">
+    <div className="flex h-full w-full">
       <Input
         id={id}
         type="number"
@@ -59,7 +59,7 @@ export const StockInput = ({
             htmlFor={id}
             className={cn(
               "px-3 bg-gray-200 border border-gray-300 border-l-0 rounded-r-lg",
-              "h-full flex items-center justify-center text-gray-800",
+              "h-auto flex items-center justify-center text-gray-800",
             )}
           >
             {resolvedUnit}

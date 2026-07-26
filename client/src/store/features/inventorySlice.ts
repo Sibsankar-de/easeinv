@@ -96,13 +96,15 @@ const inventorySlice = createSlice({
   name: "products",
   initialState,
   reducers: {
-    clearProductList: (state) => {
+    invalidateProductPages: (state) => {
       state.data.productList = {
         pages: {},
         totalDocs: 0,
         totalPages: 0,
       };
+      state.status = "idle";
     },
+    invalidate: () => initialState,
   },
   extraReducers(builder) {
     builder
@@ -198,5 +200,5 @@ const inventorySlice = createSlice({
 });
 
 export const selectInventoryState = (state: RootState) => state.inventory;
-export const { clearProductList } = inventorySlice.actions;
+export const { invalidateProductPages, invalidate } = inventorySlice.actions;
 export default inventorySlice.reducer;

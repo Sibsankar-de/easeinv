@@ -1,12 +1,7 @@
 import { InvoiceSummaryDto, InvoiceDto } from "@/types/dto/invoiceDto";
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import {
-  concatPaginatedData,
-  createApiThunk,
-  setState,
-  transformPaginatedResponse,
-} from "../utils";
+import { createApiThunk, setState, transformPaginatedResponse } from "../utils";
 import api from "@/configs/axios-config";
 import { PaginatedPages } from "@/types/PageableType";
 import { InvoiceSummary } from "@/types/InvoiceSummaryType";
@@ -78,12 +73,13 @@ const invoiceSlice = createSlice({
   name: "invoices",
   initialState,
   reducers: {
-    clearInvoiceList: (state) => {
+    invalidateInvoicePages: (state) => {
       state.data.invoicePagedData = {
         pages: {},
         totalDocs: 0,
         totalPages: 0,
       };
+      state.status = "idle";
     },
     updateInvoiceDue: (state, action) => {
       const { page, invoiceId, newDueAmount } = action.payload;
@@ -97,6 +93,7 @@ const invoiceSlice = createSlice({
         }
       }
     },
+    invalidate: () => initialState,
   },
   extraReducers(builder) {
     builder
@@ -108,10 +105,6 @@ const invoiceSlice = createSlice({
       )
       .addCase(createInvoiceThunk.fulfilled, (state, action) => {
         state.createStatus = "success";
-        state.data.invoicePagedData = concatPaginatedData(
-          state.data.invoicePagedData,
-          action.payload,
-        );
         state.error = null;
       })
       .addCase(fetchInvoiceListThunk.pending, setState)
@@ -184,5 +177,6 @@ const invoiceSlice = createSlice({
 });
 
 export const selectInvoiceState = (state: RootState) => state.invoice;
-export const { updateInvoiceDue, clearInvoiceList } = invoiceSlice.actions;
+export const { updateInvoiceDue, invalidateInvoicePages, invalidate } =
+  invoiceSlice.actions;
 export default invoiceSlice.reducer;
