@@ -7,7 +7,7 @@ import { HelpCircle } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Frequently Asked Questions | EaseInv",
+  title: "Frequently Asked Questions",
   description:
     "Find answers to common questions about EaseInv stores, pricing plans, daily invoice limits, receipt printing, and account setups.",
 };

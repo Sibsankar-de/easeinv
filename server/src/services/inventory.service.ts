@@ -101,7 +101,9 @@ export const createProduct = async (
         totalStock: totalStock ?? 0,
         alertThreshold: alertThreshold ?? 0,
         emailAlert: emailAlert ?? false,
-        stockStatus: getProductStockStatus(totalStock, alertThreshold),
+        stockStatus: trackInventory
+          ? getProductStockStatus(totalStock, alertThreshold)
+          : ProductStockStatus.AVAILABLE,
         stockUnit,
         unitGroups: unitGroups,
         pricePerQuantity: pricePerQuantity,
@@ -177,7 +179,9 @@ export const updateProduct = async (
         totalStock: totalStock ?? 0,
         alertThreshold: alertThreshold ?? 0,
         emailAlert: emailAlert ?? false,
-        stockStatus: getProductStockStatus(totalStock, alertThreshold),
+        stockStatus: trackInventory
+          ? getProductStockStatus(totalStock, alertThreshold)
+          : ProductStockStatus.AVAILABLE,
         stockUnit,
         unitGroups: unitGroups as any,
         pricePerQuantity: pricePerQuantity as any,

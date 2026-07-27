@@ -7,7 +7,7 @@ import { MessageSquare } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Contact Us | EaseInv Support",
+  title: "Contact Us & Support",
   description:
     "Have questions about billing plans, tax setups, or multi-store inventory tools? Send us a message or email support@easeinv.com.",
 };

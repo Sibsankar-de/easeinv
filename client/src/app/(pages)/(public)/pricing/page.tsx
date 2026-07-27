@@ -9,7 +9,7 @@ import { ArrowRight, Gem } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Simple & Transparent Pricing Plans | EaseInv",
+  title: "Simple & Transparent Pricing Plans",
   description:
     "Review our flexible pricing plans—Starter, Pro, and Enterprise. Save 20% on annual cycles. Get started on our free Starter plan today.",
 };

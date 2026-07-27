@@ -10,7 +10,7 @@ import { Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About Our Mission, Vision & Team | EaseInv",
+  title: "About Our Mission, Vision & Team",
   description:
     "Learn how EaseInv empowers businesses with compliant invoicing engines, real-time inventory management, and developer-first sandbox billing platforms. Explore our story, milestones, and values.",
 };

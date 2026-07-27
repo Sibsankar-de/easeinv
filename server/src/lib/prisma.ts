@@ -1,21 +1,27 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
+import pg, { PoolConfig } from "pg";
 import { createModuleLogger } from "../utils/logger";
 import { env } from "../configs/env";
 
 const log = createModuleLogger(import.meta.url);
 
-const pool = new pg.Pool({
+let pool_conf: PoolConfig = {
   host: env.DB_HOST,
   port: env.DB_PORT,
   user: env.DB_USER,
   password: env.DB_PASSWORD,
   database: env.DB_NAME,
-  ssl: {
+  ssl: false,
+};
+
+if (env.DB_SSL) {
+  pool_conf.ssl = {
     rejectUnauthorized: false,
-  },
-});
+  };
+}
+
+const pool = new pg.Pool(pool_conf);
 
 const adapter = new PrismaPg(pool);
 
