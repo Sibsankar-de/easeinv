@@ -75,8 +75,28 @@ export async function getChannel(): Promise<Channel> {
             channelPromise = null;
           });
 
-          await channel.assertQueue(env.RABBITMQ_EMAIL_QUEUE, {
+          const mainQueue = `${env.RABBITMQ_EMAIL_QUEUE}_v2`;
+          const retryQueue = `${mainQueue}_retry`;
+          const dlq = `${mainQueue}_dlq`;
+
+          // 1. Assert DLQ
+          await channel.assertQueue(dlq, {
             durable: true,
+          });
+
+          // 2. Assert Retry Queue (with 5s message TTL, routing back to Main Queue)
+          await channel.assertQueue(retryQueue, {
+            durable: true,
+            deadLetterExchange: "",
+            deadLetterRoutingKey: mainQueue,
+            messageTtl: 5000,
+          });
+
+          // 3. Assert Main Queue (with DLX routing to Retry Queue)
+          await channel.assertQueue(mainQueue, {
+            durable: true,
+            deadLetterExchange: "",
+            deadLetterRoutingKey: retryQueue,
           });
         }
       }

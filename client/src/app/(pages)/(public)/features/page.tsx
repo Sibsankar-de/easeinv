@@ -14,7 +14,7 @@ import {
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Billing & Inventory Platform Features | EaseInv",
+  title: "Billing & Inventory Platform Features",
   description:
     "Explore EaseInv's compliant invoicing engines, POS thermal receipt prints, low stock alert limits, customer directories, and earnings graphs.",
 };

@@ -1,6 +1,9 @@
 import nodemailer from "nodemailer";
 import { env } from "../configs/env";
 import { EmailJob } from "../types/email";
+import { createModuleLogger } from "../utils/logger";
+
+const log = createModuleLogger(import.meta.url);
 
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
@@ -22,18 +25,27 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendMail(options: EmailJob) {
-  const info = await transporter.sendMail({
-    from: env.MAIL_FROM,
-    to: options.to,
-    subject: options.subject,
-    html: options.html,
-    cc: options.cc,
-    bcc: options.bcc,
-  });
+  try {
+    const info = await transporter.sendMail({
+      from: env.MAIL_FROM,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      cc: options.cc,
+      bcc: options.bcc,
+    });
 
-  return {
-    messageId: info.messageId,
-    accepted: info.accepted,
-    rejected: info.rejected,
-  };
+    log.info(
+      `Email sent successfully to ${options.to}. Message ID: ${info.messageId}`,
+    );
+
+    return {
+      messageId: info.messageId,
+      accepted: info.accepted,
+      rejected: info.rejected,
+    };
+  } catch (error) {
+    log.error(`Failed to send email to ${options.to}: ${error}`);
+    throw error;
+  }
 }

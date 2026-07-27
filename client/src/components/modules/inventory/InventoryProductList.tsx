@@ -169,7 +169,7 @@ export const InventoryProductList = () => {
         enableSorting: false,
         cell: (info) => {
           const categories = info.getValue();
-          return categories ? (
+          return categories && categories.length > 0 ? (
             <div className="flex flex-wrap gap-2 items-center justify-center">
               <Badge>{categories[0].name}</Badge>
               {categories.length > 1 && (

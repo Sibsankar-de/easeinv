@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://easeinv.com"),
+  metadataBase: new URL("https://easeinv.app"),
   title: {
     default:
       "EaseInv | Billing, Inventory, and Invoicing for Modern Businesses",
@@ -42,12 +42,22 @@ export const metadata: Metadata = {
       "Manage invoices, customers, products, and store operations in one place with EaseInv.",
     siteName: "EaseInv",
     type: "website",
+    url: "https://easeinv.app",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "EaseInv - Billing, Invoicing & Inventory for Modern Businesses",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "EaseInv | Billing, Inventory, and Invoicing for Modern Businesses",
     description:
       "Manage invoices, customers, products, and store operations in one place with EaseInv.",
+    images: ["/og-image.png"],
   },
 };
 
