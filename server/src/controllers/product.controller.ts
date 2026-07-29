@@ -16,6 +16,7 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
   const query = (req.query.query as string) || "";
   const sortBy = (req.query.sortBy as string) || "createdAt";
   const sortOrder = req.query.sortOrder === "desc" ? "desc" : "asc";
+  const categoryId = (req.query.categoryId as string) || undefined;
 
   const productList = await inventoryService.getProducts({
     storeId,
@@ -24,6 +25,7 @@ export const getProducts = asyncHandler(async (req: Request, res: Response) => {
     query,
     sortBy,
     sortOrder,
+    categoryId,
   });
 
   return res

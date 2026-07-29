@@ -24,10 +24,10 @@ const logger = createLogger({
 });
 
 type ModuleLogger = {
-  info: (message: string) => void;
-  error: (message: string) => void;
-  warn: (message: string) => void;
-  debug: (message: string) => void;
+  info: (message: any) => void;
+  error: (message: any) => void;
+  warn: (message: any) => void;
+  debug: (message: any) => void;
 };
 
 export const createModuleLogger = (metaUrl: string): ModuleLogger => {
@@ -35,10 +35,10 @@ export const createModuleLogger = (metaUrl: string): ModuleLogger => {
   const moduleName = path.basename(__filename);
 
   return {
-    info: (message: string) => logger.info(message, { module: moduleName }),
-    error: (message: string) => logger.error(message, { module: moduleName }),
-    warn: (message: string) => logger.warn(message, { module: moduleName }),
-    debug: (message: string) => logger.debug(message, { module: moduleName }),
+    info: (message: any) => logger.info(message, { module: moduleName }),
+    error: (message: any) => logger.error(message, { module: moduleName }),
+    warn: (message: any) => logger.warn(message, { module: moduleName }),
+    debug: (message: any) => logger.debug(message, { module: moduleName }),
   };
 };
 

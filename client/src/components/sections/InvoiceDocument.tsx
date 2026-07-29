@@ -4,7 +4,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { InvoiceFormState } from "@/helpers/invoiceHelper";
 import { formatDateStr } from "@/utils/formatDate";
-import { convertUnit } from "@/utils/conversion";
+import { convertUnit, formatQuantityWithUnit } from "@/utils/conversion";
 import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 import { ConditionalDiv } from "../ui/ConditionalDiv";
 import { cn } from "../utils";
@@ -254,8 +254,11 @@ export const InvoiceDocument = React.forwardRef<HTMLDivElement, Props>(
                   </td>
                   <td className="px-1 py-1.5 text-center align-top text-gray-700">
                     <span className="inline-block min-w-10 wrap-break-word">
-                      {item.netQuantity}{" "}
-                      {convertUnit(item.stockUnit, storeSettings?.customUnits)}
+                      {formatQuantityWithUnit(
+                        item.netQuantity,
+                        item.stockUnit,
+                        convertUnit(item.stockUnit, storeSettings?.customUnits),
+                      )}
                     </span>
                   </td>
                   <td className="py-1.5 pl-2 text-right align-top font-medium">

@@ -11,6 +11,7 @@ export const fetchProducts: any = createApiThunk(
   async (payload: any) => {
     let url = `/products/${payload.storeId}?page=${payload.page}&limit=${payload.limit}`;
     if (payload.query) url += `&query=${encodeURIComponent(payload.query)}`;
+    if (payload.categoryId) url += `&categoryId=${payload.categoryId}`;
     if (payload.sortBy) url += `&sortBy=${payload.sortBy}`;
     if (payload.sortOrder) url += `&sortOrder=${payload.sortOrder}`;
     return await api.get(url);
