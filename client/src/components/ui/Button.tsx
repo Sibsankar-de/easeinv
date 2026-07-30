@@ -65,7 +65,7 @@ export const Button = ({
       type={type}
       className={cn(
         "flex items-center gap-2 px-4 py-2 border border-transparent rounded-lg",
-        "cursor-pointer select-none relative text-sm",
+        "cursor-pointer select-none relative text-sm whitespace-nowrap",
         "disabled:brightness-75 disabled:cursor-not-allowed",
         "focus-visible:ring-blue-400 focus-visible:ring-1",
         "transition-all duration-150 active:translate-y-0.5 active:brightness-90",

@@ -67,3 +67,33 @@ model InvoiceItem {
   @@index([productId])
   @@map("invoice_items")
 }
+
+model InvoiceSummary {
+  id      String @id @default(uuid()) @db.Uuid
+  storeId String @unique @db.Uuid
+
+  // Invoice aggregates (lifetime)
+  totalRevenue Float @default(0)
+  totalPaid    Float @default(0)
+  totalDue     Float @default(0)
+  totalProfit  Float @default(0)
+  invoiceCount Int   @default(0)
+
+  // Product aggregates (lifetime)
+  totalProductsSold Float @default(0)
+
+  // Customer counts
+  totalCustomers Int @default(0)
+
+  // Billing status snapshot
+  paidInvoices    Int @default(0)
+  partialInvoices Int @default(0)
+  unpaidInvoices  Int @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_summaries")
+}

@@ -18,6 +18,7 @@ import {
   createInvoiceThunk,
   selectInvoiceState,
   invalidateInvoicePages,
+  invalidateInvoiceSummary,
 } from "@/store/features/invoiceSlice";
 import { invalidateCustomerPages } from "@/store/features/customerSlice";
 import { InvoiceStatus } from "@/types/dto/invoiceDto";
@@ -123,6 +124,7 @@ export const CreateBillPage = () => {
       .then(() => {
         toast.success(`Invoice saved`);
         dispatch(invalidateInvoicePages());
+        dispatch(invalidateInvoiceSummary());
         dispatch(invalidateCustomerPages());
       })
       .catch(() => {

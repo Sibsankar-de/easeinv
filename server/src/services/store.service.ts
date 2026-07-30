@@ -66,6 +66,11 @@ export const createStore = async (user: User, storeData: CreateStoreDTO) =>
       },
     });
 
+    // Create InvoiceSummary
+    await tx.invoiceSummary.create({
+      data: { storeId: store.id },
+    });
+
     // send email to owner
     void transactionalEmailService.sendStoreCreatedEmail(user, store);
 

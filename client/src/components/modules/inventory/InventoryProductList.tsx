@@ -1,7 +1,14 @@
 "use client";
 
 import { Select } from "@/components/ui/Select";
-import { Plus, Edit2, Trash2, PackageSearch } from "lucide-react";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  PackageSearch,
+  Filter,
+  ListFilterPlus,
+} from "lucide-react";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { SelectOptionType } from "@/types/SelectType";
@@ -11,6 +18,7 @@ import {
   selectInventoryState,
   invalidateProductPages,
 } from "@/store/features/inventorySlice";
+import { CategoryDto } from "@/types/dto/categoryDto";
 import { ProductDto } from "@/types/dto/productDto";
 import { Button } from "@/components/ui/Button";
 import { useStoreNavigation } from "@/hooks/store-navigation";
@@ -31,12 +39,6 @@ import {
   StockStatusBadgeVariantMap,
   StockStatusMap,
 } from "@/constants/productConstants";
-
-const categories: SelectOptionType[] = [
-  { value: "All Categories", key: "all" },
-  { value: "Services", key: "services" },
-  { value: "Subscription", key: "subscription" },
-];
 
 const columnHelper = createColumnHelper<ProductDto>();
 
@@ -77,9 +79,20 @@ export const InventoryProductList = () => {
 
   const dispatch = useDispatch();
   const {
-    data: { productList },
+    data: { productList, categoryList },
     status,
   } = useSelector(selectInventoryState);
+
+  const categoryOptions: SelectOptionType[] = useMemo(
+    () => [
+      { value: "All Categories", key: "all" },
+      ...categoryList.map((cat: CategoryDto) => ({
+        value: cat.name,
+        key: cat.id,
+      })),
+    ],
+    [categoryList],
+  );
   const {
     data: { storeSettings, currencySymbol },
   } = useSelector(selectCurrentStoreState);
@@ -124,6 +137,7 @@ export const InventoryProductList = () => {
           page: currentPage,
           limit: pagination.pageSize,
           query: debouncedSearchTerm || undefined,
+          categoryId: selectedCategory !== "all" ? selectedCategory : undefined,
           sortBy: sortField,
           sortOrder,
         }),
@@ -136,6 +150,7 @@ export const InventoryProductList = () => {
     pagination.pageSize,
     productList.pages,
     debouncedSearchTerm,
+    selectedCategory,
     sorting,
   ]);
 
@@ -259,23 +274,35 @@ export const InventoryProductList = () => {
 
   return (
     <div>
-      <div className="flex gap-4 mb-4">
-        <SearchInput
-          placeholder="Search products by name or SKU..."
-          value={searchTerm}
-          onChange={(val) => setSearchTerm(val)}
-        />
-        <Select
-          options={categories}
-          value={selectedCategory}
-          onChange={(val) => {
-            setSelectedCategory(val);
-            setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-            dispatch(invalidateProductPages());
-          }}
-          placeholder="Select category"
-          className="min-w-40"
-        />
+      <div className="mb-4">
+        <div className="flex items-center gap-2 w-full mb-2">
+          <SearchInput
+            placeholder="Search products by name or SKU..."
+            value={searchTerm}
+            onChange={(val) => setSearchTerm(val)}
+          />
+          <Button
+            variant="primary"
+            onClick={() => navigate("/inventory/add-product")}
+          >
+            <Plus size={17} />
+            Add Product
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select
+            options={categoryOptions}
+            value={selectedCategory}
+            onChange={(val) => {
+              setSelectedCategory(val);
+              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+              dispatch(invalidateProductPages());
+            }}
+            placeholder="Select category"
+            className="min-w-40"
+            icon={<ListFilterPlus size={18} />}
+          />
+        </div>
       </div>
 
       <DataTable

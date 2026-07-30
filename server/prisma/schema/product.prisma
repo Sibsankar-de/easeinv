@@ -48,7 +48,8 @@ model Product {
   thumbnailImage GalleryImage?     @relation("ProductThumbnail", fields: [thumbnailImageId], references: [id])
   categories     ProductCategory[]
   images         ProductImage[]
-  invoiceItems   InvoiceItem[]
+  invoiceItems      InvoiceItem[]
+  productDailyStats ProductDailyStat[]
 
   @@index([storeId])
   @@index([storeId, name])

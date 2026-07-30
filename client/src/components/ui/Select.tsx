@@ -17,6 +17,7 @@ export const Select = ({
   className,
   dropdownClass,
   errorMessage,
+  icon,
 }: SelectType) => {
   const generatedId = useId();
   const uid = id || generatedId;
@@ -146,27 +147,39 @@ export const Select = ({
         )}
         onClick={handleClick}
       >
-        <div
-          ref={triggerRef}
-          id={uid}
-          role="button"
-          tabIndex={disabled ? -1 : 0}
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          className={clsx(
-            "w-full resize-y outline-none border-none bg-transparent",
-            disabled && "opacity-50 cursor-not-allowed",
+        <div className="flex items-center gap-2 w-full overflow-hidden">
+          {icon && (
+            <div
+              className={cn(
+                "w-fit h-fit flex items-center justify-center shrink-0 text-gray-400",
+                isFocused && "text-primary",
+              )}
+            >
+              {icon}
+            </div>
           )}
-        >
-          <span className="truncate select-none">
-            {!selected
-              ? placeholder
-              : (options.find((o) => o.key === selected)?.value ?? selected)}
-          </span>
+          <div
+            ref={triggerRef}
+            id={uid}
+            role="button"
+            tabIndex={disabled ? -1 : 0}
+            aria-haspopup="listbox"
+            aria-expanded={open}
+            className={clsx(
+              "w-full resize-y outline-none border-none bg-transparent flex items-center",
+              disabled && "opacity-50 cursor-not-allowed",
+            )}
+          >
+            <span className="truncate select-none">
+              {!selected
+                ? placeholder
+                : (options.find((o) => o.key === selected)?.value ?? selected)}
+            </span>
+          </div>
         </div>
         <div
           className={cn(
-            "transition-transform duration-200",
+            "transition-transform duration-200 shrink-0",
             isFocused ? "rotate-180" : "rotate-0",
           )}
         >

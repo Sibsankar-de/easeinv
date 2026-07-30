@@ -10,8 +10,15 @@ import {
 import * as inventoryService from "../services/inventory.service";
 import * as customerService from "./customer.service";
 import { InvoiceStatus, InvoicePaymentStatus } from "@prisma/client";
-import { calculateInvoiceDetails } from "../utils/invoice-calculator";
-import { toInvoiceDto, toInvoiceSummaryDto } from "../dto/invoice.dto";
+import {
+  CalculatedInvoice,
+  calculateInvoiceDetails,
+} from "../utils/invoice-calculator";
+import {
+  toInvoiceDto,
+  toInvoiceSummaryDto,
+  toInvoiceCalculationSummaryDto,
+} from "../dto/invoice.dto";
 
 export const createInvoice = async (
   userId: string,
@@ -106,7 +113,7 @@ export const createInvoice = async (
       })),
     });
 
-    // Side effects: inventory tracking + due amount
+    // Side effects: inventory tracking + due amount + invoice summary
     await Promise.all([
       ...(storeSettings?.enableInventoryTracking
         ? billData.billItems.map((item) =>
@@ -123,10 +130,44 @@ export const createInvoice = async (
         calculations.dueAmount,
         tx,
       ),
+      updateInvoiceSummaryOnCreate(storeId, calculations, tx),
     ]);
 
     const createdInvoice = await getPopulatedInvoice(invoice.id, tx);
     return toInvoiceDto(createdInvoice);
+  });
+
+const updateInvoiceSummaryOnCreate = (
+  storeId: string,
+  calculations: CalculatedInvoice,
+  tx: TransactionClient,
+) =>
+  tx.invoiceSummary.update({
+    where: { storeId },
+    data: {
+      totalRevenue: { increment: calculations.total },
+      totalPaid: { increment: calculations.paidAmount },
+      totalDue: { increment: calculations.dueAmount },
+      totalProfit: { increment: calculations.totalProfit },
+      invoiceCount: { increment: 1 },
+      totalProductsSold: {
+        increment: calculations.billItems.reduce(
+          (sum, item) => sum + item.netQuantity,
+          0,
+        ),
+      },
+      paidInvoices: {
+        increment: calculations.dueAmount <= 0 ? 1 : 0,
+      },
+      partialInvoices: {
+        increment:
+          calculations.dueAmount > 0 && calculations.paidAmount > 0 ? 1 : 0,
+      },
+      unpaidInvoices: {
+        increment:
+          calculations.dueAmount > 0 && calculations.paidAmount <= 0 ? 1 : 0,
+      },
+    },
   });
 
 export const updateInvoiceDueAmount = async (
@@ -253,32 +294,9 @@ export const searchInvoice = async (params: {
 };
 
 export const getInvoiceSummary = async (storeId: string) => {
-  const [aggregated, paidCount, dueCount] = await Promise.all([
-    prisma.invoice.aggregate({
-      where: { storeId },
-      _sum: {
-        total: true,
-        paidAmount: true,
-        dueAmount: true,
-      },
-      _count: { id: true },
-    }),
-    prisma.invoice.count({ where: { storeId, dueAmount: { lte: 0 } } }),
-    prisma.invoice.count({ where: { storeId, dueAmount: { gt: 0 } } }),
-  ]);
-
-  const totalProfit = await prisma.invoice.aggregate({
+  const summary = await prisma.invoiceSummary.findUniqueOrThrow({
     where: { storeId },
-    _sum: { totalProfit: true },
   });
 
-  return {
-    totalInvoices: aggregated._count.id,
-    totalRevenue: aggregated._sum.total ?? 0,
-    totalDue: aggregated._sum.dueAmount ?? 0,
-    totalPaid: aggregated._sum.paidAmount ?? 0,
-    totalProfit: totalProfit._sum.totalProfit ?? 0,
-    paidCount,
-    dueCount,
-  };
+  return toInvoiceCalculationSummaryDto(summary);
 };

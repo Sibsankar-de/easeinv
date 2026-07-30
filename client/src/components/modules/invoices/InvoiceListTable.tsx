@@ -30,9 +30,9 @@ import { useInvoiceDownload } from "@/hooks/use-invoice-download";
 
 const filterOptions: SelectOptionType[] = [
   { value: "All", key: "all" },
-  { value: "Paid", key: "paid" },
-  { value: "Unpaid", key: "unpaid" },
-  { value: "Overdue", key: "overdue" },
+  { value: "Paid", key: "PAID" },
+  { value: "Due", key: "DUE" },
+  { value: "Overdue", key: "OVERDUE" },
 ];
 
 const columnHelper = createColumnHelper<InvoiceSummaryDto>();

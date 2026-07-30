@@ -25,8 +25,9 @@ export const getProducts = async (params: {
   query: string;
   sortBy: string;
   sortOrder: "asc" | "desc";
+  categoryId?: string;
 }) => {
-  const { storeId, page, limit, query, sortBy, sortOrder } = params;
+  const { storeId, page, limit, query, sortBy, sortOrder, categoryId } = params;
 
   const where: any = { storeId };
   if (query) {
@@ -35,6 +36,9 @@ export const getProducts = async (params: {
       { sku: { contains: query, mode: "insensitive" } },
       { gtin: { contains: query, mode: "insensitive" } },
     ];
+  }
+  if (categoryId) {
+    where.categories = { some: { categoryId } };
   }
 
   const result = await paginate(

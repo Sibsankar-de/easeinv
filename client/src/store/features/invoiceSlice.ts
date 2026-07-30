@@ -6,34 +6,11 @@ import api from "@/configs/axios-config";
 import { PaginatedPages } from "@/types/PageableType";
 import { InvoiceSummary } from "@/types/InvoiceSummaryType";
 
-const initialState = {
-  data: {
-    invoicePagedData: {
-      pages: {} as PaginatedPages<InvoiceSummaryDto>,
-      totalDocs: 0,
-      totalPages: 0,
-    },
-    summaryData: {
-      totalInvoices: 0,
-      totalRevenue: 0,
-      totalDue: 0,
-      totalPaid: 0,
-    } as InvoiceSummary,
-    invoiceListData: [] as InvoiceDto[],
-  },
-  status: "idle",
-  getStatus: "idle",
-  createStatus: "idle",
-  updateStatus: "idle",
-  summaryStatus: "idle",
-  error: null,
-};
-
 export const fetchInvoiceListThunk: any = createApiThunk(
   "/invoices/list",
   async (payload: any) => {
     let url = `/invoices/${payload.storeId}?page=${payload.page}&limit=${payload.limit}`;
-    if (payload.status) url += `&status=${payload.status}`;
+    if (payload.paymentStatus) url += `&paymentStatus=${payload.paymentStatus}`;
     if (payload.customerPrefix)
       url += `&customerPrefix=${payload.customerPrefix}`;
     if (payload.customerId) url += `&customerId=${payload.customerId}`;
@@ -69,6 +46,29 @@ export const fetchInvoiceByIdThunk: any = createApiThunk(
     await api.get(`/invoices/${payload.storeId}/${payload.invoiceId}`),
 );
 
+const initialState = {
+  data: {
+    invoicePagedData: {
+      pages: {} as PaginatedPages<InvoiceSummaryDto>,
+      totalDocs: 0,
+      totalPages: 0,
+    },
+    summaryData: {
+      totalInvoices: 0,
+      totalRevenue: 0,
+      totalDue: 0,
+      totalPaid: 0,
+    } as InvoiceSummary,
+    invoiceListData: [] as InvoiceDto[],
+  },
+  status: "idle",
+  getStatus: "idle",
+  createStatus: "idle",
+  updateStatus: "idle",
+  summaryStatus: "idle",
+  error: null,
+};
+
 const invoiceSlice = createSlice({
   name: "invoices",
   initialState,
@@ -80,6 +80,10 @@ const invoiceSlice = createSlice({
         totalPages: 0,
       };
       state.status = "idle";
+    },
+    invalidateInvoiceSummary: (state) => {
+      state.data.summaryData = initialState.data.summaryData;
+      state.summaryStatus = "idle";
     },
     updateInvoiceDue: (state, action) => {
       const { page, invoiceId, newDueAmount } = action.payload;
@@ -177,6 +181,10 @@ const invoiceSlice = createSlice({
 });
 
 export const selectInvoiceState = (state: RootState) => state.invoice;
-export const { updateInvoiceDue, invalidateInvoicePages, invalidate } =
-  invoiceSlice.actions;
+export const {
+  updateInvoiceDue,
+  invalidateInvoicePages,
+  invalidateInvoiceSummary,
+  invalidate,
+} = invoiceSlice.actions;
 export default invoiceSlice.reducer;

@@ -5,10 +5,6 @@ export function numToStr(num: number | undefined) {
   return str === "0" ? "" : str;
 }
 
-// export function getNumericValue(num: any){
-//   if (num)
-// }
-
 export function convertUnit(unit: string, customs?: any[]) {
   const unitList = [...unitMap, ...(customs || [])];
   const found = unitList.find((u) => u.key === unit);
@@ -18,4 +14,20 @@ export function convertUnit(unit: string, customs?: any[]) {
 export function roundToDecimal(num: number, decimalPlaces: number = 3) {
   const factor = Math.pow(10, decimalPlaces);
   return Math.round(num * factor) / factor;
+}
+
+export function formatQuantityWithUnit(
+  quantity: number,
+  unit: string,
+  unitLabel: string,
+): string {
+  if (quantity < 1) {
+    if (unit === "KG") {
+      return `${roundToDecimal(quantity * 1000)} g`;
+    }
+    if (unit === "LITRE") {
+      return `${roundToDecimal(quantity * 1000)} ml`;
+    }
+  }
+  return `${quantity} ${unitLabel}`;
 }
