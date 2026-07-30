@@ -63,6 +63,17 @@ export const createCategoryThunk: any = createApiThunk(
   async (payload) => await api.post(`/categories/${payload.storeId}`, payload),
 );
 
+export const updateCategoryThunk: any = createApiThunk(
+  "categories/update",
+  async (payload: any) => await api.patch(`/categories/${payload.id}`, payload),
+);
+
+export const deleteCategoryThunk: any = createApiThunk(
+  "categories/delete",
+  async (payload: { id: string }) =>
+    await api.delete(`/categories/${payload.id}`),
+);
+
 export const searchProductsThunk: any = createApiThunk(
   "products/search",
   async (payload) =>
@@ -176,6 +187,35 @@ const inventorySlice = createSlice({
         state.categoryStatus = "success";
         state.error = null;
         state.data.categoryList.push(action.payload);
+      })
+      .addCase(updateCategoryThunk.pending, (state, action) =>
+        setState(state, action, "categoryStatus"),
+      )
+      .addCase(updateCategoryThunk.rejected, (state, action) =>
+        setState(state, action, "categoryStatus"),
+      )
+      .addCase(updateCategoryThunk.fulfilled, (state, action) => {
+        state.categoryStatus = "success";
+        state.error = null;
+        const index = state.data.categoryList.findIndex(
+          (cat) => cat.id === action.payload.id,
+        );
+        if (index !== -1) {
+          state.data.categoryList[index] = action.payload;
+        }
+      })
+      .addCase(deleteCategoryThunk.pending, (state, action) =>
+        setState(state, action, "categoryStatus"),
+      )
+      .addCase(deleteCategoryThunk.rejected, (state, action) =>
+        setState(state, action, "categoryStatus"),
+      )
+      .addCase(deleteCategoryThunk.fulfilled, (state, action) => {
+        state.categoryStatus = "success";
+        state.error = null;
+        state.data.categoryList = state.data.categoryList.filter(
+          (cat) => cat.id !== action.payload.id,
+        );
       })
       .addCase(searchProductsThunk.pending, (state, action) =>
         setState(state, action, "searchStatus"),
