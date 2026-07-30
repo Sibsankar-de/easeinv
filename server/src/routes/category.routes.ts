@@ -4,15 +4,23 @@ import { verifyEmployeeLevelAccess } from "../middlewares/verifyStoreAccess.midd
 import {
   createCategory,
   getCategoriesByStore,
+  updateCategory,
+  deleteCategory,
 } from "../controllers/category.controller";
 
 const router = Router();
 
-router
-  .route("/:storeId")
-  .post(verifyAuth, verifyEmployeeLevelAccess, createCategory);
+router.use(verifyAuth);
+
+router.route("/:storeId").post(verifyEmployeeLevelAccess, createCategory);
+
 router
   .route("/:storeId/list")
-  .get(verifyAuth, verifyEmployeeLevelAccess, getCategoriesByStore);
+  .get(verifyEmployeeLevelAccess, getCategoriesByStore);
+
+router
+  .route("/:storeId/:categoryId")
+  .patch(verifyEmployeeLevelAccess, updateCategory)
+  .delete(verifyEmployeeLevelAccess, deleteCategory);
 
 export default router;

@@ -1,12 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { Plus, Package, FolderTree } from "lucide-react";
+import { Package, FolderTree } from "lucide-react";
 import { Tabs, TabContent, TabItem } from "@/components/ui/Tabs";
-import { Button } from "@/components/ui/Button";
 import { cn } from "@/components/utils";
-import { useStoreNavigation } from "@/hooks/store-navigation";
 import { InventoryProductList } from "./InventoryProductList";
 import { InventoryCategoryList } from "./InventoryCategoryList";
 
@@ -16,33 +13,16 @@ const inventoryTabs: TabItem[] = [
 ];
 
 export function InventoryMainView() {
-  const { storeId } = useStoreNavigation();
   const [activeTab, setActiveTab] = useState("products");
 
   return (
     <div>
       {/* Top Header */}
-      <div
-        className={cn(
-          "mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4",
-        )}
-      >
-        <div>
-          <h1 className={cn("text-2xl font-bold text-gray-900 mb-1")}>
-            My Inventory
-          </h1>
-          <p className={cn("text-gray-600 text-sm")}>
-            Manage your product catalog, categories, and stock pricing
-          </p>
-        </div>
-        <div className={cn("flex items-center gap-3")}>
-          <Link href={`/stores/${storeId}/inventory/add-product`}>
-            <Button variant="primary" className={cn("flex items-center gap-2")}>
-              <Plus className={cn("w-4 h-4")} />
-              Add Product
-            </Button>
-          </Link>
-        </div>
+      <div className={cn("mb-8")}>
+        <h1 className={cn("text-gray-900 mb-2")}>My Inventory</h1>
+        <p className={cn("text-gray-600")}>
+          Manage your product catalog, categories, and stock pricing
+        </p>
       </div>
 
       {/* Main Tabs */}

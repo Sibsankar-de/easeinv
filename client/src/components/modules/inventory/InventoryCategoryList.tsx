@@ -189,17 +189,15 @@ export const InventoryCategoryList = () => {
 
   return (
     <div>
-      <div className={cn("flex flex-wrap items-center justify-between gap-4 mb-4")}>
-        <div className={cn("flex items-center gap-4 flex-1 max-w-md")}>
-          <SearchInput
-            placeholder="Search category by name..."
-            value={searchTerm}
-            onChange={(val) => {
-              setSearchTerm(val);
-              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-            }}
-          />
-        </div>
+      <div className={cn("flex items-center justify-between gap-2 mb-4")}>
+        <SearchInput
+          placeholder="Search category by name..."
+          value={searchTerm}
+          onChange={(val) => {
+            setSearchTerm(val);
+            setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+          }}
+        />
         <Button variant="primary" onClick={handleOpenCreate}>
           <Plus size={17} />
           Add Category

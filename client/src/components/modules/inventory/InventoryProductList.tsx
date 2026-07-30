@@ -1,7 +1,14 @@
 "use client";
 
 import { Select } from "@/components/ui/Select";
-import { Plus, Edit2, Trash2, PackageSearch } from "lucide-react";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  PackageSearch,
+  Filter,
+  ListFilterPlus,
+} from "lucide-react";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { SelectOptionType } from "@/types/SelectType";
@@ -267,23 +274,35 @@ export const InventoryProductList = () => {
 
   return (
     <div>
-      <div className="flex gap-4 mb-4">
-        <SearchInput
-          placeholder="Search products by name or SKU..."
-          value={searchTerm}
-          onChange={(val) => setSearchTerm(val)}
-        />
-        <Select
-          options={categoryOptions}
-          value={selectedCategory}
-          onChange={(val) => {
-            setSelectedCategory(val);
-            setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-            dispatch(invalidateProductPages());
-          }}
-          placeholder="Select category"
-          className="min-w-40"
-        />
+      <div className="mb-4">
+        <div className="flex items-center gap-2 w-full mb-2">
+          <SearchInput
+            placeholder="Search products by name or SKU..."
+            value={searchTerm}
+            onChange={(val) => setSearchTerm(val)}
+          />
+          <Button
+            variant="primary"
+            onClick={() => navigate("/inventory/add-product")}
+          >
+            <Plus size={17} />
+            Add Product
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select
+            options={categoryOptions}
+            value={selectedCategory}
+            onChange={(val) => {
+              setSelectedCategory(val);
+              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+              dispatch(invalidateProductPages());
+            }}
+            placeholder="Select category"
+            className="min-w-40"
+            icon={<ListFilterPlus size={18} />}
+          />
+        </div>
       </div>
 
       <DataTable

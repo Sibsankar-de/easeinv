@@ -65,13 +65,14 @@ export const createCategoryThunk: any = createApiThunk(
 
 export const updateCategoryThunk: any = createApiThunk(
   "categories/update",
-  async (payload: any) => await api.patch(`/categories/${payload.id}`, payload),
+  async (payload: any) =>
+    await api.patch(`/categories/${payload.storeId}/${payload.id}`, payload),
 );
 
 export const deleteCategoryThunk: any = createApiThunk(
   "categories/delete",
-  async (payload: { id: string }) =>
-    await api.delete(`/categories/${payload.id}`),
+  async (payload: { storeId: string; id: string }) =>
+    await api.delete(`/categories/${payload.storeId}/${payload.id}`),
 );
 
 export const searchProductsThunk: any = createApiThunk(

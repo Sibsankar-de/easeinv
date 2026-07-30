@@ -4,4 +4,9 @@ export const createCategorySchema = z.object({
   name: z.string().trim().min(1, "Category name is required"),
 });
 
+export const updateCategorySchema = z.object({
+  name: z.string().trim().min(1, "Category name is required"),
+});
+
 export type CreateCategoryDTO = z.infer<typeof createCategorySchema>;
+export type UpdateCategoryDTO = z.infer<typeof updateCategorySchema>;

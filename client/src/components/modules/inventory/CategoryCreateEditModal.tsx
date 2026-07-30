@@ -60,9 +60,6 @@ export function CategoryCreateEditModal({
         .then(() => {
           toast.success("Category created successfully!");
           onClose();
-        })
-        .catch((err: any) => {
-          toast.error(err?.message || "Failed to create category");
         });
     } else if (mode === "edit" && category) {
       dispatch(
@@ -76,9 +73,6 @@ export function CategoryCreateEditModal({
         .then(() => {
           toast.success("Category updated successfully!");
           onClose();
-        })
-        .catch((err: any) => {
-          toast.error(err?.message || "Failed to update category");
         });
     }
   };
@@ -89,7 +83,7 @@ export function CategoryCreateEditModal({
     <Modal
       openState={openState}
       onClose={onClose}
-      className={cn("p-4 space-y-5 w-full max-w-md")}
+      className={cn("p-4 space-y-5 w-xl")}
       header={<ModalHeader title={modalTitle} />}
     >
       <div className={cn("space-y-4")}>

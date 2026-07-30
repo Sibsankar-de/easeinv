@@ -10,7 +10,7 @@ export const fetchInvoiceListThunk: any = createApiThunk(
   "/invoices/list",
   async (payload: any) => {
     let url = `/invoices/${payload.storeId}?page=${payload.page}&limit=${payload.limit}`;
-    if (payload.status) url += `&status=${payload.status}`;
+    if (payload.paymentStatus) url += `&paymentStatus=${payload.paymentStatus}`;
     if (payload.customerPrefix)
       url += `&customerPrefix=${payload.customerPrefix}`;
     if (payload.customerId) url += `&customerId=${payload.customerId}`;

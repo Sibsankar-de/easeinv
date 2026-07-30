@@ -13,6 +13,7 @@ import {
   deleteCategoryThunk,
   selectInventoryState,
 } from "@/store/features/inventorySlice";
+import { useStoreNavigation } from "@/hooks/store-navigation";
 
 export interface CategoryDeleteModalProps {
   openState: boolean;
@@ -25,6 +26,7 @@ export function CategoryDeleteModal({
   onClose,
   category,
 }: CategoryDeleteModalProps) {
+  const { storeId } = useStoreNavigation();
   const dispatch = useDispatch();
   const { categoryStatus } = useSelector(selectInventoryState);
   const [confInput, setConfInput] = useState("");
@@ -39,15 +41,12 @@ export function CategoryDeleteModal({
       return;
     }
 
-    dispatch(deleteCategoryThunk({ id: category.id }))
+    dispatch(deleteCategoryThunk({ storeId, id: category.id }))
       .unwrap()
       .then(() => {
         toast.success("Category deleted successfully!");
         setConfInput("");
         onClose();
-      })
-      .catch((err: any) => {
-        toast.error(err?.message || "Failed to delete category");
       });
   };
 
@@ -60,7 +59,7 @@ export function CategoryDeleteModal({
     <Modal
       openState={openState}
       onClose={handleClose}
-      className={cn("p-4 space-y-4 w-full max-w-md")}
+      className={cn("p-4 space-y-4 w-xl")}
       header={<ModalHeader title="Delete Category" />}
     >
       <p className={cn("text-gray-700 text-sm")}>
