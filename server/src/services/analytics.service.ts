@@ -3,296 +3,308 @@ import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import {
   AnalyticsPeriod,
-  DashboardAnalytics,
-  DashboardTrendPoint,
-} from "../types/DashboardAnalyticsType";
+  DashboardAnalyticsResponseDto,
+  SalesAnalyticsResponseDto,
+  SalesTrendPointDto,
+  toDashboardAnalyticsDto,
+  toSalesAnalyticsDto,
+} from "../dto/analytics.dto";
+import { AnalyticsQueryOptions } from "../types/analytics.types";
 
 const allowedPeriods: AnalyticsPeriod[] = ["daily", "weekly", "monthly"];
 
-const periodWindows: Record<AnalyticsPeriod, number> = {
-  daily: 30,
-  weekly: 12,
-  monthly: 12,
-};
+const roundTwoDecimals = (val: number): number =>
+  Math.round((val + Number.EPSILON) * 100) / 100;
 
-const getPeriodStartDate = (period: AnalyticsPeriod): Date => {
-  const start = new Date();
-  if (period === "daily") {
-    start.setDate(start.getDate() - (periodWindows.daily - 1));
-  } else if (period === "weekly") {
-    start.setDate(start.getDate() - periodWindows.weekly * 7);
+export const resolveDateRange = (
+  period: AnalyticsPeriod = "daily",
+  startDateStr?: string,
+  endDateStr?: string,
+): { start: Date; end: Date } => {
+  let end: Date;
+  let start: Date;
+
+  if (endDateStr) {
+    end = new Date(endDateStr);
+    if (isNaN(end.getTime())) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid endDate format.");
+    }
+    end.setHours(23, 59, 59, 999);
   } else {
-    start.setMonth(start.getMonth() - (periodWindows.monthly - 1));
+    end = new Date();
+    end.setHours(23, 59, 59, 999);
   }
-  start.setHours(0, 0, 0, 0);
-  return start;
-};
 
-const toNumber = (value: unknown): number =>
-  typeof value === "number" && Number.isFinite(value) ? value : 0;
+  if (startDateStr) {
+    start = new Date(startDateStr);
+    if (isNaN(start.getTime())) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid startDate format.");
+    }
+    start.setHours(0, 0, 0, 0);
+  } else {
+    start = new Date(end);
+    start.setHours(0, 0, 0, 0);
+    if (period === "daily") {
+      start.setDate(start.getDate() - 29); // 30 days inclusive
+    } else if (period === "weekly") {
+      start.setDate(start.getDate() - 7 * 11); // 12 weeks
+    } else if (period === "monthly") {
+      start.setMonth(start.getMonth() - 11); // 12 months
+      start.setDate(1);
+    }
+  }
 
-type TrendRow = {
-  key: string;
-  label: string;
-  revenue: string | number;
-  paid: string | number;
-  due: string | number;
-  invoices: string | number;
-  profit: string | number;
-};
+  if (start > end) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "startDate cannot be after endDate.",
+    );
+  }
 
-type ProductRow = {
-  productid: string | null;
-  name: string | null;
-  sku: string | null;
-  quantitysold: string | number;
-  revenue: string | number;
-  profit: string | number;
-};
-
-type CategoryRow = {
-  categoryid: string | null;
-  name: string | null;
-  quantitysold: string | number;
-  revenue: string | number;
-};
-
-type CustomerRow = {
-  customerid: string | null;
-  name: string | null;
-  phonenumber: string | null;
-  invoicecount: string | number;
-  totalbilled: string | number;
-  totalpaid: string | number;
-  totaldue: string | number;
+  return { start, end };
 };
 
 export const getDashboardAnalytics = async (
   storeId: string,
-  requestedPeriod: string,
-): Promise<DashboardAnalytics> => {
-  if (!allowedPeriods.includes(requestedPeriod as AnalyticsPeriod)) {
+  options: AnalyticsQueryOptions = {},
+): Promise<DashboardAnalyticsResponseDto> => {
+  const period: AnalyticsPeriod = options.period ?? "daily";
+  if (!allowedPeriods.includes(period)) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       "Period must be daily, weekly, or monthly.",
     );
   }
 
-  const period = requestedPeriod as AnalyticsPeriod;
-  const startDate = getPeriodStartDate(period);
+  const { start, end } = resolveDateRange(
+    period,
+    options.startDate,
+    options.endDate,
+  );
 
-  // Build date format strings for PostgreSQL
-  const keyFormat =
-    period === "daily"
-      ? "YYYY-MM-DD"
-      : period === "weekly"
-        ? "IYYY-IW"
-        : "YYYY-MM";
-  const labelFormat =
-    period === "daily"
-      ? "DD Mon"
-      : period === "weekly"
-        ? '"W"IW IYYY'
-        : "Mon YYYY";
-
-  const [
-    kpiAgg,
-    trendRows,
-    productRows,
-    categoryRows,
-    billingStatusAgg,
-    customerRows,
-    recentInvoices,
-    totalProducts,
-    totalCustomers,
-  ] = await Promise.all([
-    // KPIs
-    prisma.invoice.aggregate({
-      where: { storeId },
+  const [invoiceAgg, productAgg] = await Promise.all([
+    prisma.invoiceDailyStat.aggregate({
+      where: {
+        storeId,
+        date: { gte: start, lte: end },
+      },
       _sum: {
-        total: true,
-        paidAmount: true,
-        dueAmount: true,
-        totalProfit: true,
-      },
-      _count: { id: true },
-    }),
-
-    // Sales trend via raw SQL
-    prisma.$queryRaw<TrendRow[]>`
-      SELECT
-        TO_CHAR("issueDate" AT TIME ZONE 'UTC', ${keyFormat}) AS key,
-        TO_CHAR("issueDate" AT TIME ZONE 'UTC', ${labelFormat}) AS label,
-        COALESCE(SUM(total), 0) AS revenue,
-        COALESCE(SUM("paidAmount"), 0) AS paid,
-        COALESCE(SUM("dueAmount"), 0) AS due,
-        COUNT(*)::int AS invoices,
-        COALESCE(SUM("totalProfit"), 0) AS profit
-      FROM invoices
-      WHERE "storeId" = ${storeId}::uuid
-        AND "issueDate" >= ${startDate}
-      GROUP BY 1, 2
-      ORDER BY 1 ASC
-    `,
-
-    // Top products via raw SQL (joins with invoice_items)
-    prisma.$queryRaw<ProductRow[]>`
-      SELECT
-        ii."productId" AS productid,
-        ii."productName" AS name,
-        ii."productSku" AS sku,
-        COALESCE(SUM(ii."netQuantity"), 0) AS quantitysold,
-        COALESCE(SUM(ii."totalPrice"), 0) AS revenue,
-        COALESCE(SUM(ii."totalProfit"), 0) AS profit
-      FROM invoice_items ii
-      INNER JOIN invoices inv ON inv.id = ii."invoiceId"
-      WHERE inv."storeId" = ${storeId}::uuid
-      GROUP BY ii."productId", ii."productName", ii."productSku"
-      ORDER BY revenue DESC
-      LIMIT 8
-    `,
-
-    // Category sales via raw SQL
-    prisma.$queryRaw<CategoryRow[]>`
-      SELECT
-        COALESCE(c.id::text, 'uncategorized') AS categoryid,
-        COALESCE(c.name, 'Uncategorized') AS name,
-        COALESCE(SUM(ii."netQuantity"), 0) AS quantitysold,
-        COALESCE(SUM(ii."totalPrice"), 0) AS revenue
-      FROM invoice_items ii
-      INNER JOIN invoices inv ON inv.id = ii."invoiceId"
-      LEFT JOIN product_categories pc ON pc."productId" = ii."productId"
-      LEFT JOIN categories c ON c.id = pc."categoryId"
-      WHERE inv."storeId" = ${storeId}::uuid
-      GROUP BY c.id, c.name
-      ORDER BY revenue DESC
-      LIMIT 6
-    `,
-
-    // Billing status breakdown
-    prisma.$queryRaw<{ paid: number; partial: number; unpaid: number }[]>`
-      SELECT
-        COALESCE(SUM(CASE WHEN "dueAmount" <= 0 THEN 1 ELSE 0 END), 0)::int AS paid,
-        COALESCE(SUM(CASE WHEN "dueAmount" > 0 AND "paidAmount" > 0 THEN 1 ELSE 0 END), 0)::int AS partial,
-        COALESCE(SUM(CASE WHEN "dueAmount" > 0 AND "paidAmount" <= 0 THEN 1 ELSE 0 END), 0)::int AS unpaid
-      FROM invoices
-      WHERE "storeId" = ${storeId}::uuid
-    `,
-
-    // Top customers via raw SQL
-    prisma.$queryRaw<CustomerRow[]>`
-      SELECT
-        COALESCE(c.id::text, 'walk-in') AS customerid,
-        COALESCE(c.name, 'Walk-in customer') AS name,
-        c."phoneNumber" AS phonenumber,
-        COUNT(inv.id)::int AS invoicecount,
-        COALESCE(SUM(inv.total), 0) AS totalbilled,
-        COALESCE(SUM(inv."paidAmount"), 0) AS totalpaid,
-        COALESCE(SUM(inv."dueAmount"), 0) AS totaldue
-      FROM invoices inv
-      LEFT JOIN customers c ON c.id = inv."customerId"
-      WHERE inv."storeId" = ${storeId}::uuid
-      GROUP BY c.id, c.name, c."phoneNumber"
-      ORDER BY totalbilled DESC
-      LIMIT 8
-    `,
-
-    // Recent invoices
-    prisma.invoice.findMany({
-      where: { storeId },
-      orderBy: [{ issueDate: "desc" }, { createdAt: "desc" }],
-      take: 6,
-      include: {
-        customer: { select: { id: true, name: true } },
+        revenue: true,
+        paid: true,
+        due: true,
+        profit: true,
+        invoiceCount: true,
       },
     }),
-
-    // Counts
-    prisma.product.count({ where: { storeId } }),
-    prisma.customer.count({ where: { storeId } }),
+    prisma.productDailyStat.aggregate({
+      where: {
+        storeId,
+        date: { gte: start, lte: end },
+      },
+      _sum: {
+        quantitySold: true,
+      },
+    }),
   ]);
 
-  const kpis = kpiAgg;
-  const billingStatus = billingStatusAgg[0] ?? {
-    paid: 0,
-    partial: 0,
-    unpaid: 0,
-  };
+  const totalRevenue = roundTwoDecimals(invoiceAgg._sum.revenue ?? 0);
+  const paidAmount = roundTwoDecimals(invoiceAgg._sum.paid ?? 0);
+  const dueAmount = roundTwoDecimals(invoiceAgg._sum.due ?? 0);
+  const totalProfit = roundTwoDecimals(invoiceAgg._sum.profit ?? 0);
+  const totalInvoices = invoiceAgg._sum.invoiceCount ?? 0;
+  const productsSold = roundTwoDecimals(productAgg._sum.quantitySold ?? 0);
 
-  // Compute totalProductsSold from invoice_items separately
-  const productsSoldAgg = await prisma.$queryRaw<{ total: string | number }[]>`
-    SELECT COALESCE(SUM(ii."netQuantity"), 0) AS total
-    FROM invoice_items ii
-    INNER JOIN invoices inv ON inv.id = ii."invoiceId"
-    WHERE inv."storeId" = ${storeId}::uuid
-  `;
-  const totalProductsSold = toNumber(Number(productsSoldAgg[0]?.total ?? 0));
+  const averageInvoiceValue =
+    totalInvoices > 0 ? roundTwoDecimals(totalRevenue / totalInvoices) : 0;
+  const profitMargin =
+    totalRevenue > 0 ? roundTwoDecimals((totalProfit / totalRevenue) * 100) : 0;
 
-  const payload: DashboardAnalytics = {
+  return toDashboardAnalyticsDto({
+    storeId,
     period,
-    generatedAt: new Date().toISOString(),
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
     kpis: {
-      totalRevenue: toNumber(kpis._sum.total),
-      totalPaid: toNumber(kpis._sum.paidAmount),
-      totalDue: toNumber(kpis._sum.dueAmount),
-      totalInvoices: toNumber(kpis._count.id),
-      totalProductsSold,
-      totalProfit: toNumber(kpis._sum.totalProfit),
-      totalProducts,
-      totalCustomers,
+      totalRevenue,
+      paidAmount,
+      dueAmount,
+      productsSold,
+      totalProfit,
+      totalInvoices,
+      averageInvoiceValue,
+      profitMargin,
     },
-    salesTrend: trendRows.map(
-      (point): DashboardTrendPoint => ({
-        key: point.key,
-        label: point.label,
-        revenue: toNumber(Number(point.revenue)),
-        paid: toNumber(Number(point.paid)),
-        due: toNumber(Number(point.due)),
-        invoices: toNumber(Number(point.invoices)),
-        productsSold: 0,
-        profit: toNumber(Number(point.profit)),
-      }),
-    ),
-    topProducts: productRows.map((p) => ({
-      productId: p.productid ?? "unknown",
-      name: p.name ?? "Unknown product",
-      sku: p.sku ?? "",
-      quantitySold: toNumber(Number(p.quantitysold)),
-      revenue: toNumber(Number(p.revenue)),
-      profit: toNumber(Number(p.profit)),
-    })),
-    categorySales: categoryRows.map((c) => ({
-      categoryId: c.categoryid ?? "uncategorized",
-      name: c.name ?? "Uncategorized",
-      quantitySold: toNumber(Number(c.quantitysold)),
-      revenue: toNumber(Number(c.revenue)),
-    })),
-    billingStatus: {
-      paid: toNumber(billingStatus.paid),
-      partial: toNumber(billingStatus.partial),
-      unpaid: toNumber(billingStatus.unpaid),
-    },
-    topCustomers: customerRows.map((c) => ({
-      customerId: c.customerid ?? "walk-in",
-      name: c.name ?? "Walk-in customer",
-      phoneNumber: c.phonenumber ?? undefined,
-      invoiceCount: toNumber(Number(c.invoicecount)),
-      totalBilled: toNumber(Number(c.totalbilled)),
-      totalPaid: toNumber(Number(c.totalpaid)),
-      totalDue: toNumber(Number(c.totaldue)),
-    })),
-    recentInvoices: recentInvoices.map((invoice) => ({
-      _id: invoice.id,
-      invoiceNumber: invoice.invoiceNumber,
-      customerName: invoice.customer?.name ?? "Walk-in customer",
-      total: toNumber(invoice.total),
-      paidAmount: toNumber(invoice.paidAmount),
-      dueAmount: toNumber(invoice.dueAmount),
-      issueDate:
-        invoice.issueDate?.toISOString?.() ?? String(invoice.issueDate),
-      status: invoice.status,
-    })),
-  };
+  });
+};
 
-  return payload;
+export const getSalesAnalytics = async (
+  storeId: string,
+  options: AnalyticsQueryOptions = {},
+): Promise<SalesAnalyticsResponseDto> => {
+  const period: AnalyticsPeriod = options.period ?? "daily";
+  if (!allowedPeriods.includes(period)) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "Period must be daily, weekly, or monthly.",
+    );
+  }
+
+  const { start, end } = resolveDateRange(
+    period,
+    options.startDate,
+    options.endDate,
+  );
+
+  const dailyStats = await prisma.invoiceDailyStat.findMany({
+    where: {
+      storeId,
+      date: { gte: start, lte: end },
+    },
+    orderBy: { date: "asc" },
+  });
+
+  const buckets = new Map<
+    string,
+    {
+      periodKey: string;
+      label: string;
+      date: string;
+      revenue: number;
+      paid: number;
+      due: number;
+      profit: number;
+      invoiceCount: number;
+    }
+  >();
+
+  for (const stat of dailyStats) {
+    const d = new Date(stat.date);
+    let key: string;
+    let label: string;
+    let bucketDate: string;
+
+    if (period === "daily") {
+      key = d.toISOString().slice(0, 10);
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      label = `${d.getUTCDate()} ${months[d.getUTCMonth()]}`;
+      bucketDate = key;
+    } else if (period === "weekly") {
+      const tempDate = new Date(d.getTime());
+      const dayNum = tempDate.getUTCDay() || 7;
+      tempDate.setUTCDate(tempDate.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(tempDate.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil(
+        ((tempDate.getTime() - yearStart.getTime()) / 86400000 + 1) / 7,
+      );
+      key = `${tempDate.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+      label = `Week ${weekNo}, ${tempDate.getUTCFullYear()}`;
+
+      const monday = new Date(d.getTime());
+      monday.setUTCDate(d.getUTCDate() - (dayNum - 1));
+      bucketDate = monday.toISOString().slice(0, 10);
+    } else {
+      key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      label = `${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+      bucketDate = `${key}-01`;
+    }
+
+    const existing = buckets.get(key) || {
+      periodKey: key,
+      label,
+      date: bucketDate,
+      revenue: 0,
+      paid: 0,
+      due: 0,
+      profit: 0,
+      invoiceCount: 0,
+    };
+
+    existing.revenue += stat.revenue;
+    existing.paid += stat.paid;
+    existing.due += stat.due;
+    existing.profit += stat.profit;
+    existing.invoiceCount += stat.invoiceCount;
+
+    buckets.set(key, existing);
+  }
+
+  const trends: SalesTrendPointDto[] = Array.from(buckets.values()).map((b) => {
+    const rev = roundTwoDecimals(b.revenue);
+    const pd = roundTwoDecimals(b.paid);
+    const du = roundTwoDecimals(b.due);
+    const pr = roundTwoDecimals(b.profit);
+    const count = b.invoiceCount;
+    return {
+      periodKey: b.periodKey,
+      label: b.label,
+      date: b.date,
+      revenue: rev,
+      paid: pd,
+      due: du,
+      profit: pr,
+      invoiceCount: count,
+      averageRevenuePerInvoice: count > 0 ? roundTwoDecimals(rev / count) : 0,
+    };
+  });
+
+  const totalRevenue = roundTwoDecimals(
+    trends.reduce((sum, t) => sum + t.revenue, 0),
+  );
+  const totalProfit = roundTwoDecimals(
+    trends.reduce((sum, t) => sum + t.profit, 0),
+  );
+  const totalPaid = roundTwoDecimals(
+    trends.reduce((sum, t) => sum + t.paid, 0),
+  );
+  const totalDue = roundTwoDecimals(trends.reduce((sum, t) => sum + t.due, 0));
+  const totalInvoices = trends.reduce((sum, t) => sum + t.invoiceCount, 0);
+
+  const averageRevenuePerInvoice =
+    totalInvoices > 0 ? roundTwoDecimals(totalRevenue / totalInvoices) : 0;
+  const paymentCollectionRate =
+    totalRevenue > 0 ? roundTwoDecimals((totalPaid / totalRevenue) * 100) : 0;
+
+  return toSalesAnalyticsDto({
+    storeId,
+    period,
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+    summary: {
+      totalRevenue,
+      totalProfit,
+      totalPaid,
+      totalDue,
+      totalInvoices,
+      averageRevenuePerInvoice,
+      paymentCollectionRate,
+    },
+    trends,
+  });
 };
