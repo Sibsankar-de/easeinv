@@ -9,6 +9,7 @@ type DropDownProps = {
   openState: boolean;
   className?: string;
   onClose?: () => void;
+  style?: React.CSSProperties;
 };
 
 export const Dropdown = ({
@@ -16,45 +17,58 @@ export const Dropdown = ({
   openState,
   onClose,
   className,
+  style,
 }: DropDownProps) => {
-  // handle dropdown open state
-  const [isOpen, setIsOpen] = useState(false);
-  const [isClose, setIsClose] = useState(false);
+  const [mounted, setMounted] = useState(openState);
+  const [isClosing, setIsClosing] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    if (openState) {
-      setTimeout(() => {
-        setIsOpen(true);
-      }, 0);
-    } else {
-      setTimeout(() => {
-        setIsClose(true);
-      }, 0);
-      setTimeout(() => {
-        setIsOpen(false);
-        setIsClose(false);
-      }, 250); // match the animation duration
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
+
+    if (openState) {
+      setMounted(true);
+      setIsClosing(false);
+    } else {
+      setIsClosing(true);
+      timerRef.current = setTimeout(() => {
+        setMounted(false);
+        setIsClosing(false);
+      }, 300);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
   }, [openState]);
 
   useEffect(() => {
-    if (isOpen && onClose) {
+    if (mounted && !isClosing && onClose) {
       OverlayManager.push(onClose);
       return () => {
         OverlayManager.pop(onClose);
       };
     }
-  }, [isOpen, onClose]);
+  }, [mounted, isClosing, onClose]);
 
   // close dropdown on outside click
   const boxRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
       // Small delay to ensure the button click is processed first
       setTimeout(() => {
         if (
-          isOpen &&
+          mounted &&
+          !isClosing &&
           boxRef.current &&
-          !boxRef.current?.contains(event.target as Node) &&
+          document.body.contains(target) &&
+          !boxRef.current?.contains(target) &&
           onClose
         ) {
           onClose();
@@ -67,16 +81,17 @@ export const Dropdown = ({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [mounted, isClosing, onClose]);
 
-  if (!isOpen) return null;
+  if (!mounted) return null;
   return (
     <div
       className={clsx(
-        `bg-white rounded-lg p-1 text-sm w-[20em] absolute border border-secondary z-50 dropdown-open-anim`,
+        "bg-white rounded-lg p-1 text-sm w-[20em] absolute border border-secondary z-50",
+        isClosing ? "dropdown-close-anim" : "dropdown-open-anim",
         className,
-        isClose && "dropdown-close-anim",
       )}
+      style={style}
       ref={boxRef}
     >
       {children}

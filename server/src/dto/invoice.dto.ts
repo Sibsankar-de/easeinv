@@ -1,4 +1,10 @@
-import { Invoice, InvoiceItem, Product, Customer } from "@prisma/client";
+import {
+  Invoice,
+  InvoiceItem,
+  Product,
+  Customer,
+  InvoiceSummary,
+} from "@prisma/client";
 import {
   CustomerSummaryResponseDto,
   toCustomerSummaryDto,
@@ -156,3 +162,31 @@ export const toInvoiceSummaryDto = (
     paymentStatus: invoice.paymentStatus,
   };
 };
+
+export interface InvoiceCalculationSummaryDto {
+  totalInvoices: number;
+  totalRevenue: number;
+  totalPaid: number;
+  totalDue: number;
+  totalProfit: number;
+  totalProductsSold: number;
+  totalCustomers: number;
+  paidCount: number;
+  partialCount: number;
+  unpaidCount: number;
+}
+
+export const toInvoiceCalculationSummaryDto = (
+  summary: InvoiceSummary,
+): InvoiceCalculationSummaryDto => ({
+  totalInvoices: summary.invoiceCount,
+  totalRevenue: summary.totalRevenue,
+  totalPaid: summary.totalPaid,
+  totalDue: summary.totalDue,
+  totalProfit: summary.totalProfit,
+  totalProductsSold: summary.totalProductsSold,
+  totalCustomers: summary.totalCustomers,
+  paidCount: summary.paidInvoices,
+  partialCount: summary.partialInvoices,
+  unpaidCount: summary.unpaidInvoices,
+});

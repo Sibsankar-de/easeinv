@@ -2,6 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import { ApiError } from "../utils/apiErrorHandler";
 import { env } from "../configs/env";
 import { Prisma } from "@prisma/client";
+import { createModuleLogger } from "../utils/logger";
+
+const log = createModuleLogger(import.meta.url);
 
 export const errorMiddleware = (
   err: any,
@@ -12,7 +15,7 @@ export const errorMiddleware = (
   let error = err;
 
   // log the error for debugging
-  console.error("Error:", error);
+  log.debug("[API_ERROR]: " + error);
 
   if (
     error instanceof Prisma.PrismaClientKnownRequestError ||

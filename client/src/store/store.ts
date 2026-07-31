@@ -10,6 +10,11 @@ import globalErrorReducer from "./features/globalErrorSlice";
 import analyticsReducer from "./features/analyticsSlice";
 import galleryReducer from "./features/gallerySlice";
 import apikeyReducer from "./features/apiKeySlice";
+import dashboardSummaryReducer from "./features/dashboardSummarySlice";
+import salesAnalyticsReducer from "./features/salesAnalyticsSlice";
+import productAnalyticsReducer from "./features/productAnalyticsSlice";
+import customerAnalyticsReducer from "./features/customerAnalyticsSlice";
+import categoryAnalyticsReducer from "./features/categoryAnalyticsSlice";
 
 export function makeStore() {
   return configureStore({
@@ -24,6 +29,12 @@ export function makeStore() {
       globalError: globalErrorReducer,
       gallery: galleryReducer,
       apiKey: apikeyReducer,
+      // Analytics domain slices (one per API endpoint)
+      dashboardSummary: dashboardSummaryReducer,
+      salesAnalytics: salesAnalyticsReducer,
+      productAnalytics: productAnalyticsReducer,
+      customerAnalytics: customerAnalyticsReducer,
+      categoryAnalytics: categoryAnalyticsReducer,
     },
   });
 }

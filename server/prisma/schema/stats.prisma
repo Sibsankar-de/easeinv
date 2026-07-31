@@ -1,0 +1,73 @@
+model InvoiceDailyStat {
+  id      String   @id @default(uuid()) @db.Uuid
+  storeId String   @db.Uuid
+  date    DateTime @db.Date
+
+  // Aggregates for this day
+  revenue      Float @default(0)
+  paid         Float @default(0)
+  due          Float @default(0)
+  profit       Float @default(0)
+  invoiceCount Int   @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, date])
+  @@index([storeId, date])
+  @@map("invoice_daily_stats")
+}
+
+model ProductDailyStat {
+  id          String   @id @default(uuid()) @db.Uuid
+  storeId     String   @db.Uuid
+  date        DateTime @db.Date
+  productId   String   @db.Uuid
+  productName String   @default("")
+  productSku  String   @default("")
+
+  quantitySold Float @default(0)
+  revenue      Float @default(0)
+  profit       Float @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  store   Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, date, productId])
+  @@index([storeId, date])
+  @@index([storeId, productId])
+  @@map("product_daily_stats")
+}
+
+model CustomerDailyStat {
+  id         String   @id @default(uuid()) @db.Uuid
+  storeId    String   @db.Uuid
+  date       DateTime @db.Date
+  customerId String   @db.Uuid
+
+  customerName String @default("")
+
+  invoiceCount Int   @default(0)
+  totalBilled  Float @default(0)
+  totalPaid    Float @default(0)
+  totalDue     Float @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  store    Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, date, customerId])
+  @@index([storeId, date])
+  @@index([storeId, customerId])
+  @@map("customer_daily_stats")
+}

@@ -21,6 +21,10 @@ export type {
   InvoiceStatus,
   InvoicePaymentStatus,
   ApiKeyStatus,
+  InvoiceSummary,
+  InvoiceDailyStat,
+  ProductDailyStat,
+  CustomerDailyStat,
 } from "@prisma/client";
 
 export * from "./user.model";
@@ -28,3 +32,4 @@ export * from "./store.model";
 export * from "./invoice.model";
 export * from "./product.model";
 export * from "./customer.model";
+export * from "./stats.model";

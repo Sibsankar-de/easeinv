@@ -25,8 +25,9 @@ model Customer {
   updatedAt        DateTime         @updatedAt
 
   // Relations
-  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  invoices Invoice[]
+  store              Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  invoices           Invoice[]
+  customerDailyStats CustomerDailyStat[]
 
   @@index([storeId])
   @@index([storeId, name])

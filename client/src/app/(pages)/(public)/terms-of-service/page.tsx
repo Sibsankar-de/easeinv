@@ -7,7 +7,7 @@ import { Scale } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | EaseInv",
+  title: "Terms of Service",
   description:
     "Read EaseInv's Terms of Service governing platform subscription structures, business ledger audits, software licenses, liabilities, and governance policies.",
 };

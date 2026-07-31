@@ -2,6 +2,7 @@ import { app } from "./app";
 import { env } from "./configs/env";
 import { connectDB } from "./lib/prisma";
 import { startWorker } from "./services/emailPublisher.service";
+import { startCronJobs } from "./cron/index";
 import { createModuleLogger } from "./utils/logger";
 
 const log = createModuleLogger(import.meta.url);
@@ -17,6 +18,9 @@ connectDB().then(() => {
   startWorker().catch((err) => {
     log.error("Failed to start email worker: " + err);
   });
+
+  // start cron jobs
+  startCronJobs();
 });
 
 server?.on("error", (error: any) => {

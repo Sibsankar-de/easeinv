@@ -38,16 +38,20 @@ model Store {
   updatedAt          DateTime @updatedAt
 
   // Relations
-  owner         User              @relation("StoreOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  settings      StoreSettings?
-  storeUsers    StoreUser[]
-  invites       StoreUserInvite[]
-  products      Product[]
-  customers     Customer[]
-  categories    Category[]
-  galleryImages GalleryImage[]
-  apiKeys       ApiKey[]
-  invoices      Invoice[]
+  owner              User                @relation("StoreOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  settings           StoreSettings?
+  storeUsers         StoreUser[]
+  invites            StoreUserInvite[]
+  products           Product[]
+  customers          Customer[]
+  categories         Category[]
+  galleryImages      GalleryImage[]
+  apiKeys            ApiKey[]
+  invoices           Invoice[]
+  invoiceSummary     InvoiceSummary?
+  invoiceDailyStats  InvoiceDailyStat[]
+  productDailyStats  ProductDailyStat[]
+  customerDailyStats CustomerDailyStat[]
 
   @@index([ownerId])
   @@map("stores")

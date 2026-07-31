@@ -65,6 +65,8 @@ export const searchInvoice = asyncHandler(
     const paymentStatus = req.query.paymentStatus as string;
     const customerPrefix = req.query.customerPrefix as string;
     const customerId = req.query.customerId as string;
+    const invoiceNumber = req.query.invoiceNumber as string;
+    const query = (req.query.query as string) || (req.query.search as string);
     const sortBy = (req.query.sortBy as string) || "createdAt";
     const sortOrder = req.query.sortOrder === "desc" ? "desc" : "asc";
 
@@ -76,6 +78,8 @@ export const searchInvoice = asyncHandler(
       paymentStatus,
       customerPrefix,
       customerId,
+      invoiceNumber,
+      query,
       sortBy,
       sortOrder,
     });

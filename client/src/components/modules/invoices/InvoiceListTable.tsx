@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FileText, Pen, Eye, Download } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,7 +9,6 @@ import {
   fetchInvoiceListThunk,
   selectInvoiceState,
   invalidateInvoicePages,
-  fetchInvoiceByIdThunk,
 } from "@/store/features/invoiceSlice";
 import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 import { useStoreNavigation } from "@/hooks/store-navigation";
@@ -30,9 +29,9 @@ import { useInvoiceDownload } from "@/hooks/use-invoice-download";
 
 const filterOptions: SelectOptionType[] = [
   { value: "All", key: "all" },
-  { value: "Paid", key: "paid" },
-  { value: "Unpaid", key: "unpaid" },
-  { value: "Overdue", key: "overdue" },
+  { value: "Paid", key: "PAID" },
+  { value: "Due", key: "DUE" },
+  { value: "Overdue", key: "OVERDUE" },
 ];
 
 const columnHelper = createColumnHelper<InvoiceSummaryDto>();
@@ -147,8 +146,8 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
           storeId,
           page: currentPage,
           limit: pagination.pageSize,
-          status: filterStatus !== "all" ? filterStatus : undefined,
-          customerPrefix: debouncedSearchTerm || undefined,
+          paymentStatus: filterStatus !== "all" ? filterStatus : undefined,
+          query: debouncedSearchTerm || undefined,
           customerId,
           sortBy: sortField,
           sortOrder,

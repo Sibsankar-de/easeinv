@@ -14,4 +14,6 @@ export type SelectType = {
   dropdownClass?: string;
   /** When provided, renders a red error message below the select */
   errorMessage?: string;
+  /** Option to add an icon on the left side */
+  icon?: React.ReactNode;
 };

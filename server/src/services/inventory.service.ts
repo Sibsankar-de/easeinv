@@ -25,8 +25,9 @@ export const getProducts = async (params: {
   query: string;
   sortBy: string;
   sortOrder: "asc" | "desc";
+  categoryId?: string;
 }) => {
-  const { storeId, page, limit, query, sortBy, sortOrder } = params;
+  const { storeId, page, limit, query, sortBy, sortOrder, categoryId } = params;
 
   const where: any = { storeId };
   if (query) {
@@ -35,6 +36,9 @@ export const getProducts = async (params: {
       { sku: { contains: query, mode: "insensitive" } },
       { gtin: { contains: query, mode: "insensitive" } },
     ];
+  }
+  if (categoryId) {
+    where.categories = { some: { categoryId } };
   }
 
   const result = await paginate(
@@ -78,6 +82,8 @@ export const createProduct = async (
       description,
     } = productData;
 
+    await ensureUniqueSKU(storeId, sku, undefined, tx);
+
     // add last stock update status
     let extraData: ProductExtraData = productExtraDataConverter({});
     if (trackInventory && totalStock) {
@@ -101,7 +107,9 @@ export const createProduct = async (
         totalStock: totalStock ?? 0,
         alertThreshold: alertThreshold ?? 0,
         emailAlert: emailAlert ?? false,
-        stockStatus: getProductStockStatus(totalStock, alertThreshold),
+        stockStatus: trackInventory
+          ? getProductStockStatus(totalStock, alertThreshold)
+          : ProductStockStatus.AVAILABLE,
         stockUnit,
         unitGroups: unitGroups,
         pricePerQuantity: pricePerQuantity,
@@ -153,6 +161,8 @@ export const updateProduct = async (
       throw new ApiError(StatusCodes.BAD_REQUEST, "Product not found.");
     }
 
+    await ensureUniqueSKU(product.storeId, sku, productId, tx);
+
     // update last stock update status
     let extraData: ProductExtraData = productExtraDataConverter(
       product.extraData,
@@ -177,7 +187,9 @@ export const updateProduct = async (
         totalStock: totalStock ?? 0,
         alertThreshold: alertThreshold ?? 0,
         emailAlert: emailAlert ?? false,
-        stockStatus: getProductStockStatus(totalStock, alertThreshold),
+        stockStatus: trackInventory
+          ? getProductStockStatus(totalStock, alertThreshold)
+          : ProductStockStatus.AVAILABLE,
         stockUnit,
         unitGroups: unitGroups as any,
         pricePerQuantity: pricePerQuantity as any,
@@ -206,6 +218,28 @@ export const deleteProduct = async (productId: string) => {
   // Related fields are cascade via relation
   await prisma.product.delete({ where: { id: productId } });
   return { productId };
+};
+
+export const ensureUniqueSKU = async (
+  storeId: string,
+  sku: string,
+  excludeProductId?: string,
+  tx: TransactionClient = prisma,
+) => {
+  const existingProduct = await tx.product.findFirst({
+    where: {
+      storeId,
+      sku,
+      ...(excludeProductId ? { id: { not: excludeProductId } } : {}),
+    },
+  });
+
+  if (existingProduct) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "Product with this SKU already exists",
+    );
+  }
 };
 
 export const getProductStockStatus = (

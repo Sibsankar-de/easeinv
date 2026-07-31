@@ -4,12 +4,15 @@ dotenv.config({
   path: ".env",
 });
 
-const parseBoolean = (value: string | undefined): boolean => value === "true";
+const parseBoolean = (
+  value: string | undefined,
+  _default: boolean = false,
+): boolean => (value ? value === "true" : _default);
 
 export const env = {
   NODE_ENV: process.env.NODE_ENV,
   PORT: process.env.PORT || 4000,
-  APP_DEBUG: parseBoolean(process.env.APP_DEBUG),
+  APP_DEBUG: parseBoolean(process.env.APP_DEBUG, true),
 
   CORS_ORIGIN: process.env.CORS_ORIGIN || "http://localhost:3000",
   CLIENT_URL: process.env.CLIENT_URL || "https://easeinv.app",
@@ -20,6 +23,7 @@ export const env = {
   DB_USER: process.env.DB_USER || "admin",
   DB_PASSWORD: process.env.DB_PASSWORD || "root",
   DB_NAME: process.env.DB_NAME || "easeinv",
+  DB_SSL: parseBoolean(process.env.DB_SSL, true),
 
   ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
   ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY,
@@ -45,6 +49,8 @@ export const env = {
   SMTP_PASS: process.env.SMTP_PASS,
 
   MAIL_FROM: process.env.MAIL_FROM,
+
+  EMAIL_RETRY_COUNT: 5,
 
   RABBITMQ_CONNECTION_URI: process.env.RABBITMQ_CONNECTION_URI,
   RABBITMQ_EMAIL_QUEUE: process.env.RABBITMQ_EMAIL_QUEUE || "email_queue",

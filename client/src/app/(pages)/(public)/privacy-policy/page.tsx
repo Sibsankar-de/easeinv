@@ -7,7 +7,7 @@ import { ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | EaseInv",
+  title: "Privacy Policy",
   description:
     "Review EaseInv's privacy practices, security protocols, encryption details, store data separation, and user rights policies.",
 };

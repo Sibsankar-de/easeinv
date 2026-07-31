@@ -9,11 +9,7 @@ import {
 import { PricePerQuantityDto, UnitGroupDto } from "../schemas/product.schema";
 import { productExtraDataConverter } from "../converters/product.converter";
 
-export interface CategoryDto {
-  id: string;
-  storeId?: string;
-  name: string;
-}
+import { CategoryDto, toCategoryDto } from "./category.dto";
 
 export interface ProductImageDto {
   id: string;
@@ -95,11 +91,7 @@ export const toProductDto = (
     stockUnit: product.stockUnit,
     unitGroups: (product.unitGroups as UnitGroupDto[]) ?? [],
     pricePerQuantity: (product.pricePerQuantity as PricePerQuantityDto[]) ?? [],
-    categories: categories.map((c) => ({
-      id: c.id,
-      storeId: c.storeId,
-      name: c.name,
-    })),
+    categories: categories.map(toCategoryDto),
     images: images.map((img) => ({
       id: img.id,
       priority: img.priority,
@@ -132,11 +124,7 @@ export const toProductSummaryDto = (
     alertThreshold: product.alertThreshold,
     createdAt: product.createdAt,
     categories: product.categories
-      ? product.categories.map((pc) => ({
-          id: pc.category.id,
-          storeId: pc.category.storeId,
-          name: pc.category.name,
-        }))
+      ? product.categories.map((pc) => toCategoryDto(pc.category))
       : [],
   };
 };

@@ -5,8 +5,7 @@ import { uploadToCloudinary } from "./cloudinary.service";
 import { cloudinaryFolders } from "../constants/cloudinary.constant";
 import { paginate } from "../utils/paginate";
 import {
-  CreateStoreDTO,
-  UpdateStoreDTO,
+  StoreCreateUpdateDTO,
   UpdateStoreSettingsDTO,
 } from "../schemas/store.schema";
 import { StoreStatus, StoreUserRole, User } from "@prisma/client";
@@ -17,7 +16,10 @@ import {
 import { toStoreDto, toStoreSummaryDto } from "../dto/store.dto";
 import * as transactionalEmailService from "./transactionalEmail.service";
 
-export const createStore = async (user: User, storeData: CreateStoreDTO) =>
+export const createStore = async (
+  user: User,
+  storeData: StoreCreateUpdateDTO,
+) =>
   prismaTransaction(async (tx) => {
     const {
       name,
@@ -66,6 +68,11 @@ export const createStore = async (user: User, storeData: CreateStoreDTO) =>
       },
     });
 
+    // Create InvoiceSummary
+    await tx.invoiceSummary.create({
+      data: { storeId: store.id },
+    });
+
     // send email to owner
     void transactionalEmailService.sendStoreCreatedEmail(user, store);
 
@@ -75,7 +82,7 @@ export const createStore = async (user: User, storeData: CreateStoreDTO) =>
 export const updateStore = async (
   storeId: string,
   userId: string,
-  updateData: UpdateStoreDTO,
+  updateData: StoreCreateUpdateDTO,
   files?: {
     logo?: Express.Multer.File[];
     qrCode?: Express.Multer.File[];

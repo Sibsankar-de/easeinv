@@ -3,6 +3,7 @@
 import { CustomerDetailsForm } from "./CustomerDetailsForm";
 import { Label } from "@/components/ui/Label";
 import { Input } from "@/components/ui/Input";
+import { DateInput } from "@/components/ui/DateInput";
 import { Button } from "@/components/ui/Button";
 import { CloudCheck, PrinterCheck, RotateCcw } from "lucide-react";
 import { BillingForm } from "./BillingForm";
@@ -18,6 +19,7 @@ import {
   createInvoiceThunk,
   selectInvoiceState,
   invalidateInvoicePages,
+  invalidateInvoiceSummary,
 } from "@/store/features/invoiceSlice";
 import { invalidateCustomerPages } from "@/store/features/customerSlice";
 import { InvoiceStatus } from "@/types/dto/invoiceDto";
@@ -123,6 +125,7 @@ export const CreateBillPage = () => {
       .then(() => {
         toast.success(`Invoice saved`);
         dispatch(invalidateInvoicePages());
+        dispatch(invalidateInvoiceSummary());
         dispatch(invalidateCustomerPages());
       })
       .catch(() => {
@@ -205,10 +208,9 @@ export const CreateBillPage = () => {
           </div>
           <div>
             <Label>Invoice Date</Label>
-            <Input
-              type="date"
+            <DateInput
               value={formatDateStr(formData.issueDate).dashedDate}
-              onChange={(e) => handleFormChange("issueDate", e)}
+              onChange={(val) => handleFormChange("issueDate", val)}
             />
           </div>
         </div>
