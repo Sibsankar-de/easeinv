@@ -280,7 +280,7 @@ export const DateInput = ({
       </div>
 
       {/* Popover Dropdown */}
-      {open && !disabled && (
+      {!disabled && (
         <Dropdown
           openState={open}
           onClose={() => {
@@ -451,14 +451,18 @@ export const DateInput = ({
                   {MONTHS.map((mName, mIdx) => {
                     const isSelectedMonth =
                       mIdx === navMonth &&
-                      (value ? parseDate(value).getFullYear() === navYear : false);
+                      (value
+                        ? parseDate(value).getFullYear() === navYear
+                        : false);
                     const isCurrentNavMonth = mIdx === navMonth;
                     const isMonthDisabled =
                       (min
-                        ? `${navYear}-${String(mIdx + 1).padStart(2, "0")}-${String(daysInMonth(navYear, mIdx)).padStart(2, "0")}` < min
+                        ? `${navYear}-${String(mIdx + 1).padStart(2, "0")}-${String(daysInMonth(navYear, mIdx)).padStart(2, "0")}` <
+                          min
                         : false) ||
                       (max
-                        ? `${navYear}-${String(mIdx + 1).padStart(2, "0")}-01` > max
+                        ? `${navYear}-${String(mIdx + 1).padStart(2, "0")}-01` >
+                          max
                         : false);
 
                     return (
@@ -529,44 +533,46 @@ export const DateInput = ({
 
                       {/* 3x4 Years Grid */}
                       <div className="grid grid-cols-3 gap-2 text-center py-1">
-                        {Array.from({ length: 12 }, (_, i) => startYear + i).map(
-                          (yr) => {
-                            const isSelectedYear =
-                              value ? parseDate(value).getFullYear() === yr : false;
-                            const isCurrentNavYear = yr === navYear;
-                            const isYrDisabled =
-                              (min ? `${yr}-12-31` < min : false) ||
-                              (max ? `${yr}-01-01` > max : false);
+                        {Array.from(
+                          { length: 12 },
+                          (_, i) => startYear + i,
+                        ).map((yr) => {
+                          const isSelectedYear = value
+                            ? parseDate(value).getFullYear() === yr
+                            : false;
+                          const isCurrentNavYear = yr === navYear;
+                          const isYrDisabled =
+                            (min ? `${yr}-12-31` < min : false) ||
+                            (max ? `${yr}-01-01` > max : false);
 
-                            return (
-                              <button
-                                key={yr}
-                                type="button"
-                                disabled={isYrDisabled}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setNavYear(yr);
-                                  setViewMode("month");
-                                }}
-                                className={cn(
-                                  "py-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer",
-                                  isYrDisabled &&
-                                    "cursor-not-allowed opacity-30 text-muted-foreground",
-                                  !isYrDisabled &&
-                                    !isSelectedYear &&
-                                    "hover:bg-accent hover:text-foreground text-foreground",
-                                  isCurrentNavYear &&
-                                    !isSelectedYear &&
-                                    "ring-1 ring-primary/40 text-primary font-bold",
-                                  isSelectedYear &&
-                                    "bg-primary text-primary-foreground font-semibold shadow-sm",
-                                )}
-                              >
-                                {yr}
-                              </button>
-                            );
-                          },
-                        )}
+                          return (
+                            <button
+                              key={yr}
+                              type="button"
+                              disabled={isYrDisabled}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setNavYear(yr);
+                                setViewMode("month");
+                              }}
+                              className={cn(
+                                "py-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer",
+                                isYrDisabled &&
+                                  "cursor-not-allowed opacity-30 text-muted-foreground",
+                                !isYrDisabled &&
+                                  !isSelectedYear &&
+                                  "hover:bg-accent hover:text-foreground text-foreground",
+                                isCurrentNavYear &&
+                                  !isSelectedYear &&
+                                  "ring-1 ring-primary/40 text-primary font-bold",
+                                isSelectedYear &&
+                                  "bg-primary text-primary-foreground font-semibold shadow-sm",
+                              )}
+                            >
+                              {yr}
+                            </button>
+                          );
+                        })}
                       </div>
                     </>
                   );

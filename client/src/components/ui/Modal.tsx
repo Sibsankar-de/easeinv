@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { cn } from "../utils";
 import { Button } from "./Button";
@@ -32,52 +38,61 @@ export const Modal = ({
   header,
   onClose,
 }: ModalProps) => {
-  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(openState);
   const [closing, setClosing] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
     if (openState) {
-      setTimeout(() => {
-        setOpen(true);
-        setClosing(false);
-      }, 0);
+      setMounted(true);
+      setClosing(false);
       document.body.style.overflowY = "hidden";
     } else {
-      setTimeout(() => {
-        setClosing(true);
-      }, 0);
-      setTimeout(() => {
-        setOpen(false);
+      setClosing(true);
+      timerRef.current = setTimeout(() => {
+        setMounted(false);
         setClosing(false);
         document.body.style.overflowY = "auto";
       }, 300);
     }
+
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
   }, [openState]);
 
   useEffect(() => {
-    if (open && onClose) {
+    if (mounted && !closing && onClose) {
       OverlayManager.push(onClose);
       return () => {
         OverlayManager.pop(onClose);
       };
     }
-  }, [open, onClose]);
+  }, [mounted, closing, onClose]);
 
-  if (!open) return null;
+  if (!mounted) return null;
   return createPortal(
-    <ModalContext.Provider value={{ open, onClose }}>
+    <ModalContext.Provider value={{ open: mounted && !closing, onClose }}>
       <div
         className={cn(
           "fixed top-0 left-0 z-60 w-screen h-screen pt-8 pb-2 overflow-y-auto",
-          "bg-black/50 backdrop-blur-[5px] fade-in",
+          "bg-black/50 backdrop-blur-[5px]",
           "flex items-start justify-center",
-          closing && "fade-out",
+          closing ? "fade-out" : "fade-in",
         )}
         onClick={() => onClose && onClose()}
       >
         <div
           className={cn(
-            "bg-background rounded-xl dropdown-open-anim",
-            closing && "dropdown-close-anim",
+            "bg-background rounded-xl",
+            closing ? "dropdown-close-anim" : "dropdown-open-anim",
           )}
           onClick={(e) => e.stopPropagation()}
         >

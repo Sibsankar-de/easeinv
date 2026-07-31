@@ -238,7 +238,7 @@ export const Select = ({
         </div>
       </div>
       {/* dropdown */}
-      {open && !disabled && (
+      {!disabled && (
         <Dropdown
           openState={open}
           onClose={() => {

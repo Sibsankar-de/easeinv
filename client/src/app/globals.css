@@ -254,3 +254,29 @@ input[type="number"]::-webkit-outer-spin-button {
     transform: translateY(15px);
   }
 }
+
+.fade-in {
+  animation: fadeIn 0.3s 1;
+}
+
+.fade-out {
+  animation: fadeOut 0.3s 1;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

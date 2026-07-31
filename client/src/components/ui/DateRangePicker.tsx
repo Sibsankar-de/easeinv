@@ -578,7 +578,7 @@ export const DateRangePicker = ({
       </div>
 
       {/* Popover */}
-      {open && !disabled && (
+      {!disabled && (
         <Dropdown
           openState={open}
           onClose={() => {
