@@ -82,6 +82,8 @@ export const createProduct = async (
       description,
     } = productData;
 
+    await ensureUniqueSKU(storeId, sku, undefined, tx);
+
     // add last stock update status
     let extraData: ProductExtraData = productExtraDataConverter({});
     if (trackInventory && totalStock) {
@@ -159,6 +161,8 @@ export const updateProduct = async (
       throw new ApiError(StatusCodes.BAD_REQUEST, "Product not found.");
     }
 
+    await ensureUniqueSKU(product.storeId, sku, productId, tx);
+
     // update last stock update status
     let extraData: ProductExtraData = productExtraDataConverter(
       product.extraData,
@@ -214,6 +218,28 @@ export const deleteProduct = async (productId: string) => {
   // Related fields are cascade via relation
   await prisma.product.delete({ where: { id: productId } });
   return { productId };
+};
+
+export const ensureUniqueSKU = async (
+  storeId: string,
+  sku: string,
+  excludeProductId?: string,
+  tx: TransactionClient = prisma,
+) => {
+  const existingProduct = await tx.product.findFirst({
+    where: {
+      storeId,
+      sku,
+      ...(excludeProductId ? { id: { not: excludeProductId } } : {}),
+    },
+  });
+
+  if (existingProduct) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "Product with this SKU already exists",
+    );
+  }
 };
 
 export const getProductStockStatus = (

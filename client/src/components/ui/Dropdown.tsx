@@ -9,6 +9,7 @@ type DropDownProps = {
   openState: boolean;
   className?: string;
   onClose?: () => void;
+  style?: React.CSSProperties;
 };
 
 export const Dropdown = ({
@@ -16,6 +17,7 @@ export const Dropdown = ({
   openState,
   onClose,
   className,
+  style,
 }: DropDownProps) => {
   // handle dropdown open state
   const [isOpen, setIsOpen] = useState(false);
@@ -49,12 +51,14 @@ export const Dropdown = ({
   const boxRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
       // Small delay to ensure the button click is processed first
       setTimeout(() => {
         if (
           isOpen &&
           boxRef.current &&
-          !boxRef.current?.contains(event.target as Node) &&
+          document.body.contains(target) &&
+          !boxRef.current?.contains(target) &&
           onClose
         ) {
           onClose();
@@ -77,6 +81,7 @@ export const Dropdown = ({
         className,
         isClose && "dropdown-close-anim",
       )}
+      style={style}
       ref={boxRef}
     >
       {children}

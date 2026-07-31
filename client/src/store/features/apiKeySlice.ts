@@ -6,13 +6,13 @@ import { RootState } from "../store";
 
 export const fetchApiKeyListThunk: any = createApiThunk(
   "/api-key/list",
-  async (storeId: string) => await api.get(`api-keys/${storeId}`),
+  async (storeId: string) => await api.get(`/api-keys/${storeId}`),
 );
 
 export const createApiKeyThunk: any = createApiThunk(
   "/api-key/create",
   async (data: { storeId: string; formData: Partial<ApiKeyDto> }) =>
-    await api.post(`api-keys/${data.storeId}`, data.formData),
+    await api.post(`/api-keys/${data.storeId}`, data.formData),
 );
 
 export const renameApiKeyThunk: any = createApiThunk(
@@ -23,7 +23,7 @@ export const renameApiKeyThunk: any = createApiThunk(
     formData: Partial<ApiKeyDto>;
   }) =>
     await api.patch(
-      `api-keys/rename/${data.storeId}/${data.keyId}`,
+      `/api-keys/rename/${data.storeId}/${data.keyId}`,
       data.formData,
     ),
 );
@@ -31,7 +31,7 @@ export const renameApiKeyThunk: any = createApiThunk(
 export const deleteApiKeyThunk: any = createApiThunk(
   "/api-key/delete",
   async (data: { storeId: string; keyId: string }) =>
-    await api.delete(`api-keys/${data.storeId}/${data.keyId}`),
+    await api.delete(`/api-keys/${data.storeId}/${data.keyId}`),
 );
 
 const initialState = {

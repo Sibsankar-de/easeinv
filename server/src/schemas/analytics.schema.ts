@@ -13,3 +13,34 @@ export const analyticsQuerySchema = z.object({
 });
 
 export type AnalyticsQuerySchemaDTO = z.infer<typeof analyticsQuerySchema>;
+
+export const productAnalyticsQuerySchema = analyticsQuerySchema.extend({
+  productId: z.uuid("productId must be a valid UUID").optional(),
+  categoryId: z.uuid("categoryId must be a valid UUID").optional(),
+  limit: z.coerce.number().int().positive().optional().default(10),
+  productCount: z.coerce.number().int().positive().optional(),
+});
+
+export type ProductAnalyticsQuerySchemaDTO = z.infer<
+  typeof productAnalyticsQuerySchema
+>;
+
+export const customerAnalyticsQuerySchema = analyticsQuerySchema.extend({
+  customerId: z.uuid("customerId must be a valid UUID").optional(),
+  limit: z.coerce.number().int().positive().optional().default(10),
+  customerCount: z.coerce.number().int().positive().optional(),
+});
+
+export type CustomerAnalyticsQuerySchemaDTO = z.infer<
+  typeof customerAnalyticsQuerySchema
+>;
+
+export const categoryAnalyticsQuerySchema = analyticsQuerySchema.extend({
+  categoryId: z.uuid("categoryId must be a valid UUID").optional(),
+  limit: z.coerce.number().int().positive().optional().default(10),
+  categoryCount: z.coerce.number().int().positive().optional(),
+});
+
+export type CategoryAnalyticsQuerySchemaDTO = z.infer<
+  typeof categoryAnalyticsQuerySchema
+>;

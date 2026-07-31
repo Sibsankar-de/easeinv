@@ -1,138 +1,152 @@
 "use client";
 
 import { useStoreNavigation } from "@/hooks/store-navigation";
-import {
-  BadgeIndianRupee,
-  Boxes,
-  ChartNoAxesCombined,
-  CreditCard,
-} from "lucide-react";
-import { AnalyticsLinkGrid } from "./DashboardAnalyticsLinkGrid";
-import { ChartCard } from "@/components/charts/DashboardChartCard";
-import { DashboardPageHeader } from "./DashboardPageHeader";
-import { DashboardSkeleton } from "@/components/ui/DashboardSkeleton";
-import { EmptyAnalyticsState } from "./DashboardEmptyState";
-import { MetricCard, MetricGrid } from "@/components/ui/MetricCard";
-import { RecentInvoicesList } from "./DashboardRecentInvoicesList";
-import { CategorySalesPieChart } from "@/components/charts/DashboardCategorySalesPieChart";
-import { HorizontalCurrencyBarChart } from "@/components/charts/DashboardHorizontalCurrencyBarChart";
-import { SalesTrendAreaChart } from "@/components/charts/DashboardSalesTrendAreaChart";
-import { useDashboardAnalytics } from "@/hooks/use-dashboard-analytics";
+import { useDashboardSummary } from "@/hooks/use-dashboard-summary";
 import { formatCurrency, formatNumber } from "@/utils/currency-formatters";
 import { analyticsLinks } from "@/constants/dashboard";
 import { useSelector } from "react-redux";
 import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
+import {
+  BadgeIndianRupee,
+  BarChart3,
+  Boxes,
+  CreditCard,
+  FileText,
+  Percent,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
+import { AnalyticsLinkGrid } from "./DashboardAnalyticsLinkGrid";
+import { DashboardPageHeader } from "./DashboardPageHeader";
+import { DashboardSkeleton } from "@/components/ui/DashboardSkeleton";
+import { MetricCard, MetricGrid } from "@/components/ui/MetricCard";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { PrimaryBox } from "@/components/ui/PrimaryBox";
 
 export const DashboardOverview = () => {
   const { navigate } = useStoreNavigation();
-  const { data, period, isLoading, setPeriod } = useDashboardAnalytics();
+  const { data, filter, isLoading, setFilter, refetch } = useDashboardSummary();
   const {
     data: { currentStore },
   } = useSelector(selectCurrentStoreState);
   const currencyCode = currentStore?.currencyCode;
 
-  const hasAnalytics =
-    data.kpis.totalInvoices > 0 ||
-    data.salesTrend.length > 0 ||
-    data.topProducts.length > 0;
+  const kpis = data?.kpis;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <DashboardPageHeader
         title="Dashboard"
-        description="Review sales, billing, product movement, and customer activity."
-        period={period}
-        onPeriodChange={setPeriod}
+        description="Store-wide performance summary for the selected period."
+        filter={filter}
+        onFilterChange={setFilter}
+        onRefresh={refetch}
+        isLoading={isLoading}
       />
 
-      {isLoading ? <DashboardSkeleton /> : null}
-
-      {!isLoading ? (
+      {isLoading ? (
         <>
-          <MetricGrid>
-            <MetricCard
-              label="Total revenue"
-              value={formatCurrency(data.kpis.totalRevenue, currencyCode)}
-              helper={`${formatNumber(data.kpis.totalInvoices)} invoices`}
-              icon={BadgeIndianRupee}
-            />
-            <MetricCard
-              label="Paid amount"
-              value={formatCurrency(data.kpis.totalPaid, currencyCode)}
-              helper={`${formatCurrency(data.kpis.totalDue, currencyCode)} pending`}
-              icon={CreditCard}
-              tone="success"
-            />
-            <MetricCard
-              label="Products sold"
-              value={formatNumber(data.kpis.totalProductsSold)}
-              helper={`${formatNumber(data.kpis.totalProducts)} products listed`}
-              icon={Boxes}
-              tone="info"
-            />
-            <MetricCard
-              label="Total profit"
-              value={formatCurrency(data.kpis.totalProfit, currencyCode)}
-              helper={`${formatNumber(data.kpis.totalCustomers)} customers`}
-              icon={ChartNoAxesCombined}
-              tone="warning"
-            />
-          </MetricGrid>
-
-          {!hasAnalytics ? <EmptyAnalyticsState /> : null}
-
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <ChartCard
-              title="Sales trend"
-              description="Revenue, paid collection, and due movement"
-              className="xl:col-span-2"
-            >
-              <SalesTrendAreaChart
-                data={data.salesTrend}
-                currencyCode={currencyCode}
-              />
-            </ChartCard>
-
-            <ChartCard
-              title="Category sales"
-              description="Revenue split by product category"
-            >
-              <CategorySalesPieChart
-                data={data.categorySales}
-                currencyCode={currencyCode}
-              />
-            </ChartCard>
+          <DashboardSkeleton metricCount={4} layout="summary" />
+          <DashboardSkeleton metricCount={4} layout="summary" />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <PrimaryBox key={i} className="space-y-3">
+                <Skeleton className="h-9 w-9 rounded-lg" />
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-3.5 w-36" />
+              </PrimaryBox>
+            ))}
           </div>
-
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <ChartCard
-              title="Top products"
-              description="Best-selling products by revenue"
-            >
-              <HorizontalCurrencyBarChart
-                data={data.topProducts}
-                dataKey="revenue"
-                name="Revenue"
-                color="var(--chart-2)"
-                currencyCode={currencyCode}
-              />
-            </ChartCard>
-
-            <ChartCard
-              title="Recent invoices"
-              description="Latest billing activity in this store"
-              heightClassName="h-auto"
-            >
-              <RecentInvoicesList
-                invoices={data.recentInvoices}
-                currencyCode={currencyCode}
-              />
-            </ChartCard>
-          </div>
-
-          <AnalyticsLinkGrid links={analyticsLinks} onNavigate={navigate} />
         </>
-      ) : null}
+      ) : (
+        <>
+          {/* Row 1: Revenue metrics */}
+          <div>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Revenue
+            </p>
+            <MetricGrid columns={4}>
+              <MetricCard
+                label="Total revenue"
+                value={formatCurrency(kpis?.totalRevenue ?? 0, currencyCode)}
+                helper={
+                  filter.mode === "custom" && filter.startDate && filter.endDate
+                    ? `${filter.startDate} → ${filter.endDate}`
+                    : `This ${filter.period} period`
+                }
+                icon={BadgeIndianRupee}
+                tone="primary"
+              />
+              <MetricCard
+                label="Amount paid"
+                value={formatCurrency(kpis?.paidAmount ?? 0, currencyCode)}
+                helper="Collected from customers"
+                icon={CreditCard}
+                tone="success"
+              />
+              <MetricCard
+                label="Amount due"
+                value={formatCurrency(kpis?.dueAmount ?? 0, currencyCode)}
+                helper="Pending from customers"
+                icon={Wallet}
+                tone="danger"
+              />
+              <MetricCard
+                label="Total profit"
+                value={formatCurrency(kpis?.totalProfit ?? 0, currencyCode)}
+                helper={`${(kpis?.profitMargin ?? 0).toFixed(1)}% profit margin`}
+                icon={TrendingUp}
+                tone="warning"
+              />
+            </MetricGrid>
+          </div>
+
+          {/* Row 2: Activity metrics */}
+          <div>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Activity
+            </p>
+            <MetricGrid columns={4}>
+              <MetricCard
+                label="Total invoices"
+                value={formatNumber(kpis?.totalInvoices ?? 0)}
+                helper="Billing documents issued"
+                icon={FileText}
+                tone="info"
+              />
+              <MetricCard
+                label="Products sold"
+                value={formatNumber(kpis?.productsSold ?? 0)}
+                helper="Total units billed"
+                icon={Boxes}
+                tone="info"
+              />
+              <MetricCard
+                label="Avg invoice value"
+                value={formatCurrency(kpis?.averageInvoiceValue ?? 0, currencyCode)}
+                helper="Revenue per invoice"
+                icon={BarChart3}
+                tone="primary"
+              />
+              <MetricCard
+                label="Profit margin"
+                value={`${(kpis?.profitMargin ?? 0).toFixed(1)}%`}
+                helper={formatCurrency(kpis?.totalProfit ?? 0, currencyCode) + " net profit"}
+                icon={Percent}
+                tone="warning"
+              />
+            </MetricGrid>
+          </div>
+
+          {/* Navigation cards */}
+          <div>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Detailed analytics
+            </p>
+            <AnalyticsLinkGrid links={analyticsLinks} onNavigate={navigate} />
+          </div>
+        </>
+      )}
     </div>
   );
 };

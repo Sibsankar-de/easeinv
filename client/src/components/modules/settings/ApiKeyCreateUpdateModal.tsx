@@ -11,6 +11,7 @@ import { ApiKeyDto } from "@/types/dto/apiKeyDto";
 import { Modal, ModalHeader } from "@/components/ui/Modal";
 import { Label } from "@/components/ui/Label";
 import { Input } from "@/components/ui/Input";
+import { DateInput } from "@/components/ui/DateInput";
 import { WhitelistedOriginsInput } from "@/components/ui/WhitelistedOriginsInput";
 import {
   ApiKeyScopeSelector,
@@ -190,9 +191,8 @@ export const ApiKeyCreateUpdateModal = ({
               />
             )}
           </div>
-          <Input
+          <DateInput
             id="expiry"
-            type="date"
             value={formData.expiresAt}
             disabled={isLoading}
             onChange={(val) => handleFormChange("expiresAt", val)}
