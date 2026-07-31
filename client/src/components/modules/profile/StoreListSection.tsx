@@ -81,7 +81,6 @@ export const StoreListSection = () => {
       </div>
 
       <StoreCreateModal
-        key={isStoreModalOpen ? "open" : "closed"}
         openState={isStoreModalOpen}
         onClose={() => setIsStoreModalOpen(false)}
       />

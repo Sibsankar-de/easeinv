@@ -47,7 +47,7 @@ const ApiKeyTableActions = ({ apiKey }: { apiKey: ApiKeyDto }) => {
       </Button>
 
       <ApiKeyCreateUpdateModal
-        key={`${apiKey.id}-${updateModalOpen}`}
+        key={apiKey.id}
         isOpen={updateModalOpen}
         mode="edit"
         apiKey={apiKey}

@@ -1,19 +1,10 @@
-import { AnalyticsPeriod } from "@/types/DashboardAnalyticsType";
 import {
   ChartNoAxesCombined,
+  LayoutGrid,
   Package,
   ReceiptIndianRupee,
   Users,
 } from "lucide-react";
-
-export const analyticsPeriodOptions: {
-  label: string;
-  value: AnalyticsPeriod;
-}[] = [
-  { label: "Daily", value: "daily" },
-  { label: "Weekly", value: "weekly" },
-  { label: "Monthly", value: "monthly" },
-];
 
 export const dashboardChartColors = [
   "var(--primary)",
@@ -37,23 +28,34 @@ export const analyticsLinks = [
     description: "Revenue movement, paid collection, and profit trends.",
     href: "dashboard/sales",
     icon: ChartNoAxesCombined,
+    color: "text-primary bg-primary/10",
   },
   {
     title: "Billing analytics",
     description: "Invoices, due payments, and collection health.",
     href: "dashboard/billing",
     icon: ReceiptIndianRupee,
+    color: "text-chart-2 bg-chart-2/10",
   },
   {
     title: "Product analytics",
     description: "Top products, category contribution, and units sold.",
     href: "dashboard/products",
     icon: Package,
+    color: "text-chart-3 bg-chart-3/10",
   },
   {
     title: "Customer analytics",
     description: "Customer activity, outstanding dues, and repeat billing.",
     href: "dashboard/customers",
     icon: Users,
+    color: "text-chart-4 bg-chart-4/10",
+  },
+  {
+    title: "Category analytics",
+    description: "Revenue, profit, and units sold by product category.",
+    href: "dashboard/categories",
+    icon: LayoutGrid,
+    color: "text-chart-5 bg-chart-5/10",
   },
 ];

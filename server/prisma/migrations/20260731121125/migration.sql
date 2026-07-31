@@ -38,7 +38,7 @@ CREATE TABLE "product_daily_stats" (
     "id" UUID NOT NULL,
     "storeId" UUID NOT NULL,
     "date" DATE NOT NULL,
-    "productId" UUID,
+    "productId" UUID NOT NULL,
     "productName" TEXT NOT NULL DEFAULT '',
     "productSku" TEXT NOT NULL DEFAULT '',
     "quantitySold" DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -55,7 +55,7 @@ CREATE TABLE "customer_daily_stats" (
     "id" UUID NOT NULL,
     "storeId" UUID NOT NULL,
     "date" DATE NOT NULL,
-    "customerId" UUID,
+    "customerId" UUID NOT NULL,
     "customerName" TEXT NOT NULL DEFAULT '',
     "invoiceCount" INTEGER NOT NULL DEFAULT 0,
     "totalBilled" DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -83,10 +83,16 @@ CREATE INDEX "product_daily_stats_storeId_date_idx" ON "product_daily_stats"("st
 CREATE INDEX "product_daily_stats_storeId_productId_idx" ON "product_daily_stats"("storeId", "productId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "product_daily_stats_storeId_date_productId_key" ON "product_daily_stats"("storeId", "date", "productId");
+
+-- CreateIndex
 CREATE INDEX "customer_daily_stats_storeId_date_idx" ON "customer_daily_stats"("storeId", "date");
 
 -- CreateIndex
 CREATE INDEX "customer_daily_stats_storeId_customerId_idx" ON "customer_daily_stats"("storeId", "customerId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "customer_daily_stats_storeId_date_customerId_key" ON "customer_daily_stats"("storeId", "date", "customerId");
 
 -- AddForeignKey
 ALTER TABLE "invoice_summaries" ADD CONSTRAINT "invoice_summaries_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "stores"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -98,10 +104,10 @@ ALTER TABLE "invoice_daily_stats" ADD CONSTRAINT "invoice_daily_stats_storeId_fk
 ALTER TABLE "product_daily_stats" ADD CONSTRAINT "product_daily_stats_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "stores"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "product_daily_stats" ADD CONSTRAINT "product_daily_stats_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "product_daily_stats" ADD CONSTRAINT "product_daily_stats_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "customer_daily_stats" ADD CONSTRAINT "customer_daily_stats_storeId_fkey" FOREIGN KEY ("storeId") REFERENCES "stores"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "customer_daily_stats" ADD CONSTRAINT "customer_daily_stats_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "customer_daily_stats" ADD CONSTRAINT "customer_daily_stats_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;

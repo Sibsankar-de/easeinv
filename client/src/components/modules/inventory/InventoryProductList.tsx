@@ -300,6 +300,7 @@ export const InventoryProductList = () => {
             }}
             placeholder="Select category"
             className="min-w-40"
+            dropdownClass="max-h-100"
             icon={<ListFilterPlus size={18} />}
           />
         </div>

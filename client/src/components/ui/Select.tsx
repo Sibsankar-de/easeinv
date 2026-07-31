@@ -26,30 +26,81 @@ export const Select = ({
   const [isFocused, setIsFocused] = useState(false);
   const [direction, setDirection] = useState<"top" | "bottom">("bottom");
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [maxHeight, setMaxHeight] = useState<number | undefined>(undefined);
   const ref = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
 
   useEffect(() => {
-    if (open && ref.current) {
+    if (!open) {
+      setTimeout(() => {
+        setDirection("bottom");
+        setMaxHeight(undefined);
+      }, 0);
+      return;
+    }
+
+    const parseMaxHeightClass = (className?: string): number | null => {
+      if (!className) return null;
+      const matches = className.split(/\s+/);
+      for (const cls of matches) {
+        const pxMatch = cls.match(/^max-h-\[(\d+)px\]$/);
+        if (pxMatch) return parseInt(pxMatch[1], 10);
+
+        const remMatch = cls.match(/^max-h-\[(\d+(?:\.\d+)?)rem\]$/);
+        if (remMatch) return parseFloat(remMatch[1]) * 16;
+
+        const vhMatch = cls.match(/^max-h-\[(\d+(?:\.\d+)?)vh\]$/);
+        if (vhMatch) return (parseFloat(vhMatch[1]) * window.innerHeight) / 100;
+
+        const twMatch = cls.match(/^max-h-(\d+)$/);
+        if (twMatch) return parseInt(twMatch[1], 10) * 4;
+      }
+      return null;
+    };
+
+    const updateLayout = () => {
+      if (!ref.current) return;
+
       const rect = ref.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
-      const spaceBelow = viewportHeight - rect.bottom;
-      const dropdownHeight = 260;
+
+      const TOP_NAV_THRESHOLD = 65; // Reserve 60px at top for top nav bar
+      const DROPDOWN_MARGIN = 8; // Margin for mt-2 / mb-2
+
+      const spaceBelow = viewportHeight - rect.bottom - DROPDOWN_MARGIN - 12;
+      const spaceAbove = rect.top - TOP_NAV_THRESHOLD - DROPDOWN_MARGIN;
+
+      const configuredMaxHeight = parseMaxHeightClass(dropdownClass) ?? 260;
+
       const targetDirection =
-        spaceBelow < dropdownHeight && rect.top > dropdownHeight
+        spaceBelow < configuredMaxHeight && spaceAbove > spaceBelow
           ? "top"
           : "bottom";
 
-      setTimeout(() => {
-        setDirection(targetDirection);
-      }, 0);
-    } else if (!open) {
-      setTimeout(() => {
-        setDirection("bottom");
-      }, 0);
-    }
-  }, [open]);
+      const availableSpace =
+        targetDirection === "top" ? spaceAbove : spaceBelow;
+
+      // Ensure max height never goes beyond screen/nav bounds, overriding configured max height if needed
+      const effectiveMaxHeight = Math.min(
+        configuredMaxHeight,
+        Math.max(40, Math.floor(availableSpace)),
+      );
+
+      setDirection(targetDirection);
+      setMaxHeight(effectiveMaxHeight);
+    };
+
+    updateLayout();
+
+    window.addEventListener("resize", updateLayout);
+    window.addEventListener("scroll", updateLayout, true);
+
+    return () => {
+      window.removeEventListener("resize", updateLayout);
+      window.removeEventListener("scroll", updateLayout, true);
+    };
+  }, [open, dropdownClass]);
 
   useEffect(() => {
     if (open) {
@@ -187,7 +238,7 @@ export const Select = ({
         </div>
       </div>
       {/* dropdown */}
-      {open && !disabled && (
+      {!disabled && (
         <Dropdown
           openState={open}
           onClose={() => {
@@ -202,6 +253,7 @@ export const Select = ({
             "w-full overflow-auto select-none",
             dropdownClass,
           )}
+          style={maxHeight ? { maxHeight: `${maxHeight}px` } : undefined}
         >
           <ul ref={listRef} role="listbox" aria-labelledby={uid}>
             {options.map((opt) => (

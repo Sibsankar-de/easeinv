@@ -5,8 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import * as storeService from "../services/store.service";
 import { validateBody } from "../utils/validate.utils";
 import {
-  createStoreSchema,
-  updateStoreSchema,
+  storeCreateUpdateSchema,
   updateStoreSettingsSchema,
 } from "../schemas/store.schema";
 import { ApiError } from "../utils/apiErrorHandler";
@@ -21,7 +20,7 @@ export const createStore = asyncHandler(async (req: Request, res: Response) => {
     );
   }
 
-  const validatedBody = validateBody(createStoreSchema, req.body);
+  const validatedBody = validateBody(storeCreateUpdateSchema, req.body);
 
   const store = await storeService.createStore(user, validatedBody);
 
@@ -37,7 +36,7 @@ export const updateStore = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
-  const validatedBody = validateBody(updateStoreSchema, req.body);
+  const validatedBody = validateBody(storeCreateUpdateSchema, req.body);
 
   const updatedStore = await storeService.updateStore(
     storeId as string,

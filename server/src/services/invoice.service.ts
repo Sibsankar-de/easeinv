@@ -250,6 +250,8 @@ export const searchInvoice = async (params: {
   paymentStatus?: string;
   customerPrefix?: string;
   customerId?: string;
+  invoiceNumber?: string;
+  query?: string;
   sortBy: string;
   sortOrder: "asc" | "desc";
 }) => {
@@ -261,6 +263,8 @@ export const searchInvoice = async (params: {
     paymentStatus,
     customerPrefix,
     customerId,
+    invoiceNumber,
+    query,
     sortBy,
     sortOrder,
   } = params;
@@ -271,10 +275,21 @@ export const searchInvoice = async (params: {
   if (paymentStatus) where.paymentStatus = paymentStatus;
   if (customerId) where.customerId = customerId;
 
+  if (invoiceNumber) {
+    where.invoiceNumber = { contains: invoiceNumber, mode: "insensitive" };
+  }
+
   if (customerPrefix) {
     where.customer = {
       name: { startsWith: customerPrefix, mode: "insensitive" },
     };
+  }
+
+  if (query) {
+    where.OR = [
+      { invoiceNumber: { contains: query, mode: "insensitive" } },
+      { customer: { name: { contains: query, mode: "insensitive" } } },
+    ];
   }
 
   const result = await paginate(
