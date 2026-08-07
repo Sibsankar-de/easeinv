@@ -39,6 +39,8 @@ import {
   StockStatusBadgeVariantMap,
   StockStatusMap,
 } from "@/constants/productConstants";
+import { ExportButton } from "@/components/ui/ExportButton";
+import { downloadExportFile } from "@/utils/export-utils";
 
 const columnHelper = createColumnHelper<ProductDto>();
 
@@ -108,6 +110,27 @@ export const InventoryProductList = () => {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "createdAt", desc: true },
   ]);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async (format: "xlsx" | "csv") => {
+    setIsExporting(true);
+    const sortField = sorting[0]?.id || "createdAt";
+    const sortOrder = sorting[0]?.desc ? "desc" : "asc";
+
+    await downloadExportFile({
+      endpoint: `/products/${storeId}/export`,
+      params: {
+        format,
+        query: debouncedSearchTerm || undefined,
+        categoryId: selectedCategory !== "all" ? selectedCategory : undefined,
+        sortBy: sortField,
+        sortOrder,
+      },
+      defaultFilename: `inventory_${storeId}_${new Date().toISOString().slice(0, 10)}.${format}`,
+      format,
+    });
+    setIsExporting(false);
+  };
 
   const currentPage = pagination.pageIndex + 1;
 
@@ -303,6 +326,7 @@ export const InventoryProductList = () => {
             dropdownClass="max-h-100"
             icon={<ListFilterPlus size={18} />}
           />
+          <ExportButton onExport={handleExport} loading={isExporting} />
         </div>
       </div>
 

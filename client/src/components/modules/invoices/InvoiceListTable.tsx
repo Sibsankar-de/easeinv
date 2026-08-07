@@ -26,6 +26,8 @@ import { getTableSearchDebounceTime } from "@/utils/get-debounce";
 import { cn } from "@/components/utils";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { useInvoiceDownload } from "@/hooks/use-invoice-download";
+import { ExportButton } from "@/components/ui/ExportButton";
+import { downloadExportFile } from "@/utils/export-utils";
 
 const filterOptions: SelectOptionType[] = [
   { value: "All", key: "all" },
@@ -118,6 +120,28 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "issueDate", desc: true },
   ]);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async (format: "xlsx" | "csv") => {
+    setIsExporting(true);
+    const sortField = sorting[0]?.id || "createdAt";
+    const sortOrder = sorting[0]?.desc ? "desc" : "asc";
+
+    await downloadExportFile({
+      endpoint: `/invoices/${storeId}/export`,
+      params: {
+        format,
+        query: debouncedSearchTerm || undefined,
+        paymentStatus: filterStatus !== "all" ? filterStatus : undefined,
+        customerId: customerId || undefined,
+        sortBy: sortField,
+        sortOrder,
+      },
+      defaultFilename: `invoices_${storeId}_${new Date().toISOString().slice(0, 10)}.${format}`,
+      format,
+    });
+    setIsExporting(false);
+  };
 
   const currentPage = pagination.pageIndex + 1;
 
@@ -258,6 +282,7 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
             dispatch(invalidateInvoicePages());
           }}
         />
+        <ExportButton onExport={handleExport} loading={isExporting} />
       </div>
 
       <DataTable

@@ -69,3 +69,17 @@ export type InvoiceCustomerDto = z.infer<typeof customerDetailsSchema>;
 export type InvoiceCreateDto = z.infer<typeof createInvoiceSchema>;
 export type InvoiceUpdateDueDto = z.infer<typeof updateInvoiceDueSchema>;
 export type InvoiceExtraData = z.infer<typeof invoiceExtraDataSchema>;
+
+export const invoiceExportQuerySchema = z.object({
+  format: z.enum(["csv", "xlsx"]).default("csv"),
+  query: z.string().optional().default(""),
+  status: z.enum(["ISSUED", "DRAFTED"]).optional(),
+  paymentStatus: z.enum(["PAID", "DUE", "OVERDUE"]).optional(),
+  customerId: z.string().optional(),
+  invoiceNumber: z.string().optional(),
+  sortBy: z.string().default("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+});
+
+export type InvoiceExportQueryDTO = z.infer<typeof invoiceExportQuerySchema>;
+

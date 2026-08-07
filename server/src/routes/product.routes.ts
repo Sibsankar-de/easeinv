@@ -6,6 +6,7 @@ import {
   deleteProduct,
   getProductById,
   rearrangeProductImages,
+  exportProducts,
 } from "../controllers/product.controller";
 import { verifyAuth } from "../middlewares/auth.middleware";
 import {
@@ -18,7 +19,9 @@ const router = Router();
 router.use(verifyAuth);
 
 router.get("/:storeId", verifyEmployeeLevelAccess, getProducts);
+router.get("/:storeId/export", verifyEmployeeLevelAccess, exportProducts);
 router.post("/:storeId", verifyManagerLevelAccess, createProduct);
+
 router.get("/:storeId/:productId", verifyManagerLevelAccess, getProductById);
 router.patch("/:storeId/:productId", verifyManagerLevelAccess, updateProduct);
 router.patch(

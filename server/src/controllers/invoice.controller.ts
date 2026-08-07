@@ -6,8 +6,10 @@ import * as invoiceService from "../services/invoice.service";
 import { validateBody } from "../utils/validate.utils";
 import {
   createInvoiceSchema,
+  invoiceExportQuerySchema,
   updateInvoiceDueSchema,
 } from "../schemas/invoice.schema";
+
 
 export const createInvoice = asyncHandler(
   async (req: Request, res: Response) => {
@@ -101,3 +103,13 @@ export const getInvoiceSummary = asyncHandler(
       .json(new ApiResponse(StatusCodes.OK, summary, "Summary fetched."));
   },
 );
+
+export const exportInvoices = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { storeId } = req.params as { storeId: string };
+    const queryParams = invoiceExportQuerySchema.parse(req.query);
+
+    await invoiceService.exportInvoicesStream(storeId, queryParams, res);
+  },
+);
+
