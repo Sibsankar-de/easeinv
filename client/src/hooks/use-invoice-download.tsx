@@ -9,7 +9,7 @@ import { useStoreNavigation } from "@/hooks/store-navigation";
 import { downloadElementAsPdf } from "@/utils/downloadPdf";
 import { InvoiceDocument } from "@/components/sections/InvoiceDocument";
 import { InvoiceSummaryDto, InvoiceDto } from "@/types/dto/invoiceDto";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 
 export const useInvoiceDownload = () => {
   const dispatch = useDispatch();

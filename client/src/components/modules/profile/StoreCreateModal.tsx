@@ -16,7 +16,7 @@ import { getNames as getCountryNames } from "country-list";
 import { Mail, Phone, Store } from "lucide-react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 
 export const StoreCreateModal = ({
   openState,

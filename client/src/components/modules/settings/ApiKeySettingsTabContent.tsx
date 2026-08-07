@@ -19,7 +19,7 @@ import { ColumnDef, SortingState } from "@tanstack/react-table";
 import { Check, Copy, Key, Pen, Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { createIndex, search, SearchRule } from "@/utils/genericSearch";
 import { ApiKeyCreateUpdateModal } from "./ApiKeyCreateUpdateModal";
 import { RemoveApiKeyModal } from "./RemoveApiKeyModal";

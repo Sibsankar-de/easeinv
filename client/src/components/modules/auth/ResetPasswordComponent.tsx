@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { useAuth } from "@/contexts/AuthContext";
 import { Mail, Lock, CheckCircle2, ArrowRight } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import api from "@/configs/axios-config";
 import { requestHandler } from "@/utils/api-request";
 

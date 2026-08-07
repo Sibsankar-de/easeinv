@@ -1,5 +1,4 @@
 import { setGlobalError } from "@/store/features/globalErrorSlice";
-import store from "@/store/store";
 import axios from "axios";
 
 const api = axios.create({
@@ -12,16 +11,21 @@ const api = axios.create({
 
 api.interceptors.response.use(
   (res) => res,
-  (err) => {
+  async (err) => {
     if (axios.isAxiosError(err)) {
       const status = err.response?.status;
       const message = err.response?.data?.message;
-      store.dispatch(
-        setGlobalError({
-          status,
-          message: message,
-        }),
-      );
+      try {
+        const { default: store } = await import("@/store/store");
+        store.dispatch(
+          setGlobalError({
+            status,
+            message: message,
+          }),
+        );
+      } catch {
+        // Fallback if store cannot be imported
+      }
     }
 
     return Promise.reject(err);

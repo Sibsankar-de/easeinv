@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { useStoreNavigation } from "@/hooks/store-navigation";
 import {
   createApiKeyThunk,

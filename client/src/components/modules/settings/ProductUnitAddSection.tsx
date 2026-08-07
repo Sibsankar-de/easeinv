@@ -8,7 +8,7 @@ import { CustomUnitType } from "@/types/dto/storeDto";
 import { Edit, Plus, Ruler, Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 
 export const ProductUnitAddSection = ({
   onChange,

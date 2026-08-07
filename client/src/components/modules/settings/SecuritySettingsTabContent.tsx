@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { PrimaryBox } from "@/components/ui/PrimaryBox";
 import { Button } from "@/components/ui/Button";
 import { Modal, ModalHeader } from "@/components/ui/Modal";

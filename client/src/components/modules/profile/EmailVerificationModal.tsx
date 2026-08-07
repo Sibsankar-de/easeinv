@@ -9,7 +9,7 @@ import {
   resetResendVerificationStatus,
 } from "@/store/features/userSlice";
 import { Mail, CheckCircle2 } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { useEffect } from "react";
 import { cn } from "@/components/utils";
 

@@ -7,7 +7,7 @@ import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { Checkbox } from "../ui/Checkbox";
 import Link from "next/link";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import AuthContext from "@/contexts/AuthContext";
 import { GoogleIcon } from "../icons/GoogleIcon";
 import { Separator } from "../ui/Separator";

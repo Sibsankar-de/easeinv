@@ -12,7 +12,7 @@ import {
   uploadGalleryImageThunk,
 } from "@/store/features/gallerySlice";
 import { GalleryItem } from "./GalleryItem";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { pageLimits } from "@/constants/pageLimits";
 import { useStoreNavigation } from "@/hooks/store-navigation";
 import { cn } from "@/components/utils";

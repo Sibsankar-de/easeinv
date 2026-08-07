@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { useStoreNavigation } from "@/hooks/store-navigation";
 import { selectApiKeyState, deleteApiKeyThunk } from "@/store/features/apiKeySlice";
 import { ApiKeyDto } from "@/types/dto/apiKeyDto";

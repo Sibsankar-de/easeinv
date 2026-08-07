@@ -6,7 +6,7 @@ import { AppDispatch } from "@/store/store";
 import { fetchStoreList } from "@/store/features/storeSlice";
 import { fetchApiKeyListThunk } from "@/store/features/apiKeySlice";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { Play } from "lucide-react";
 import { cn } from "../../utils";
 import { ApiKeyInput } from "./ApiKeyInput";

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "../../ui/Button";
 import { Plus, Trash2 } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { PricePerQuantityType, UnitGroupType } from "@/types/dto/productDto";
 import { StockInput } from "../../ui/StockInput";
 import { calculateProfit } from "@/utils/price-calculator";

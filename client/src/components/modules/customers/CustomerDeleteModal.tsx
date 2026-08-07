@@ -14,7 +14,7 @@ import { CustomerDto } from "@/types/dto/customerDto";
 import { X } from "lucide-react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 
 export function CustomerDeleteModal({
   openState,

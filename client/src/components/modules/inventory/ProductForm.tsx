@@ -24,7 +24,7 @@ import {
   invalidateProductPages,
 } from "@/store/features/inventorySlice";
 import { useParams, useRouter } from "next/navigation";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { useStoreNavigation } from "@/hooks/store-navigation";
 import { StockInput } from "@/components/ui/StockInput";
 import { Separator } from "@/components/ui/Separator";

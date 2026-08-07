@@ -6,7 +6,7 @@ import { Label } from "../ui/Label";
 import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import AuthContext from "@/contexts/AuthContext";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { Separator } from "../ui/Separator";
 import { GoogleIcon } from "../icons/GoogleIcon";
 import { TextLink } from "../ui/TextLink";

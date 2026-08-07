@@ -12,7 +12,7 @@ import { useStoreNavigation } from "@/hooks/store-navigation";
 import { useNavContext } from "@/contexts/NavContext";
 import { NavActionButton } from "@/components/modules/navbar/Navbar";
 import { Mail, Trash2, Edit2, UserPlus, Users } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDispatch, useSelector } from "react-redux";
