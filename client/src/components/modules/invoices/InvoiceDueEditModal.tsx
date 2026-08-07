@@ -66,7 +66,7 @@ export const InvoiceDueEditModal = ({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="space-y-6 w-100"
+      className="space-y-6 w-[90vw] sm:w-96"
       header={<ModalHeader title="Edit Due Amount" />}
     >
       <div>

@@ -92,7 +92,7 @@ export const UnitGroupModal = ({
     <Modal
       openState={open}
       onClose={onClose}
-      className="w-2xl space-y-5"
+      className="w-[90vw] sm:w-xl md:w-2xl space-y-5"
       header={
         <ModalHeader
           title={editingGroup ? "Edit Unit Group" : "Add Unit Group"}

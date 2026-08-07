@@ -114,7 +114,7 @@ export function CustomerCreateEditModal({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="p-4 space-y-4 w-[40vw]"
+      className="p-4 space-y-4 w-[90vw] sm:w-[28rem] md:w-[35rem]"
       header={
         <ModalHeader
           title={`${mode === "edit" ? "Edit" : "Create"} Customer`}

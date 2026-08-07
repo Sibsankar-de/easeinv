@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { NavContextProvider } from "@/contexts/NavContext";
 import { AppLoadingLayout } from "@/components/layout/AppLoadingLayout";
 import { ResizeProvider } from "@/contexts/ResizeContext";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -74,11 +75,13 @@ export default function RootLayout({
         <ResizeProvider>
           <ToastProvider>
             <NavContextProvider>
-              <StoreProvider>
-                <AuthProvider>
-                  <AppLoadingLayout>{children}</AppLoadingLayout>
-                </AuthProvider>
-              </StoreProvider>
+              <SidebarProvider>
+                <StoreProvider>
+                  <AuthProvider>
+                    <AppLoadingLayout>{children}</AppLoadingLayout>
+                  </AuthProvider>
+                </StoreProvider>
+              </SidebarProvider>
             </NavContextProvider>
           </ToastProvider>
         </ResizeProvider>

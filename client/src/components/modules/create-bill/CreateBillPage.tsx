@@ -196,7 +196,7 @@ export const CreateBillPage = () => {
         </div>
 
         {/* Invoice Details */}
-        <div className="grid grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-8">
           <div>
             <Label>Invoice Number</Label>
             <Input
@@ -217,7 +217,7 @@ export const CreateBillPage = () => {
 
         <BillingForm key={`bf-${resetKey}`} onBillChange={handleBillchange} />
 
-        <div className="mt-12 flex gap-2">
+        <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row gap-2">
           <Button
             className="w-full justify-center flex-1"
             disabled={isSaving}

@@ -37,7 +37,7 @@ export const RemoveApiKeyModal = ({
     <Modal
       openState={isOpen}
       onClose={onClose}
-      className="w-xl"
+      className="w-[90vw] sm:w-xl"
       header={
         <ModalHeader
           title="Delete API Key"

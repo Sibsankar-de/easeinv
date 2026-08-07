@@ -9,6 +9,7 @@ import {
   Cable,
 } from "lucide-react";
 import { NavMenuItem } from "./SideNavMenu";
+import { cn } from "../../utils";
 
 const menuItems: NavMenuType[] = [
   {
@@ -52,19 +53,28 @@ const menuItems: NavMenuType[] = [
 export const SettingsNavDropdown = ({
   openState,
   onClose,
+  isCollapsed = false,
 }: {
   openState: boolean;
   onClose: () => void;
+  isCollapsed?: boolean;
 }) => {
   return (
     <Dropdown
-      className="w-full bottom-0 border-gray-200! shadow-md z-50! space-y-1"
+      className={cn(
+        "border-gray-200! z-50! p-1",
+        isCollapsed
+          ? "w-56 left-16 bottom-0 shadow-lg"
+          : "w-full bottom-0 shadow-md",
+      )}
       openState={openState}
       onClose={onClose}
     >
-      {menuItems.map((item) => (
-        <NavMenuItem key={item.id} item={item} />
-      ))}
+      <ul className="space-y-1 list-none p-0 m-0">
+        {menuItems.map((item) => (
+          <NavMenuItem key={item.id} item={item} onClick={onClose} />
+        ))}
+      </ul>
     </Dropdown>
   );
 };

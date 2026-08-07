@@ -59,7 +59,7 @@ export function CategoryDeleteModal({
     <Modal
       openState={openState}
       onClose={handleClose}
-      className={cn("p-4 space-y-4 w-xl")}
+      className={cn("p-4 space-y-4 w-[90vw] sm:w-xl")}
       header={<ModalHeader title="Delete Category" />}
     >
       <p className={cn("text-gray-700 text-sm")}>

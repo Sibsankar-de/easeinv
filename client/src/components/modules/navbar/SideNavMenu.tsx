@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { NavMenuType } from "@/types/NavMenuTypes";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   FileText,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "../../ui/Button";
 import { useStoreNavigation } from "@/hooks/store-navigation";
+import { cn } from "../../utils";
 
 const menuItems: NavMenuType[] = [
   {
@@ -45,11 +47,11 @@ const menuItems: NavMenuType[] = [
   },
 ];
 
-export const SideNavMenu = () => {
+export const SideNavMenu = ({ isCollapsed }: { isCollapsed?: boolean }) => {
   return (
-    <ul className="space-y-1">
+    <ul className="space-y-1 list-none p-0 m-0">
       {menuItems.map((item) => (
-        <NavMenuItem key={item.id} item={item} />
+        <NavMenuItem key={item.id} item={item} isCollapsed={isCollapsed} />
       ))}
     </ul>
   );
@@ -65,38 +67,50 @@ const isRouteActive = (currentPath: string, targetPath: string) => {
 export const NavMenuItem = ({
   item,
   onClick,
+  isCollapsed = false,
 }: {
   item: NavMenuType;
   onClick?: () => void;
+  isCollapsed?: boolean;
 }) => {
   const { storeId } = useStoreNavigation();
-
   const pathname = usePathname();
-  const router = useRouter();
 
   const Icon = item.icon;
 
   const targetUrl = `/stores/${storeId}${item.basePath}`;
   const isActive = isRouteActive(pathname, targetUrl);
 
-  const handleButtonClick = () => {
-    router.push(targetUrl);
-  };
+  const navButton = (
+    <Button
+      variant="nav"
+      onClick={onClick}
+      tooltip={isCollapsed ? item.label : undefined}
+      tooltipId={`nav-tooltip-${item.id}`}
+      className={cn(
+        "w-full transition-all duration-200",
+        isCollapsed
+          ? "justify-center px-2 py-2.5 gap-0"
+          : "justify-start px-3 py-2 gap-3",
+        isActive
+          ? "bg-indigo-100 text-primary font-medium"
+          : "text-gray-700 hover:bg-gray-100",
+      )}
+    >
+      <Icon className="w-5 h-5 shrink-0" />
+      {!isCollapsed && <span className="truncate">{item.label}</span>}
+    </Button>
+  );
 
   return (
-    <li>
-      <Button
-        variant="nav"
-        onClick={onClick || handleButtonClick}
-        className={`w-full gap-3 ${
-          isActive
-            ? "bg-indigo-100 text-primary"
-            : "text-gray-700 hover:bg-gray-200"
-        }`}
-      >
-        <Icon className="w-5 h-5" />
-        <span>{item.label}</span>
-      </Button>
+    <li className="list-none">
+      {item.id === "settings" ? (
+        navButton
+      ) : (
+        <Link href={targetUrl} className="block w-full">
+          {navButton}
+        </Link>
+      )}
     </li>
   );
 };

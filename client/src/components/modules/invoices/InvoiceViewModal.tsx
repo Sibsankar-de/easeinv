@@ -77,7 +77,7 @@ export const InvoiceViewModal = ({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="min-w-[50vw] space-y-4"
+      className="w-[90vw] md:w-[60vw] lg:w-[50vw] max-w-5xl space-y-4"
       header={<ModalHeader title="Invoice Details" />}
     >
       <div className="flex justify-end items-center gap-3">

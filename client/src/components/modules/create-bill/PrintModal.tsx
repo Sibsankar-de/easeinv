@@ -59,7 +59,7 @@ export const PrintModal = ({
   return (
     <Modal
       openState={openState}
-      className="min-w-[50vw] space-y-4"
+      className="w-[90vw] md:w-[60vw] lg:w-[50vw] max-w-5xl space-y-4"
       onClose={onClose}
       header={<ModalHeader title="Save and print Invoice" />}
     >

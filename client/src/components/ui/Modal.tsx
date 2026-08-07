@@ -91,7 +91,7 @@ export const Modal = ({
       >
         <div
           className={cn(
-            "bg-background rounded-xl",
+            "bg-background rounded-xl max-w-[90vw]",
             closing ? "dropdown-close-anim" : "dropdown-open-anim",
           )}
           onClick={(e) => e.stopPropagation()}
@@ -100,7 +100,7 @@ export const Modal = ({
           {header && header}
 
           {/* Modal body */}
-          <div className={cn("min-w-[15em] min-h-[5em] p-3", className)}>
+          <div className={cn("w-[90vw] max-w-full min-h-[5em] p-3 sm:p-4", className)}>
             {children}
           </div>
         </div>

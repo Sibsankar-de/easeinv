@@ -259,7 +259,7 @@ const UserInviteModal = ({
     <Modal
       openState={isOpen}
       onClose={onClose}
-      className="space-y-4 p-4 w-lg"
+      className="space-y-4 p-4 w-[90vw] sm:w-lg"
       header={<ModalHeader title="Invite New User" />}
     >
       <div className="space-y-2">
@@ -343,7 +343,7 @@ const UserRoleEditModal = ({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="space-y-4 p-4 min-w-lg"
+      className="space-y-4 p-4 w-[90vw] sm:w-lg"
     >
       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
         <Avatar userName={userData.userName} className="w-10 h-10" />
@@ -411,7 +411,7 @@ const UserDeleteModal = ({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="space-y-6 p-4 w-lg"
+      className="space-y-6 p-4 w-[90vw] sm:w-lg"
       header={<ModalHeader title="Remove User Access" />}
     >
       <p className="text-gray-600">

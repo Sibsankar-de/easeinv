@@ -131,7 +131,7 @@ export const ApiKeyCreateUpdateModal = ({
     <Modal
       openState={isOpen}
       onClose={onClose}
-      className="w-3xl"
+      className="w-[90vw] md:w-[80vw] lg:w-3xl"
       header={
         <ModalHeader
           title={mode === "create" ? "Create API Key" : "Update API Key"}

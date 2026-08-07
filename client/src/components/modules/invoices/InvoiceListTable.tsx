@@ -243,7 +243,7 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
   return (
     <div>
       {/* Search and Filters */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
         <SearchInput
           placeholder="Search by invoice number or client name..."
           value={searchTerm}

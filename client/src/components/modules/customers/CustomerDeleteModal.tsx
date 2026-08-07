@@ -53,7 +53,7 @@ export function CustomerDeleteModal({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="p-4 space-y-4 w-[30vw]"
+      className="p-4 space-y-4 w-[90vw] sm:w-[26rem]"
       header={<ModalHeader title="Delete Customer" />}
     >
       <p>This action will delete the customer and its data permanently.</p>

@@ -44,7 +44,7 @@ export function EmailVerificationModal({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="p-6 space-y-6 w-xl"
+      className="p-4 sm:p-6 space-y-6 w-[90vw] sm:w-xl"
       header={<ModalHeader title="Verify your Email" />}
     >
       {isSuccess ? (

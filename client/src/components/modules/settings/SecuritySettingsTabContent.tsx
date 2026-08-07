@@ -87,7 +87,7 @@ export const SecuritySettingsTabContent = () => {
       <Modal
         openState={modalOpen}
         onClose={() => !isDeleting && setModalOpen(false)}
-        className="p-4 space-y-4 w-[90vw] sm:w-[35vw]"
+        className="p-4 space-y-4 w-[90vw] sm:w-[28rem] md:w-[35vw]"
         header={<ModalHeader title="Delete Store" />}
       >
         <p className="text-sm text-gray-600 font-sans">

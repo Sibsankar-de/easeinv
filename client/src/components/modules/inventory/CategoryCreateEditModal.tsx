@@ -83,7 +83,7 @@ export function CategoryCreateEditModal({
     <Modal
       openState={openState}
       onClose={onClose}
-      className={cn("p-4 space-y-5 w-xl")}
+      className={cn("p-4 space-y-5 w-[90vw] sm:w-xl")}
       header={<ModalHeader title={modalTitle} />}
     >
       <div className={cn("space-y-4")}>

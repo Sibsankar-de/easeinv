@@ -4,6 +4,7 @@ import React from "react";
 import { HeaderNavbar } from "@/components/modules/navbar/Navbar";
 import { DocsSidebar } from "../modules/docs/DocsSidebar";
 import { DocsMobileNav } from "../modules/docs/DocsMobileNav";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 import {
   BookOpen,
   Key,
@@ -72,45 +73,47 @@ export function DocPageLayout({ children }: { children: React.ReactNode }) {
   const isApiExplorer = pathname === "/docs/api";
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <HeaderNavbar />
-
-      <div className="flex-1 flex flex-row">
-        <div className="hidden md:block sticky top-[57px] h-[calc(100vh-69px)] shrink-0 z-20">
-          <DocsSidebar />
-        </div>
+    <SidebarProvider>
+      <div className="flex h-screen overflow-hidden bg-white">
+        {/* Full-Height Docs Sidebar */}
+        <DocsSidebar />
 
         {/* Mobile Navigation Drawer */}
         <DocsMobileNav />
 
-        <main className="flex-1 min-w-0 flex flex-col justify-between">
-          <div
-            className={cn(
-              "px-6 pb-8 md:px-12 md:pb-10 flex-1 w-full mx-auto space-y-8",
-              isApiExplorer ? "max-w-[1400px]" : "max-w-5xl",
-            )}
-          >
-            <div>{children}</div>
+        {/* Right Main Content Column */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <HeaderNavbar showLogo={false} />
 
-            {nextPage && (
-              <div className="pt-8 border-t border-border flex justify-end">
-                <Link
-                  href={nextPage.href}
-                  className={cn(
-                    "group flex items-center gap-1.5",
-                    "text-sm font-semibold text-primary hover:text-indigo-700 transition-colors",
-                  )}
-                >
-                  <span>Read Next: {nextPage.title}</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </div>
-            )}
-          </div>
-        </main>
+          <main className="flex-1 min-w-0 flex flex-col justify-between overflow-y-auto">
+            <div
+              className={cn(
+                "px-6 pb-8 pt-6 md:px-12 md:pb-10 flex-1 w-full mx-auto space-y-8",
+                isApiExplorer ? "max-w-[1400px]" : "max-w-5xl",
+              )}
+            >
+              <div>{children}</div>
+
+              {nextPage && (
+                <div className="pt-8 border-t border-border flex justify-end">
+                  <Link
+                    href={nextPage.href}
+                    className={cn(
+                      "group flex items-center gap-1.5",
+                      "text-sm font-semibold text-primary hover:text-indigo-700 transition-colors",
+                    )}
+                  >
+                    <span>Read Next: {nextPage.title}</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            <Footer />
+          </main>
+        </div>
       </div>
-
-      <Footer />
-    </div>
+    </SidebarProvider>
   );
 }

@@ -51,7 +51,7 @@ export function ProductDeleteModal({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="p-4 space-y-4 w-[30vw]"
+      className="p-4 space-y-4 w-[90vw] sm:w-[26rem]"
       header={<ModalHeader title="Delete Product" />}
     >
       <p>This action will delete the product permanently.</p>
