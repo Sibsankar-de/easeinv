@@ -93,19 +93,32 @@ export const CustomerDetailsForm = ({
         {(item) =>
           item.map((p, i) => (
             <SelectableItem
-              key={i}
+              key={p.id || i}
               item={p}
               index={i}
-              className="flex justify-between"
+              className="flex justify-between items-center py-1.5"
             >
               <div>
-                <p>{p.name}</p>
-                {p.phoneNumber && <p className="text-sm">{p.phoneNumber}</p>}
+                <p className="text-[15px] font-medium text-gray-900">{p.name}</p>
+                {p.phoneNumber && (
+                  <p className="text-sm text-gray-500">{p.phoneNumber}</p>
+                )}
               </div>
-              <ConditionalDiv condition={p.totalDue}>
-                <span className="text-sm">Due:</span>{" "}
-                <span className="text-red-400">{currencySymbol}{p.totalDue}</span>
-              </ConditionalDiv>
+              <div className="text-right shrink-0 ml-4">
+                {p.totalDue !== undefined && p.totalDue !== null && p.totalDue > 0 ? (
+                  <div className="inline-flex items-center gap-1 bg-red-50 text-red-600 px-2.5 py-1 rounded-md text-xs font-semibold border border-red-200/60">
+                    <span>Due:</span>
+                    <span>
+                      {currencySymbol}
+                      {Number(p.totalDue).toFixed(2)}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-xs text-gray-400 font-normal">
+                    No Due
+                  </span>
+                )}
+              </div>
             </SelectableItem>
           ))
         }

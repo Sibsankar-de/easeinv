@@ -36,6 +36,7 @@ export interface ProductResponseDto {
   description: string | null;
   thumbnailImageId: string | null;
   buyingPricePerQuantity: number;
+  mrp: number | null;
   totalStock: number;
   trackInventory: boolean;
   alertThreshold: number;
@@ -57,6 +58,7 @@ export interface ProductSummaryResponseDto {
   name: string;
   sku: string;
   buyingPricePerQuantity: number;
+  mrp: number | null;
   totalStock: number;
   stockUnit: string;
   pricePerQuantity: PricePerQuantityDto[];
@@ -83,6 +85,7 @@ export const toProductDto = (
     description: product.description,
     thumbnailImageId: product.thumbnailImageId,
     buyingPricePerQuantity: product.buyingPricePerQuantity,
+    mrp: product.mrp,
     totalStock: product.totalStock,
     trackInventory: product.trackInventory,
     alertThreshold: product.alertThreshold,
@@ -116,6 +119,7 @@ export const toProductSummaryDto = (
     name: product.name,
     sku: product.sku,
     buyingPricePerQuantity: product.buyingPricePerQuantity,
+    mrp: product.mrp,
     totalStock: product.totalStock,
     stockUnit: product.stockUnit,
     pricePerQuantity: (product.pricePerQuantity as PricePerQuantityDto[]) ?? [],

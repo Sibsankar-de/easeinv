@@ -66,6 +66,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     description: "",
     categoryIds: [] as string[],
     buyingPricePerQuantity: 0,
+    mrp: undefined,
     stockUnit: unitMap[0].key,
     totalStock: 0,
     trackInventory: false,
@@ -84,6 +85,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
   // UI State (String values for Inputs)
   const [localInputs, setLocalInputs] = useState({
     buyingPricePerQuantity: "",
+    mrp: "",
     totalStock: "",
     alertThreshold: "",
   });
@@ -105,6 +107,10 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
             buyingPricePerQuantity:
               product.buyingPricePerQuantity !== undefined
                 ? String(product.buyingPricePerQuantity)
+                : "",
+            mrp:
+              product.mrp !== undefined && product.mrp !== null
+                ? String(product.mrp)
                 : "",
             totalStock:
               product.totalStock !== undefined
@@ -149,7 +155,11 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     }));
 
     const numValue = parseFloat(rawValue);
-    const safeValue = isNaN(numValue) ? 0 : numValue;
+    const safeValue = isNaN(numValue)
+      ? key === "mrp"
+        ? undefined
+        : 0
+      : numValue;
 
     handleFormData(key, safeValue);
   };
@@ -333,6 +343,17 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
             disabled={isLoading}
           />
         </div>
+      </div>
+
+      <div>
+        <Label htmlFor="mrp">MRP</Label>
+        <PriceInput
+          placeholder="Enter MRP"
+          id="mrp"
+          value={localInputs.mrp}
+          onChange={(e) => handleNumberChange("mrp", e)}
+          disabled={isLoading}
+        />
       </div>
 
       <Separator text={"Unit Groups"} className="mb-8 mt-10" />

@@ -25,6 +25,11 @@ export const productCreateUpdateSchema = z
     buyingPricePerQuantity: z
       .number()
       .min(0, "Buying price must be non-negative"),
+    mrp: z
+      .number()
+      .min(0, "MRP must be non-negative")
+      .optional()
+      .nullable(),
     trackInventory: z.boolean().optional().default(false),
     totalStock: z.number().optional().default(0),
     alertThreshold: z

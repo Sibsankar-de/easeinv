@@ -94,7 +94,15 @@ export function ProductSearchInput({
                   {StockStatusMap[p.stockStatus]}
                 </Badge>
               </div>
-              <p className="text-sm text-gray-600">{p.sku}</p>
+              <p className="text-sm text-gray-600">
+                {p.sku}
+                {p.mrp !== null && p.mrp !== undefined && p.mrp > 0 && (
+                  <span className="ml-2 font-normal">
+                    • MRP: {currencySymbol}
+                    {p.mrp}
+                  </span>
+                )}
+              </p>
             </div>
             <div className="font-normal text-right">
               <p className="text-green-800 text-sm">

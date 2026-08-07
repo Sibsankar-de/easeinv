@@ -151,11 +151,8 @@ export const createCustomer = async (
 ) => {
   const { name, phoneNumber, email, address } = customerData;
 
-  if (!name || !phoneNumber) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Name and phone number are required",
-    );
+  if (!name) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Name is required");
   }
 
   const customer = await prisma.customer.create({

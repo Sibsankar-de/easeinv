@@ -121,11 +121,11 @@ export const DateInput = ({
   // Handle position & screen overflow calculation
   useEffect(() => {
     if (!open) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setDirection("bottom");
         setMaxHeight(undefined);
-      }, 0);
-      return;
+      }, 350);
+      return () => clearTimeout(timer);
     }
 
     const updateLayout = () => {

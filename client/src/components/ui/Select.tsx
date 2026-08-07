@@ -33,11 +33,11 @@ export const Select = ({
 
   useEffect(() => {
     if (!open) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setDirection("bottom");
         setMaxHeight(undefined);
-      }, 0);
-      return;
+      }, 350);
+      return () => clearTimeout(timer);
     }
 
     const parseMaxHeightClass = (className?: string): number | null => {

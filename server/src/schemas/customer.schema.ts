@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const createCustomerSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
-  phoneNumber: z.string().trim().min(1, "Phone number is required"),
+  phoneNumber: z.string().trim().optional(),
   email: z.email("Invalid email").or(z.literal("")).optional(),
   address: z.string().trim().optional(),
 });

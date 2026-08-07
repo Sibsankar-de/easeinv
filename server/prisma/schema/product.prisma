@@ -30,6 +30,7 @@ model Product {
   description            String?
   thumbnailImageId       String?            @db.Uuid
   buyingPricePerQuantity Float
+  mrp                    Float?
   totalStock             Float              @default(0)
   trackInventory         Boolean            @default(false)
   alertThreshold         Float              @default(0)

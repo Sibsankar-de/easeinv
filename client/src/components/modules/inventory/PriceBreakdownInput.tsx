@@ -49,23 +49,35 @@ export const PriceBreakdownInput = ({
     const lastBreakdown = priceBreakdowns[priceBreakdowns.length - 1];
     // Check if the last item has valid data before adding new
     if (
-      priceBreakdowns.length === 0 ||
-      !lastBreakdown.price ||
-      !lastBreakdown.quantity
+      priceBreakdowns.length > 0 &&
+      (!lastBreakdown.price || !lastBreakdown.quantity)
     ) {
       toast.warn("Fill the current breakdown first.");
       return;
     }
 
+    const maxId = priceBreakdowns.reduce(
+      (max, bd) => Math.max(max, bd.id || 0),
+      0,
+    );
+
     const newBreakdown: PricePerQuantityType = {
-      id: (lastBreakdown.id || 0) + 1,
+      id: maxId + 1,
       price: 0,
       quantity: 0,
       unit: baseUnit,
       profitMargin: 0,
     };
 
-    setPriceBreakdowns((prev) => [...prev, newBreakdown]);
+    const updatedList = [...priceBreakdowns, newBreakdown];
+    setPriceBreakdowns(updatedList);
+    onChange?.(updatedList);
+  }
+
+  function handleDeleteBreakdown(id: number) {
+    const updatedList = priceBreakdowns.filter((bd) => bd.id !== id);
+    setPriceBreakdowns(updatedList);
+    onChange?.(updatedList);
   }
 
   function handleUpdateBreakdown(breakdown: PricePerQuantityType) {
@@ -114,18 +126,19 @@ export const PriceBreakdownInput = ({
               unitOptions={unitOptions}
             />
             {index === priceBreakdowns.length - 1 ? (
-              <Button className="py-2" onClick={handleAddNewBreakdown}>
+              <Button
+                type="button"
+                className="py-2"
+                onClick={handleAddNewBreakdown}
+              >
                 <Plus size={18} />
               </Button>
             ) : (
               <Button
                 variant="none"
-                className="py-2 bg-red-200/50 text-red-400"
-                onClick={() =>
-                  setPriceBreakdowns(
-                    priceBreakdowns.filter((bd) => bd.id !== item.id),
-                  )
-                }
+                type="button"
+                className="py-2 bg-red-200/50 text-red-400 hover:bg-red-200 hover:text-red-600"
+                onClick={() => handleDeleteBreakdown(item.id)}
               >
                 <Trash2 size={18} />
               </Button>
