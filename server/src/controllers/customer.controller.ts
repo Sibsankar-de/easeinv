@@ -6,8 +6,10 @@ import * as customerService from "../services/customer.service";
 import { validateBody } from "../utils/validate.utils";
 import {
   createCustomerSchema,
+  customerExportQuerySchema,
   updateCustomerSchema,
 } from "../schemas/customer.schema";
+
 
 export const getCustomers = asyncHandler(
   async (req: Request, res: Response) => {
@@ -145,3 +147,13 @@ export const createCustomer = asyncHandler(
       );
   },
 );
+
+export const exportCustomers = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { storeId } = req.params as { storeId: string };
+    const queryParams = customerExportQuerySchema.parse(req.query);
+
+    await customerService.exportCustomersStream(storeId, queryParams, res);
+  },
+);
+

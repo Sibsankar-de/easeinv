@@ -1,13 +1,17 @@
+import ExcelJS from "exceljs";
+import { Response } from "express";
 import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import { paginate } from "../utils/paginate";
 import {
   CreateCustomerDTO,
+  CustomerExportQueryDTO,
   UpdateCustomerDTO,
 } from "../schemas/customer.schema";
 import { TransactionClient } from "../utils/transactionHandler";
-import { Customer } from "@prisma/client";
+import { Customer, Prisma } from "@prisma/client";
+
 import { InvoiceCustomerDto } from "../schemas/invoice.schema";
 import { toCustomerDto, toCustomerSummaryDto } from "../dto/customer.dto";
 
@@ -207,3 +211,91 @@ export const increamentCustomerDue = async (
     data: { totalDue: { increment: dueAmount } },
   });
 };
+
+export const exportCustomersStream = async (
+  storeId: string,
+  params: CustomerExportQueryDTO,
+  res: Response,
+) => {
+  const { format, query, sortBy, sortOrder } = params;
+
+  const where: Prisma.CustomerWhereInput = { storeId };
+
+  if (query) {
+    const term = decodeURIComponent(query);
+    where.OR = [
+      { name: { contains: term, mode: "insensitive" } },
+      { phoneNumber: { contains: term, mode: "insensitive" } },
+      { email: { contains: term, mode: "insensitive" } },
+    ];
+  }
+
+  const customers = await prisma.customer.findMany({
+    where,
+    orderBy: { [sortBy]: sortOrder },
+    include: {
+      invoices: { select: { id: true, dueAmount: true } },
+    },
+  });
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Customers");
+
+  worksheet.columns = [
+    { header: "ID", key: "id", width: 36 },
+    { header: "Customer Name", key: "name", width: 25 },
+    { header: "Phone Number", key: "phoneNumber", width: 18 },
+    { header: "Email", key: "email", width: 25 },
+    { header: "Address", key: "address", width: 30 },
+    { header: "Total Due", key: "totalDue", width: 15 },
+    { header: "Advance Amount", key: "advance", width: 15 },
+    { header: "Payment Behaviour", key: "paymentBehaviour", width: 18 },
+    { header: "Customer Mark", key: "mark", width: 15 },
+    { header: "Total Invoices", key: "totalInvoices", width: 15 },
+    { header: "Due Invoices", key: "dueInvoices", width: 15 },
+    { header: "Created At", key: "createdAt", width: 22 },
+  ];
+
+  worksheet.getRow(1).font = { bold: true };
+
+  customers.forEach((c) => {
+    const invoices = c.invoices ?? [];
+    const dueCount = invoices.filter((inv) => inv.dueAmount > 0).length;
+
+    worksheet.addRow({
+      id: c.id,
+      name: c.name,
+      phoneNumber: c.phoneNumber || "",
+      email: c.email || "",
+      address: c.address || "",
+      totalDue: c.totalDue,
+      advance: c.advance,
+      paymentBehaviour: c.paymentBehaviour,
+      mark: c.mark,
+      totalInvoices: invoices.length,
+      dueInvoices: dueCount,
+      createdAt: c.createdAt.toISOString(),
+    });
+  });
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  if (format === "xlsx") {
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="customers_${storeId}_${timestamp}.xlsx"`,
+    );
+    await workbook.xlsx.write(res);
+  } else {
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="customers_${storeId}_${timestamp}.csv"`,
+    );
+    await workbook.csv.write(res);
+  }
+};
+

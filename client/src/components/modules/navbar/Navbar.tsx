@@ -119,7 +119,7 @@ export function Sidebar() {
                 tooltip="Collapse sidebar"
                 tooltipId="sidebar-toggle-tooltip"
               >
-                <PanelLeft className="w-5 h-5 flex-shrink-0" />
+                <PanelLeft className="w-5 h-5 shrink-0" />
               </Button>
             </>
           ) : (

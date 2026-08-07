@@ -1,15 +1,21 @@
+import ExcelJS from "exceljs";
+import { Response } from "express";
 import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import { paginate } from "../utils/paginate";
-import { InvoiceCreateDto } from "../schemas/invoice.schema";
+import {
+  InvoiceCreateDto,
+  InvoiceExportQueryDTO,
+} from "../schemas/invoice.schema";
 import {
   prismaTransaction,
   TransactionClient,
 } from "../utils/transactionHandler";
 import * as inventoryService from "../services/inventory.service";
 import * as customerService from "./customer.service";
-import { InvoiceStatus, InvoicePaymentStatus } from "@prisma/client";
+import { InvoiceStatus, InvoicePaymentStatus, Prisma } from "@prisma/client";
+
 import {
   CalculatedInvoice,
   calculateInvoiceDetails,
@@ -315,3 +321,118 @@ export const getInvoiceSummary = async (storeId: string) => {
 
   return toInvoiceCalculationSummaryDto(summary);
 };
+
+export const exportInvoicesStream = async (
+  storeId: string,
+  params: InvoiceExportQueryDTO,
+  res: Response,
+) => {
+  const {
+    format,
+    query,
+    status,
+    paymentStatus,
+    customerId,
+    invoiceNumber,
+    sortBy,
+    sortOrder,
+  } = params;
+
+  const where: Prisma.InvoiceWhereInput = { storeId };
+
+  if (status) where.status = status;
+  if (paymentStatus) where.paymentStatus = paymentStatus;
+  if (customerId) where.customerId = customerId;
+
+  if (invoiceNumber) {
+    where.invoiceNumber = { contains: invoiceNumber, mode: "insensitive" };
+  }
+
+  if (query) {
+    const term = decodeURIComponent(query);
+    where.OR = [
+      { invoiceNumber: { contains: term, mode: "insensitive" } },
+      { customer: { name: { contains: term, mode: "insensitive" } } },
+    ];
+  }
+
+  const invoices = await prisma.invoice.findMany({
+    where,
+    orderBy: { [sortBy]: sortOrder },
+    include: {
+      customer: true,
+      billItems: true,
+    },
+  });
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Invoices");
+
+  worksheet.columns = [
+    { header: "ID", key: "id", width: 36 },
+    { header: "Invoice Number", key: "invoiceNumber", width: 20 },
+    { header: "Issue Date", key: "issueDate", width: 15 },
+    { header: "Customer Name", key: "customerName", width: 25 },
+    { header: "Customer Phone", key: "customerPhone", width: 18 },
+    { header: "Subtotal", key: "subTotal", width: 15 },
+    { header: "Tax Amount", key: "taxAmount", width: 15 },
+    { header: "Discount Amount", key: "discountAmount", width: 15 },
+    { header: "Total Amount", key: "total", width: 15 },
+    { header: "Paid Amount", key: "paidAmount", width: 15 },
+    { header: "Due Amount", key: "dueAmount", width: 15 },
+    { header: "Status", key: "status", width: 12 },
+    { header: "Payment Status", key: "paymentStatus", width: 15 },
+    { header: "Total Profit", key: "totalProfit", width: 15 },
+    { header: "Note", key: "note", width: 30 },
+    { header: "Created At", key: "createdAt", width: 22 },
+  ];
+
+  worksheet.getRow(1).font = { bold: true };
+
+  invoices.forEach((inv) => {
+    const customerExtra = (inv.extraData as any)?.customer;
+    const customerName = inv.customer?.name || customerExtra?.name || "N/A";
+    const customerPhone =
+      inv.customer?.phoneNumber || customerExtra?.phoneNumber || "";
+
+    worksheet.addRow({
+      id: inv.id,
+      invoiceNumber: inv.invoiceNumber,
+      issueDate: inv.issueDate ? inv.issueDate.toISOString().split("T")[0] : "",
+      customerName,
+      customerPhone,
+      subTotal: inv.subTotal,
+      taxAmount: inv.taxAmount,
+      discountAmount: inv.discountAmount,
+      total: inv.total,
+      paidAmount: inv.paidAmount,
+      dueAmount: inv.dueAmount,
+      status: inv.status,
+      paymentStatus: inv.paymentStatus,
+      totalProfit: inv.totalProfit,
+      note: inv.note || "",
+      createdAt: inv.createdAt.toISOString(),
+    });
+  });
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  if (format === "xlsx") {
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="invoices_${storeId}_${timestamp}.xlsx"`,
+    );
+    await workbook.xlsx.write(res);
+  } else {
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="invoices_${storeId}_${timestamp}.csv"`,
+    );
+    await workbook.csv.write(res);
+  }
+};
+

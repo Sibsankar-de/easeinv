@@ -24,6 +24,8 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { CustomerCreateEditModal } from "./CustomerCreateEditModal";
 import { useNavContext } from "@/contexts/NavContext";
 import { NavActionButton } from "../navbar/Navbar";
+import { ExportButton } from "@/components/ui/ExportButton";
+import { downloadExportFile } from "@/utils/export-utils";
 
 const columnHelper = createColumnHelper<CustomerDto>();
 
@@ -82,6 +84,26 @@ export const CustomerListTable = () => {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "createdAt", desc: true },
   ]);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async (format: "xlsx" | "csv") => {
+    setIsExporting(true);
+    const sortField = sorting[0]?.id || "createdAt";
+    const sortOrder = sorting[0]?.desc ? "desc" : "asc";
+
+    await downloadExportFile({
+      endpoint: `/customers/${storeId}/export`,
+      params: {
+        format,
+        query: debouncedSearchTerm || undefined,
+        sortBy: sortField,
+        sortOrder,
+      },
+      defaultFilename: `customers_${storeId}_${new Date().toISOString().slice(0, 10)}.${format}`,
+      format,
+    });
+    setIsExporting(false);
+  };
 
   const currentPage = pagination.pageIndex + 1;
 
@@ -227,6 +249,7 @@ export const CustomerListTable = () => {
           <UserPlus size={15} />
           Add customer
         </Button>
+        <ExportButton onExport={handleExport} loading={isExporting} />
       </div>
 
       <DataTable
