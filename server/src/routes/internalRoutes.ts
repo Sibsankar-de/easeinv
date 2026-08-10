@@ -10,6 +10,8 @@ import oauthRoutes from "./oauth.routes";
 import searchRoutes from "./search.routes";
 import galleryRoutes from "./galleryImage.routes";
 import apiKeyRoutes from "./apiKey.routes";
+import notificationRoutes from "./notification.routes";
+import webhookRoutes from "./webhook.routes";
 
 const router = Router();
 
@@ -24,5 +26,7 @@ router.use("/oauth", oauthRoutes);
 router.use("/search", searchRoutes);
 router.use("/gallery", galleryRoutes);
 router.use("/api-keys", apiKeyRoutes);
+router.use("/notifications", notificationRoutes);
+router.use("/webhooks", webhookRoutes);
 
 export default router;

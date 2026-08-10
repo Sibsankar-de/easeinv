@@ -12,6 +12,7 @@ import {
   UpdateStoreUserRoleDTO,
 } from "../schemas/storeAccess.schema";
 import { Store } from "@prisma/client";
+import * as transactionalNotification from "./transactionalNotification.service";
 
 export const getStoreUsers = async (storeId: string) => {
   const storeUsers = await prisma.storeUser.findMany({
@@ -93,6 +94,9 @@ export const inviteStoreUser = async (
     await getStoreUserInviteEmail(user, store, role, invitationLink),
   );
 
+  // Notify the invited user (fire-and-forget)
+  transactionalNotification.notifyStoreUserInvited(user, store, role);
+
   return null;
 };
 
@@ -155,6 +159,18 @@ export const acceptStoreUserInvite = async (token: string, user: any) => {
 
   await prisma.storeUserInvite.delete({ where: { id: invite.id } });
 
+  // Notify the store owner that a new member joined (fire-and-forget)
+  const store = await prisma.store.findUnique({
+    where: { id: invite.storeId },
+  });
+  if (store) {
+    transactionalNotification.notifyStoreUserJoined(
+      store.ownerId,
+      user,
+      store,
+    );
+  }
+
   return { storeId: invite.storeId };
 };
 
@@ -184,10 +200,21 @@ export const updateStoreUserRole = async (
     );
   }
 
-  return prisma.storeUser.update({
+  const updatedStoreUser = await prisma.storeUser.update({
     where: { id: storeUser.id },
     data: { role: role as any },
   });
+
+  // Notify the affected user about their role change (fire-and-forget)
+  const [targetUser, store] = await Promise.all([
+    prisma.user.findUnique({ where: { id: targetUserId } }),
+    prisma.store.findUnique({ where: { id: storeId } }),
+  ]);
+  if (targetUser && store) {
+    transactionalNotification.notifyRoleChanged(targetUser, store, role);
+  }
+
+  return updatedStoreUser;
 };
 
 export const removeStoreUser = async (

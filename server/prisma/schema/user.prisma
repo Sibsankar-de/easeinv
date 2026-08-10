@@ -21,6 +21,8 @@ model User {
   updatedAt       DateTime     @updatedAt
 
   // Relations
+  notifications      Notification[]
+  webhooks           Webhook[]
   ownedStores        Store[]             @relation("StoreOwner")
   storeUsers         StoreUser[]
   galleryImages      GalleryImage[]

@@ -9,7 +9,10 @@ import {
   CustomerExportQueryDTO,
   UpdateCustomerDTO,
 } from "../schemas/customer.schema";
-import { TransactionClient } from "../utils/transactionHandler";
+import {
+  prismaTransaction,
+  TransactionClient,
+} from "../utils/transactionHandler";
 import { Customer, Prisma } from "@prisma/client";
 
 import { InvoiceCustomerDto } from "../schemas/invoice.schema";
@@ -108,16 +111,24 @@ export const deleteCustomer = async (storeId: string, customerId: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Customer id is required");
   }
 
-  const customer = await prisma.customer.findFirst({
-    where: { id: customerId, storeId },
+  return prismaTransaction(async (tx) => {
+    const customer = await tx.customer.findFirst({
+      where: { id: customerId, storeId },
+    });
+
+    if (!customer) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Customer not found");
+    }
+
+    await tx.customer.delete({ where: { id: customerId } });
+
+    await tx.invoiceSummary.update({
+      where: { storeId },
+      data: { totalCustomers: { decrement: 1 } },
+    });
+
+    return null;
   });
-
-  if (!customer) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Customer not found");
-  }
-
-  await prisma.customer.delete({ where: { id: customerId } });
-  return null;
 };
 
 export const updateCustomer = async (
@@ -152,19 +163,19 @@ export const updateCustomer = async (
 export const createCustomer = async (
   storeId: string,
   customerData: CreateCustomerDTO,
-) => {
-  const { name, phoneNumber, email, address } = customerData;
+) =>
+  prismaTransaction(async (tx) => {
+    const { name, phoneNumber, email, address } = customerData;
+    const newCust = await tx.customer.create({
+      data: { name, phoneNumber, email, address, storeId },
+    });
 
-  if (!name) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Name is required");
-  }
-
-  const customer = await prisma.customer.create({
-    data: { name, phoneNumber, email, address, storeId },
+    await tx.invoiceSummary.update({
+      where: { storeId },
+      data: { totalCustomers: { increment: 1 } },
+    });
+    return toCustomerDto(newCust);
   });
-
-  return toCustomerDto(customer);
-};
 
 export const getOrCreateInvoiceCustomer = async (
   storeId: string,
@@ -186,6 +197,11 @@ export const getOrCreateInvoiceCustomer = async (
         address: customer.address,
         email: customer.email,
       },
+    });
+
+    await tx.invoiceSummary.update({
+      where: { storeId },
+      data: { totalCustomers: { increment: 1 } },
     });
   }
 
@@ -298,4 +314,3 @@ export const exportCustomersStream = async (
     await workbook.csv.write(res);
   }
 };
-

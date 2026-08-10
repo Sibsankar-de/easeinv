@@ -26,6 +26,7 @@ import {
 } from "@prisma/client";
 
 import * as transactionalEmailService from "./transactionalEmail.service";
+import * as transactionalNotification from "./transactionalNotification.service";
 import { clientPages } from "../constants/client.constant";
 import { productExtraDataConverter } from "../converters/product.converter";
 
@@ -523,7 +524,14 @@ export const sendInventoryStockAlert = (
 ) => {
   if (product.totalStock > product.alertThreshold) return;
 
-  // send email
+  // Send in-app notification (always, regardless of emailAlert setting)
+  if (product.totalStock <= 0) {
+    transactionalNotification.notifyStockOut(product.user, product, store);
+  } else {
+    transactionalNotification.notifyStockLow(product.user, product, store);
+  }
+
+  // send email (only if emailAlert is enabled for this product)
   if (product.emailAlert) {
     const inventoryLink = clientPages.constructProductEditPageUrl(
       store.id,

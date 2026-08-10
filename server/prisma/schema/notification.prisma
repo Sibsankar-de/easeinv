@@ -1,0 +1,42 @@
+enum NotificationType {
+  // Billing / Invoice events
+  INVOICE_CREATED
+  INVOICE_PAID
+  INVOICE_OVERDUE
+
+  // Inventory events
+  STOCK_LOW
+  STOCK_OUT
+
+  // Store / Team events
+  STORE_USER_INVITED
+  STORE_USER_JOINED
+  STORE_USER_ROLE_CHANGED
+
+  // Auth / Account events
+  EMAIL_VERIFIED
+  PASSWORD_CHANGED
+
+  // Generic (extensible)
+  GENERAL
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  metadata  Json             @default("{}")
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}

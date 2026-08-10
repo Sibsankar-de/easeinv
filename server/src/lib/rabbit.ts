@@ -75,29 +75,35 @@ export async function getChannel(): Promise<Channel> {
             channelPromise = null;
           });
 
-          const mainQueue = `${env.RABBITMQ_EMAIL_QUEUE}_v2`;
-          const retryQueue = `${mainQueue}_retry`;
-          const dlq = `${mainQueue}_dlq`;
+          // Assert main/retry/dlq triplet for a given base queue name
+          const assertQueueTriplet = async (base: string) => {
+            const dlq = `${base}_dlq`;
+            const retry = `${base}_retry`;
 
-          // 1. Assert DLQ
-          await channel.assertQueue(dlq, {
-            durable: true,
-          });
+            // 1. Assert DLQ
+            await channel!.assertQueue(dlq, { durable: true });
 
-          // 2. Assert Retry Queue (with 5s message TTL, routing back to Main Queue)
-          await channel.assertQueue(retryQueue, {
-            durable: true,
-            deadLetterExchange: "",
-            deadLetterRoutingKey: mainQueue,
-            messageTtl: 5000,
-          });
+            // 2. Assert Retry Queue (5s TTL -> routes back to Main on expiry)
+            await channel!.assertQueue(retry, {
+              durable: true,
+              deadLetterExchange: "",
+              deadLetterRoutingKey: base,
+              messageTtl: 5000,
+            });
 
-          // 3. Assert Main Queue (with DLX routing to Retry Queue)
-          await channel.assertQueue(mainQueue, {
-            durable: true,
-            deadLetterExchange: "",
-            deadLetterRoutingKey: retryQueue,
-          });
+            // 3. Assert Main Queue (DLX routes to Retry on nack)
+            await channel!.assertQueue(base, {
+              durable: true,
+              deadLetterExchange: "",
+              deadLetterRoutingKey: retry,
+            });
+          };
+
+          // Email queue
+          await assertQueueTriplet(`${env.RABBITMQ_EMAIL_QUEUE}_v2`);
+
+          // Notification queue
+          await assertQueueTriplet(`${env.RABBITMQ_NOTIFICATION_QUEUE}_v1`);
         }
       }
 

@@ -14,6 +14,7 @@ import {
 } from "../utils/transactionHandler";
 import * as inventoryService from "../services/inventory.service";
 import * as customerService from "./customer.service";
+import * as transactionalNotification from "./transactionalNotification.service";
 import { InvoiceStatus, InvoicePaymentStatus, Prisma } from "@prisma/client";
 
 import {
@@ -183,7 +184,12 @@ export const updateInvoiceDueAmount = async (
   prismaTransaction(async (tx) => {
     const currentInvoice = await tx.invoice.findUnique({
       where: { id: invoiceId },
-      select: { dueAmount: true, customerId: true },
+      select: {
+        dueAmount: true,
+        paidAmount: true,
+        customerId: true,
+        storeId: true,
+      },
     });
 
     if (!currentInvoice) {
@@ -194,7 +200,11 @@ export const updateInvoiceDueAmount = async (
       throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid paid ammount.");
     }
 
-    const newDueAmount = currentInvoice.dueAmount - paidAmount;
+    const oldDueAmount = currentInvoice.dueAmount;
+    const oldPaidAmount = currentInvoice.paidAmount;
+    const newDueAmount = oldDueAmount - paidAmount;
+    const newPaidAmount = oldPaidAmount + paidAmount;
+
     const paymentStatus =
       newDueAmount > 0 ? InvoicePaymentStatus.DUE : InvoicePaymentStatus.PAID;
 
@@ -214,8 +224,49 @@ export const updateInvoiceDueAmount = async (
       });
     }
 
+    // Update InvoiceSummary stats
+    const oldIsPaid = oldDueAmount <= 0;
+    const oldIsPartial = oldDueAmount > 0 && oldPaidAmount > 0;
+    const oldIsUnpaid = oldDueAmount > 0 && oldPaidAmount <= 0;
+
+    const newIsPaid = newDueAmount <= 0;
+    const newIsPartial = newDueAmount > 0 && newPaidAmount > 0;
+    const newIsUnpaid = newDueAmount > 0 && newPaidAmount <= 0;
+
+    const paidInvoicesDelta = (newIsPaid ? 1 : 0) - (oldIsPaid ? 1 : 0);
+    const partialInvoicesDelta = (newIsPartial ? 1 : 0) - (oldIsPartial ? 1 : 0);
+    const unpaidInvoicesDelta = (newIsUnpaid ? 1 : 0) - (oldIsUnpaid ? 1 : 0);
+
+    await tx.invoiceSummary.update({
+      where: { storeId: currentInvoice.storeId },
+      data: {
+        totalPaid: { increment: paidAmount },
+        totalDue: { decrement: paidAmount },
+        paidInvoices: { increment: paidInvoicesDelta },
+        partialInvoices: { increment: partialInvoicesDelta },
+        unpaidInvoices: { increment: unpaidInvoicesDelta },
+      },
+    });
+
     const updatedInvoice = await getPopulatedInvoice(invoice.id, tx);
-    return toInvoiceDto(updatedInvoice);
+    const invoiceDto = toInvoiceDto(updatedInvoice);
+
+    // Notify when invoice is fully paid (fire-and-forget)
+    if (invoice.dueAmount <= 0) {
+      const [user, store] = await Promise.all([
+        prisma.user.findUnique({ where: { id: invoice.userId } }),
+        prisma.store.findUnique({ where: { id: invoice.storeId } }),
+      ]);
+      if (user && store) {
+        transactionalNotification.notifyInvoicePaid(
+          user,
+          { id: invoice.id, invoiceNumber: invoice.invoiceNumber },
+          store,
+        );
+      }
+    }
+
+    return invoiceDto;
   });
 
 export const getInvoiceById = async (invoiceId: string) => {

@@ -48,6 +48,7 @@ model Store {
   galleryImages      GalleryImage[]
   apiKeys            ApiKey[]
   invoices           Invoice[]
+  webhooks           Webhook[]
   invoiceSummary     InvoiceSummary?
   invoiceDailyStats  InvoiceDailyStat[]
   productDailyStats  ProductDailyStat[]
