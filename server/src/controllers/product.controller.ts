@@ -11,7 +11,6 @@ import {
 } from "../schemas/product.schema";
 
 export const getProducts = asyncHandler(async (req: Request, res: Response) => {
-
   const { storeId } = req.params as { storeId: string };
   const page = parseInt((req.query.page as string) || "1");
   const limit = parseInt((req.query.limit as string) || "20");

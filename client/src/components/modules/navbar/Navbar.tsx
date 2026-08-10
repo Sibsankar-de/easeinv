@@ -27,6 +27,7 @@ import { SettingsNavDropdown } from "./SettingsNavDropdown";
 import { UserDto } from "@/types/dto/userDto";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
+import { StoreSelector } from "./StoreSelector";
 
 const settingsItem: NavMenuType = {
   id: "settings",
@@ -276,15 +277,16 @@ export function HeaderNavbar({
 
           <NavbarSearch />
 
-          {actionButtons}
+          <div className="hidden lg:flex items-center">{actionButtons}</div>
         </div>
 
-        {/* Right side: Actions & Profile */}
-        <div className="flex items-center gap-2 sm:gap-4">
+        {/* Right side: Store selector + Actions + Profile */}
+        <div className="flex items-center gap-0">
+          {showMobileMenu && <StoreSelector />}
           <Button
             variant="none"
             className={cn(
-              "relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg",
+              "relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 sm:mx-3",
               "transition-colors",
             )}
           >

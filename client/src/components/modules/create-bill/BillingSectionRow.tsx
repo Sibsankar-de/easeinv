@@ -103,6 +103,7 @@ export function BillingSectionRow({
       });
       const withTotal = {
         ...productFields,
+        stockUnit: unit,
         pricePerQuantity: calc.chosenTier,
         totalPrice: calc.price,
         totalProfit: calc.profit,

@@ -505,7 +505,7 @@ export const DateRangePicker = ({
 
   return (
     <div
-      className="relative cursor-pointer"
+      className="relative cursor-pointer w-full sm:w-auto"
       ref={containerRef}
       onKeyDown={onKeyDown}
     >
@@ -515,7 +515,7 @@ export const DateRangePicker = ({
         tabIndex={disabled ? -1 : 0}
         onClick={handleClick}
         className={cn(
-          "w-full pl-3 pr-4 py-1.5 border border-gray-300 rounded-lg h-fit",
+          "w-full min-w-0 sm:min-w-[200px] pl-3 pr-4 py-1.5 border border-gray-300 rounded-lg h-fit",
           "flex items-center justify-between gap-2 relative",
           "transition-all duration-200 focus-within:ring-primary focus-within:ring-2",
           disabled && "opacity-50 cursor-not-allowed",
@@ -587,8 +587,7 @@ export const DateRangePicker = ({
           }}
           className={cn(
             direction === "top" ? "bottom-full mb-2" : "mt-2",
-            "right-0 w-auto p-0 rounded-2xl overflow-auto select-none",
-            "max-w-[95vw] sm:max-w-none",
+            "left-0 right-0 sm:left-auto sm:right-0 w-auto p-0 rounded-2xl overflow-auto select-none",
           )}
           style={maxHeight ? { maxHeight: `${maxHeight}px` } : undefined}
         >
@@ -652,21 +651,23 @@ export const DateRangePicker = ({
             </div>
 
             {/* Calendars Container */}
-            <div className="p-4 sm:p-5">
-              <div className="flex flex-col md:flex-row gap-6">
-                <MiniCalendar
-                  year={navYear}
-                  month={navMonth}
-                  selectedStart={draft.start}
-                  selectedEnd={draft.end}
-                  hovered={hovered}
-                  onDayClick={handleDayClick}
-                  onDayHover={setHovered}
-                  onPrevMonth={goBack}
-                  onNextMonth={undefined}
-                />
+            <div className="p-3 sm:p-4 md:p-5">
+              <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                <div className="w-full md:w-auto">
+                  <MiniCalendar
+                    year={navYear}
+                    month={navMonth}
+                    selectedStart={draft.start}
+                    selectedEnd={draft.end}
+                    hovered={hovered}
+                    onDayClick={handleDayClick}
+                    onDayHover={setHovered}
+                    onPrevMonth={goBack}
+                    onNextMonth={goForward}
+                  />
+                </div>
                 <div className="hidden md:block w-px bg-border/60" />
-                <div className="hidden md:block">
+                <div className="hidden md:block w-full md:w-auto">
                   <MiniCalendar
                     year={secondYear}
                     month={secondMonth}
@@ -682,46 +683,48 @@ export const DateRangePicker = ({
               </div>
 
               {/* Selection Summary Footer */}
-              <div className="mt-4 pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-3">
-                <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" />
-                  {draft.start && draft.end ? (
-                    <span>
-                      <strong className="text-foreground font-medium">
-                        {formatDateShort(draft.start)}
-                      </strong>
-                      {" → "}
-                      <strong className="text-foreground font-medium">
-                        {formatDateShort(draft.end)}
-                      </strong>{" "}
-                      <span className="text-muted-foreground/80 font-normal">
-                        ({getDaysDifference(draft.start, draft.end)}{" "}
-                        {getDaysDifference(draft.start, draft.end) === 1
-                          ? "day"
-                          : "days"}
-                        )
-                      </span>
-                    </span>
-                  ) : draft.start ? (
-                    <span>
-                      <strong className="text-foreground font-medium">
-                        {formatDateShort(draft.start)}
-                      </strong>
-                      {" → select end date"}
-                    </span>
-                  ) : (
-                    <span>Select start & end date range</span>
-                  )}
+              <div className="mt-4 pt-3 border-t border-border/60 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 sm:gap-3">
+                <div className="text-xs text-muted-foreground flex items-center gap-1.5 min-w-0">
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
+                  <span className="truncate">
+                    {draft.start && draft.end ? (
+                      <>
+                        <strong className="text-foreground font-medium">
+                          {formatDateShort(draft.start)}
+                        </strong>
+                        {" → "}
+                        <strong className="text-foreground font-medium">
+                          {formatDateShort(draft.end)}
+                        </strong>{" "}
+                        <span className="text-muted-foreground/80 font-normal">
+                          ({getDaysDifference(draft.start, draft.end)}{" "}
+                          {getDaysDifference(draft.start, draft.end) === 1
+                            ? "day"
+                            : "days"}
+                          )
+                        </span>
+                      </>
+                    ) : draft.start ? (
+                      <>
+                        <strong className="text-foreground font-medium">
+                          {formatDateShort(draft.start)}
+                        </strong>
+                        {" → select end date"}
+                      </>
+                    ) : (
+                      <>Select start &amp; end date range</>
+                    )}
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-2 ml-auto">
+                <div className="flex items-center gap-2 sm:ml-auto w-full sm:w-auto">
                   <Button
                     variant="outline"
                     onClick={() => {
                       setOpen(false);
                       setIsFocused(false);
                     }}
-                    className="text-xs h-8 px-3 rounded-lg"
+                    className="text-xs h-8 px-3 rounded-lg flex-1 sm:flex-none"
                   >
                     Cancel
                   </Button>
@@ -729,7 +732,7 @@ export const DateRangePicker = ({
                     variant="primary"
                     disabled={!draft.start || !draft.end}
                     onClick={applyCustomRange}
-                    className="text-xs h-8 px-3.5 rounded-lg font-medium shadow-sm"
+                    className="text-xs h-8 px-3.5 rounded-lg font-medium shadow-sm flex-1 sm:flex-none"
                   >
                     Apply Range
                   </Button>
