@@ -1,8 +1,11 @@
 import { setGlobalError } from "@/store/features/globalErrorSlice";
 import axios from "axios";
 
+const rawBaseUrl = process.env.NEXT_PUBLIC_API_URI || "http://localhost:4000/backend";
+const baseURL = `${rawBaseUrl.replace(/\/+$/, "")}/api/v1`;
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URI,
+  baseURL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

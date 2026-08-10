@@ -15,6 +15,7 @@ import salesAnalyticsReducer from "./features/salesAnalyticsSlice";
 import productAnalyticsReducer from "./features/productAnalyticsSlice";
 import customerAnalyticsReducer from "./features/customerAnalyticsSlice";
 import categoryAnalyticsReducer from "./features/categoryAnalyticsSlice";
+import notificationReducer from "./features/notificationSlice";
 
 export function makeStore() {
   return configureStore({
@@ -29,6 +30,7 @@ export function makeStore() {
       globalError: globalErrorReducer,
       gallery: galleryReducer,
       apiKey: apikeyReducer,
+      notification: notificationReducer,
       // Analytics domain slices (one per API endpoint)
       dashboardSummary: dashboardSummaryReducer,
       salesAnalytics: salesAnalyticsReducer,

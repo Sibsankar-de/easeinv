@@ -4,6 +4,10 @@ import { PrimaryBox } from "@/components/ui/PrimaryBox";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { Select } from "@/components/ui/Select";
+import { Separator } from "@/components/ui/Separator";
+import { CurrencySelector } from "@/components/ui/CurrencySelector";
+import { FormSkeleton } from "@/components/ui/Skeleton";
 import { useStoreNavigation } from "@/hooks/store-navigation";
 import {
   selectCurrentStoreState,
@@ -12,17 +16,17 @@ import {
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "@/utils/toast";
-import { FormSkeleton } from "@/components/ui/Skeleton";
 import { useNavContext } from "@/contexts/NavContext";
 import { NavActionButton } from "@/components/modules/navbar/Navbar";
-import { CurrencySelector } from "@/components/ui/CurrencySelector";
-import { CloudCheck } from "lucide-react";
+import { StoreType } from "@/types/dto/storeDto";
+import { getNames as getCountryNames } from "country-list";
+import { CloudCheck, Mail, Phone } from "lucide-react";
 
 export const StoreInfoComponent = () => {
   const { storeId } = useStoreNavigation();
   const { setActionButtons } = useNavContext();
 
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<any>();
   const {
     data: { currentStore },
     status,
@@ -31,13 +35,31 @@ export const StoreInfoComponent = () => {
 
   const [formData, setFormData] = useState({
     name: "",
-    currencyCode: "",
+    type: StoreType.HYBRID as string,
+    currencyCode: "INR",
     contactEmail: "",
     contactNo: "",
-    address: "",
+    addressLine: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "India",
     registrationNumber: "",
     website: "",
   });
+
+  const countryOptions = getCountryNames().map((name) => ({
+    key: name,
+    value: name,
+  }));
+
+  const storeTypeOptions = [
+    { key: StoreType.RETAIL, value: "Retail" },
+    { key: StoreType.WHOLESALE, value: "Wholesale" },
+    { key: StoreType.ONLINE, value: "Online" },
+    { key: StoreType.FRANCHISE, value: "Franchise" },
+    { key: StoreType.HYBRID, value: "Hybrid" },
+  ];
 
   function handleFormDataChange(key: keyof typeof formData, value: any) {
     setFormData((prev) => ({
@@ -47,21 +69,30 @@ export const StoreInfoComponent = () => {
   }
 
   useEffect(() => {
-    let data: any = {};
-    Object.keys(formData).map((key) => {
-      const storeKey = key as keyof typeof currentStore;
-      if (currentStore[storeKey]) {
-        data[key] = currentStore[storeKey];
-      }
-    });
-
-    setFormData((prev) => ({
-      ...prev,
-      ...data,
-    }));
+    if (currentStore) {
+      setFormData({
+        name: currentStore.name || "",
+        type: currentStore.type || StoreType.HYBRID,
+        currencyCode: currentStore.currencyCode || "INR",
+        contactEmail: currentStore.contactEmail || "",
+        contactNo: currentStore.contactNo || "",
+        addressLine: currentStore.addressLine || "",
+        city: currentStore.city || "",
+        state: currentStore.state || "",
+        zipCode: currentStore.zipCode || "",
+        country: currentStore.country || "India",
+        registrationNumber: currentStore.registrationNumber || "",
+        website: currentStore.website || "",
+      });
+    }
   }, [currentStore]);
 
   const handleSaveChanges = () => {
+    if (!formData.name || !formData.type || !formData.country || !formData.currencyCode) {
+      toast.error("Stared fields are required!");
+      return;
+    }
+
     if (storeUpdateStatus !== "loading" && storeId) {
       dispatch(updateStoreDetailsThunk({ storeId, updateData: formData }))
         .unwrap()
@@ -87,14 +118,15 @@ export const StoreInfoComponent = () => {
   }, [setActionButtons, isUpdating, formData]);
 
   if (status === "loading") {
-    return <FormSkeleton rows={4} />;
+    return <FormSkeleton rows={6} />;
   }
 
   return (
     <div className="space-y-6">
       <PrimaryBox>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          {/* Section 1: Basic Store Details */}
+          <div className="space-y-1.5 md:col-span-2">
             <Label htmlFor="storeName" required>
               Store Name
             </Label>
@@ -102,11 +134,25 @@ export const StoreInfoComponent = () => {
               id="storeName"
               value={formData.name}
               onChange={(e) => handleFormDataChange("name", e)}
-              placeholder="Enter business name"
+              placeholder="Enter store name"
               disabled={isUpdating}
             />
           </div>
-          <div className="space-y-2">
+
+          <div className="space-y-1.5">
+            <Label htmlFor="storeType" required>
+              Store Type
+            </Label>
+            <Select
+              id="storeType"
+              value={formData.type}
+              onChange={(val) => handleFormDataChange("type", val)}
+              options={storeTypeOptions}
+              disabled={isUpdating}
+            />
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="currency-selector" required>
               Store Currency
             </Label>
@@ -117,31 +163,8 @@ export const StoreInfoComponent = () => {
               disabled={isUpdating}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.contactEmail}
-              onChange={(e) => handleFormDataChange("contactEmail", e)}
-              placeholder="contact@business.com"
-              disabled={isUpdating}
-            />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={formData.contactNo}
-              onChange={(e) => handleFormDataChange("contactNo", e)}
-              placeholder="+91 (555) 000-0000"
-              disabled={isUpdating}
-            />
-          </div>
-
-          <div className="space-y-2">
+          <div className="space-y-1.5 md:col-span-2">
             <Label htmlFor="website">Website</Label>
             <Input
               id="website"
@@ -152,24 +175,106 @@ export const StoreInfoComponent = () => {
             />
           </div>
 
-          <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="address">Store Address</Label>
+          {/* Section 2: Contact details */}
+          <Separator text="Contact details" className="col-span-2" />
+
+          <div className="space-y-1.5">
+            <Label htmlFor="email">Contact Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.contactEmail}
+              onChange={(e) => handleFormDataChange("contactEmail", e)}
+              placeholder="contact@business.com"
+              disabled={isUpdating}
+              icon={<Mail size={18} />}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="phone">Contact Number</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={formData.contactNo}
+              onChange={(e) => handleFormDataChange("contactNo", e)}
+              placeholder="+91 (555) 000-0000"
+              disabled={isUpdating}
+              icon={<Phone size={18} />}
+            />
+          </div>
+
+          {/* Section 3: Address & Location */}
+          <Separator text="Address & Location" className="col-span-2" />
+
+          <div className="space-y-1.5 md:col-span-2">
+            <Label htmlFor="address">Address</Label>
             <Input
               id="address"
-              value={formData.address}
-              onChange={(e) => handleFormDataChange("address", e)}
-              placeholder="123 Business Street"
+              value={formData.addressLine}
+              onChange={(e) => handleFormDataChange("addressLine", e)}
+              placeholder="e.g., Street address, P.O. box, company name"
               disabled={isUpdating}
             />
           </div>
 
-          <div className="space-y-2 md:col-span-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="city">City</Label>
+            <Input
+              id="city"
+              value={formData.city}
+              onChange={(e) => handleFormDataChange("city", e)}
+              placeholder="Enter city"
+              disabled={isUpdating}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="state">State / Province</Label>
+            <Input
+              id="state"
+              value={formData.state}
+              onChange={(e) => handleFormDataChange("state", e)}
+              placeholder="Enter state"
+              disabled={isUpdating}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="zipCode">ZIP / Postal Code</Label>
+            <Input
+              id="zipCode"
+              value={formData.zipCode}
+              onChange={(e) => handleFormDataChange("zipCode", e)}
+              placeholder="Enter zip code"
+              disabled={isUpdating}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="country" required>
+              Country
+            </Label>
+            <Select
+              id="country"
+              value={formData.country}
+              onChange={(val) => handleFormDataChange("country", val)}
+              options={countryOptions}
+              disabled={isUpdating}
+              dropdownClass="max-h-60"
+            />
+          </div>
+
+          {/* Section 4: Legal & Registration */}
+          <Separator text="Legal & Registration" className="col-span-2" />
+
+          <div className="space-y-1.5 md:col-span-2">
             <Label htmlFor="taxId">Tax ID / Business Registration Number</Label>
             <Input
               id="taxId"
               value={formData.registrationNumber}
               onChange={(e) => handleFormDataChange("registrationNumber", e)}
-              placeholder="12-3456789"
+              placeholder="e.g., 12-3456789"
               disabled={isUpdating}
             />
           </div>

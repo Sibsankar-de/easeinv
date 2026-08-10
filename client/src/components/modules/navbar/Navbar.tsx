@@ -28,6 +28,51 @@ import { UserDto } from "@/types/dto/userDto";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { StoreSelector } from "./StoreSelector";
+import { useDispatch } from "react-redux";
+import {
+  fetchNotificationsThunk,
+  selectNotificationState,
+} from "@/store/features/notificationSlice";
+import { NotificationPane } from "../notifications/NotificationPane";
+
+function NotificationBellButton() {
+  const dispatch = useDispatch<any>();
+  const { isAuthenticated } = useAuth();
+  const { unreadCount } = useSelector(selectNotificationState);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    // Initial fetch on mount / login (real-time WebSockets handle subsequent updates)
+    dispatch(fetchNotificationsThunk({ page: 1 }));
+  }, [isAuthenticated, dispatch]);
+
+  if (!isAuthenticated) return null;
+
+  return (
+    <>
+      <Button
+        variant="none"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={cn(
+          "relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg mx-1.5 sm:mx-2",
+          "transition-colors",
+        )}
+        tooltip="Notifications"
+        aria-label="Toggle notifications pane"
+      >
+        <Bell className="w-5 h-5 text-gray-700" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center border-2 border-white shadow-xs animate-in zoom-in-50 duration-200">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </Button>
+
+      <NotificationPane isOpen={isOpen} onClose={() => setIsOpen(false)} />
+    </>
+  );
+}
 
 const settingsItem: NavMenuType = {
   id: "settings",
@@ -280,20 +325,10 @@ export function HeaderNavbar({
           <div className="hidden lg:flex items-center">{actionButtons}</div>
         </div>
 
-        {/* Right side: Store selector + Actions + Profile */}
+        {/* Right side: Store selector + Notification Bell + Profile */}
         <div className="flex items-center gap-0">
           {showMobileMenu && <StoreSelector />}
-          <Button
-            variant="none"
-            className={cn(
-              "relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg mx-2 sm:mx-3",
-              "transition-colors",
-            )}
-          >
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-          </Button>
-
+          <NotificationBellButton />
           <ProfileButton user={user} />
         </div>
       </div>

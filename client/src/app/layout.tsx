@@ -4,6 +4,7 @@ import "./globals.css";
 import StoreProvider from "@/store/storeProvider";
 import { ToastProvider } from "./toastProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import { NavContextProvider } from "@/contexts/NavContext";
 import { AppLoadingLayout } from "@/components/layout/AppLoadingLayout";
 import { ResizeProvider } from "@/contexts/ResizeContext";
@@ -78,7 +79,9 @@ export default function RootLayout({
               <SidebarProvider>
                 <StoreProvider>
                   <AuthProvider>
-                    <AppLoadingLayout>{children}</AppLoadingLayout>
+                    <NotificationProvider>
+                      <AppLoadingLayout>{children}</AppLoadingLayout>
+                    </NotificationProvider>
                   </AuthProvider>
                 </StoreProvider>
               </SidebarProvider>
