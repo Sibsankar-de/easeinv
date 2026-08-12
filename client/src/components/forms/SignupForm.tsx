@@ -11,11 +11,16 @@ import { toast } from "@/utils/toast";
 import AuthContext from "@/contexts/AuthContext";
 import { GoogleIcon } from "../icons/GoogleIcon";
 import { Separator } from "../ui/Separator";
+import { useTurnstile } from "@/hooks/useTurnstile";
+import { TurnstileWidget } from "../ui/TurnstileWidget";
 
 export const SignupForm = () => {
   const { registerUser, loginWithGoogle } = useContext(AuthContext)!;
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const { turnstileToken, setTurnstileToken, resetTurnstile, turnstileRef } =
+    useTurnstile();
 
   const [formData, setFormData] = useState({
     userName: "",
@@ -51,9 +56,19 @@ export const SignupForm = () => {
       return;
     }
 
+    if (!turnstileToken) {
+      toast.error("Please complete the Turnstile security check");
+      return;
+    }
+
     setIsLoading(true);
-    await registerUser(formData);
-    setIsLoading(false);
+    try {
+      await registerUser({ ...formData, turnstileToken });
+    } catch {
+      resetTurnstile();
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   async function handleGoogleLogin() {
@@ -150,11 +165,19 @@ export const SignupForm = () => {
           </div>
         </div>
 
+        {/* Turnstile Widget */}
+        <TurnstileWidget
+          ref={turnstileRef}
+          onVerify={(token) => setTurnstileToken(token)}
+          onExpire={() => setTurnstileToken("")}
+          onError={() => setTurnstileToken("")}
+        />
+
         {/* Login Button */}
         <Button
           type="submit"
           className="w-full justify-center"
-          disabled={isLoading || isGoogleLoading}
+          disabled={isLoading || isGoogleLoading || !turnstileToken}
           loading={isLoading}
         >
           Sign Up

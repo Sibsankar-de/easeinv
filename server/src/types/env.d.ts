@@ -31,5 +31,6 @@ declare namespace NodeJS {
     SMTP_PASS: string;
     RABBITMQ_CONNECTION_URI: string;
     RABBITMQ_EMAIL_QUEUE: string;
+    CLOUDFLARE_TURNSTILE_SECRET: string;
   }
 }

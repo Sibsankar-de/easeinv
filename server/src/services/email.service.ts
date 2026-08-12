@@ -3,6 +3,7 @@ import { emailTemplates } from "../constants/emailTemplates";
 import { renderEmail } from "./emailRender.service";
 import { EmailJob } from "../types/email";
 import { clientPages } from "../constants/client.constant";
+import { env } from "../configs/env";
 
 export const getStoreUserInviteEmail = async (
   user: User,
@@ -158,6 +159,32 @@ export const getPasswordResetEmail = async (
   const emailJob: EmailJob = {
     to: user.email,
     subject: "Reset your password - EaseInv",
+    html: body,
+  };
+
+  return emailJob;
+};
+
+export const getCustomerQueryEmail = async (
+  name: string,
+  email: string,
+  message: string,
+): Promise<EmailJob> => {
+  const data = {
+    senderName: name,
+    senderEmail: email,
+    senderMessage: message,
+    submittedAt: new Date().toLocaleString(),
+  };
+
+  const body = await renderEmail({
+    templateName: emailTemplates.CUSTOMER_QUERY_EMAIL_TEMPLATE,
+    data,
+  });
+
+  const emailJob: EmailJob = {
+    to: env.SUPPORT_EMAIL,
+    subject: `[EaseInv Inquiry] New Message from ${name}`,
     html: body,
   };
 

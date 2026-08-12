@@ -7,6 +7,11 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Label";
 import Link from "next/link";
+import websiteStaticMetaData from "@/configs/websiteStaticMetaData";
+import { useTurnstile } from "@/hooks/useTurnstile";
+import { TurnstileWidget } from "@/components/ui/TurnstileWidget";
+import api from "@/configs/axios-config";
+import { toast } from "@/utils/toast";
 
 export default function ContactForm() {
   const [name, setName] = useState("");
@@ -15,19 +20,36 @@ export default function ContactForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { turnstileToken, setTurnstileToken, resetTurnstile, turnstileRef } =
+    useTurnstile();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !message) return;
-    
+
+    if (!turnstileToken) {
+      toast.error("Please complete the Turnstile security check");
+      return;
+    }
+
     setIsSubmitting(true);
-    // Simulate API request
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await api.post("/customer-queries", {
+        name,
+        email,
+        message,
+        turnstileToken,
+      });
+
       setIsSubmitted(true);
       setName("");
       setEmail("");
       setMessage("");
-    }, 1500);
+    } catch {
+      resetTurnstile();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -53,7 +75,14 @@ export default function ContactForm() {
               <div>
                 <h4 className="font-bold text-sm text-foreground">Email Support</h4>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Reach out directly at <a href="mailto:support@easeinv.com" className="text-primary hover:underline font-semibold">support@easeinv.com</a>.
+                  Reach out directly at{" "}
+                  <a
+                    href={`mailto:${websiteStaticMetaData.contactEmail}`}
+                    className="text-primary hover:underline font-semibold"
+                  >
+                    {websiteStaticMetaData.contactEmail}
+                  </a>
+                  .
                 </p>
               </div>
             </div>
@@ -103,7 +132,10 @@ export default function ContactForm() {
               </p>
               <button
                 type="button"
-                onClick={() => setIsSubmitted(false)}
+                onClick={() => {
+                  setIsSubmitted(false);
+                  resetTurnstile();
+                }}
                 className="text-xs font-semibold text-primary hover:underline pt-4"
               >
                 Send another message
@@ -130,7 +162,6 @@ export default function ContactForm() {
                     placeholder="Jane Doe"
                     value={name}
                     onChange={setName}
-                    className="bg-background text-sm border-border/40 focus:ring-primary/50 text-foreground"
                   />
                 </div>
 
@@ -145,7 +176,6 @@ export default function ContactForm() {
                     placeholder="jane@company.com"
                     value={email}
                     onChange={setEmail}
-                    className="bg-background text-sm border-border/40 focus:ring-primary/50 text-foreground"
                   />
                 </div>
 
@@ -159,10 +189,17 @@ export default function ContactForm() {
                     placeholder="Tell us about your store requirements..."
                     value={message}
                     onChange={setMessage}
-                    className="bg-background text-sm border-border/40 focus:ring-primary/50 min-h-36 text-foreground"
                   />
                 </div>
               </div>
+
+              {/* Turnstile Security Widget */}
+              <TurnstileWidget
+                ref={turnstileRef}
+                onVerify={(token) => setTurnstileToken(token)}
+                onExpire={() => setTurnstileToken("")}
+                onError={() => setTurnstileToken("")}
+              />
 
               <div className="pt-2">
                 <Button
@@ -170,6 +207,7 @@ export default function ContactForm() {
                   variant="primary"
                   loading={isSubmitting}
                   loadingMessage="Sending message..."
+                  disabled={isSubmitting || !turnstileToken}
                   className="w-full flex items-center justify-center gap-2 font-bold py-3 text-sm rounded-xl cursor-pointer"
                 >
                   Submit Inquiry

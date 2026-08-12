@@ -1,0 +1,12 @@
+model CustomerQuery {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  email     String
+  message   String   @db.Text
+  replied   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@map("customer_queries")
+}

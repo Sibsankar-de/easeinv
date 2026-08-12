@@ -10,11 +10,16 @@ import { toast } from "@/utils/toast";
 import { Separator } from "../ui/Separator";
 import { GoogleIcon } from "../icons/GoogleIcon";
 import { TextLink } from "../ui/TextLink";
+import { useTurnstile } from "@/hooks/useTurnstile";
+import { TurnstileWidget } from "../ui/TurnstileWidget";
 
 export const LoginForm = () => {
   const { loginUser, loginWithGoogle } = useContext(AuthContext)!;
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const { turnstileToken, setTurnstileToken, resetTurnstile, turnstileRef } =
+    useTurnstile();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -40,9 +45,19 @@ export const LoginForm = () => {
 
     if (isError) return;
 
+    if (!turnstileToken) {
+      toast.error("Please complete the Turnstile security check");
+      return;
+    }
+
     setIsLoading(true);
-    await loginUser(formData);
-    setIsLoading(false);
+    try {
+      await loginUser({ ...formData, turnstileToken });
+    } catch {
+      resetTurnstile();
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   async function handleGoogleLogin() {
@@ -61,7 +76,9 @@ export const LoginForm = () => {
       >
         {/* Email Field */}
         <div className="space-y-2">
-          <Label htmlFor="email">Email Address</Label>
+          <Label htmlFor="email" required>
+            Email Address
+          </Label>
           <div className="relative">
             <Input
               id="email"
@@ -78,7 +95,9 @@ export const LoginForm = () => {
 
         {/* Password Field */}
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password" required>
+            Password
+          </Label>
           <div className="relative">
             <Input
               id="password"
@@ -98,11 +117,19 @@ export const LoginForm = () => {
           <TextLink href={"/reset-password"}>Forgot password?</TextLink>
         </div>
 
+        {/* Turnstile Widget */}
+        <TurnstileWidget
+          ref={turnstileRef}
+          onVerify={(token) => setTurnstileToken(token)}
+          onExpire={() => setTurnstileToken("")}
+          onError={() => setTurnstileToken("")}
+        />
+
         {/* Login Button */}
         <Button
           type="submit"
           className="w-full justify-center"
-          disabled={isLoading || isGoogleLoading}
+          disabled={isLoading || isGoogleLoading || !turnstileToken}
           loading={isLoading}
         >
           Log In

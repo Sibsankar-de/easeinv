@@ -59,4 +59,8 @@ export const env = {
 
   EMAIL_VERIFICATION_TOKEN_EXPIRY: 10, // in hours
   PASSWORD_RESET_TOKEN_EXPIRY: 1, // in hours
+
+  CLOUDFLARE_TURNSTILE_SECRET: process.env.CLOUDFLARE_TURNSTILE_SECRET,
+
+  SUPPORT_EMAIL: "support@easeinv.app",
 } as const;

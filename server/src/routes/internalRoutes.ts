@@ -12,6 +12,7 @@ import galleryRoutes from "./galleryImage.routes";
 import apiKeyRoutes from "./apiKey.routes";
 import notificationRoutes from "./notification.routes";
 import webhookRoutes from "./webhook.routes";
+import customerQueryRoutes from "./customerQuery.routes";
 
 const router = Router();
 
@@ -28,5 +29,7 @@ router.use("/gallery", galleryRoutes);
 router.use("/api-keys", apiKeyRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/webhooks", webhookRoutes);
+router.use("/customer-queries", customerQueryRoutes);
+router.use("/contact", customerQueryRoutes);
 
 export default router;

@@ -4,11 +4,13 @@ export const createUserSchema = z.object({
   userName: z.string().trim().min(1, "Username is required"),
   email: z.email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  turnstileToken: z.string().min(1, "Turnstile verification token is required"),
 });
 
 export const loginUserSchema = z.object({
   email: z.email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
+  turnstileToken: z.string().min(1, "Turnstile verification token is required"),
 });
 
 export const updateUserSchema = z.object({

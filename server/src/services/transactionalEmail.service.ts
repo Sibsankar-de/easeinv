@@ -5,6 +5,7 @@ import {
   getStoreCreatedEmail,
   getWelcomeEmail,
   getPasswordResetEmail,
+  getCustomerQueryEmail,
 } from "./email.service";
 import { publishEmailJob } from "./emailPublisher.service";
 import { sendMail } from "../lib/mailer";
@@ -72,4 +73,17 @@ export const sendPasswordResetEmail = async (user: User, resetLink: string) => {
     return;
   }
   await sendMail(emailJob);
+};
+
+export const sendCustomerQueryEmail = async (
+  name: string,
+  email: string,
+  message: string,
+) => {
+  try {
+    const emailJob = await getCustomerQueryEmail(name, email, message);
+    await publishEmailJob(emailJob);
+  } catch (error) {
+    log.error("Email publishing failed " + error);
+  }
 };
