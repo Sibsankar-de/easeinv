@@ -103,6 +103,70 @@ export const getStoreCreatedEmail = async (
   return emailJob;
 };
 
+export interface BatchStockAlertProductItem {
+  productId: string;
+  productName: string;
+  productSku: string;
+  currentStock: number;
+  stockUnit: string;
+  threshold: number;
+  inventoryLink: string;
+}
+
+export const getBatchStockAlertEmail = async (
+  user: User,
+  store: Store,
+  products: BatchStockAlertProductItem[],
+): Promise<EmailJob> => {
+  const formattedProducts = products.map((p) => {
+    const isOutOfStock = p.currentStock <= 0;
+    return {
+      ...p,
+      isOutOfStock,
+      statusText: isOutOfStock ? "Out of Stock" : "Low Stock",
+      badgeClass: isOutOfStock ? "alert-badge" : "warning-badge",
+    };
+  });
+
+  const hasOutOfStock = formattedProducts.some((p) => p.isOutOfStock);
+  const allOutOfStock =
+    formattedProducts.length > 0 &&
+    formattedProducts.every((p) => p.isOutOfStock);
+  const totalAffectedCount = formattedProducts.length;
+  const itemLabel = totalAffectedCount === 1 ? "product" : "products";
+  const inventoryDashboardLink = clientPages.constructStorePageUrl(
+    store.id,
+    "/inventory",
+  );
+
+  const data = {
+    recipientName: user.userName,
+    storeName: store.name,
+    totalAffectedCount,
+    itemLabel,
+    hasOutOfStock,
+    products: formattedProducts,
+    inventoryDashboardLink,
+  };
+
+  const body = await renderEmail({
+    templateName: emailTemplates.STOCK_BATCH_ALERT_EMAIL_TEMPLATE,
+    data,
+  });
+
+  const subject = allOutOfStock
+    ? `🚨 Out of Stock Alert: ${totalAffectedCount} ${itemLabel} in ${store.name}`
+    : `⚠️ Stock Alert: ${totalAffectedCount} ${itemLabel} in ${store.name}`;
+
+  const emailJob: EmailJob = {
+    to: user.email,
+    subject,
+    html: body,
+  };
+
+  return emailJob;
+};
+
 export const getStockAlertEmail = async (
   user: User,
   store: Store,

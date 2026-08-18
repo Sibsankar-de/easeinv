@@ -123,14 +123,13 @@ export const createInvoice = async (
     // Side effects: inventory tracking + due amount + invoice summary
     await Promise.all([
       ...(storeSettings?.enableInventoryTracking
-        ? billData.billItems.map((item) =>
-            inventoryService.updateInventoryStock(
-              item.productId,
-              item.netQuantity,
+        ? [
+            inventoryService.processInvoiceStockUpdates(
+              billData.billItems,
               store,
               tx,
             ),
-          )
+          ]
         : []),
       customerService.increamentCustomerDue(
         customer,
@@ -234,7 +233,8 @@ export const updateInvoiceDueAmount = async (
     const newIsUnpaid = newDueAmount > 0 && newPaidAmount <= 0;
 
     const paidInvoicesDelta = (newIsPaid ? 1 : 0) - (oldIsPaid ? 1 : 0);
-    const partialInvoicesDelta = (newIsPartial ? 1 : 0) - (oldIsPartial ? 1 : 0);
+    const partialInvoicesDelta =
+      (newIsPartial ? 1 : 0) - (oldIsPartial ? 1 : 0);
     const unpaidInvoicesDelta = (newIsUnpaid ? 1 : 0) - (oldIsUnpaid ? 1 : 0);
 
     await tx.invoiceSummary.update({
@@ -486,4 +486,3 @@ export const exportInvoicesStream = async (
     await workbook.csv.write(res);
   }
 };
-

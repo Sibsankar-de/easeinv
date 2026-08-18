@@ -6,7 +6,7 @@ import { env } from "../configs/env";
 
 const log = createModuleLogger(import.meta.url);
 
-let pool_conf: PoolConfig = {
+const pool_conf: PoolConfig = {
   host: env.DB_HOST,
   port: env.DB_PORT,
   user: env.DB_USER,

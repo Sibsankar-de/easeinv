@@ -2,6 +2,8 @@ import { Product, Store, User } from "@prisma/client";
 import {
   getEmailVerificationEmail,
   getStockAlertEmail,
+  getBatchStockAlertEmail,
+  BatchStockAlertProductItem,
   getStoreCreatedEmail,
   getWelcomeEmail,
   getPasswordResetEmail,
@@ -58,6 +60,19 @@ export const sendStockAlertEmail = async (
       product,
       inventoryLink,
     );
+    await publishEmailJob(emailJob);
+  } catch (error) {
+    log.error("Email publishing failed " + error);
+  }
+};
+
+export const sendBatchStockAlertEmail = async (
+  user: User,
+  store: Store,
+  products: BatchStockAlertProductItem[],
+) => {
+  try {
+    const emailJob = await getBatchStockAlertEmail(user, store, products);
     await publishEmailJob(emailJob);
   } catch (error) {
     log.error("Email publishing failed " + error);

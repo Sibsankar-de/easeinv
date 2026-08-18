@@ -508,15 +508,15 @@ export const updateInventoryStock = async (
     });
   }
 
-  // send stock alert
+  // send in-app stock alert
   if (product.totalStock <= product.alertThreshold) {
-    sendInventoryStockAlert(product, store);
+    sendInventoryInAppStockAlert(product, store);
   }
 
   return product;
 };
 
-export const sendInventoryStockAlert = (
+export const sendInventoryInAppStockAlert = (
   product: Product & {
     user: User;
   },
@@ -530,6 +530,18 @@ export const sendInventoryStockAlert = (
   } else {
     transactionalNotification.notifyStockLow(product.user, product, store);
   }
+};
+
+export const sendInventoryStockAlert = (
+  product: Product & {
+    user: User;
+  },
+  store: Store,
+) => {
+  if (product.totalStock > product.alertThreshold) return;
+
+  // Send in-app notification
+  sendInventoryInAppStockAlert(product, store);
 
   // send email (only if emailAlert is enabled for this product)
   if (product.emailAlert) {
@@ -544,6 +556,87 @@ export const sendInventoryStockAlert = (
       inventoryLink,
     );
   }
+};
+
+export const sendBatchInventoryStockAlert = (
+  user: User,
+  store: Store,
+  products: Product[],
+) => {
+  const eligibleProducts = products.filter(
+    (p) => p.emailAlert && p.totalStock <= p.alertThreshold,
+  );
+
+  if (eligibleProducts.length === 0) return;
+
+  const items = eligibleProducts.map((product) => ({
+    productId: product.id,
+    productName: product.name,
+    productSku: product.sku,
+    currentStock: product.totalStock,
+    stockUnit: product.stockUnit,
+    threshold: product.alertThreshold,
+    inventoryLink: clientPages.constructProductEditPageUrl(
+      store.id,
+      product.id,
+    ),
+  }));
+
+  transactionalEmailService.sendBatchStockAlertEmail(user, store, items);
+};
+
+export const sendBatchStockAlertsForProducts = (
+  updatedProducts: Array<(Product & { user: User }) | null>,
+  store: Store,
+) => {
+  // Collect unique products eligible for stock email alert
+  const eligibleProductMap = new Map<string, Product & { user: User }>();
+
+  for (const product of updatedProducts) {
+    if (
+      product &&
+      product.emailAlert &&
+      product.totalStock <= product.alertThreshold
+    ) {
+      eligibleProductMap.set(product.id, product);
+    }
+  }
+
+  if (eligibleProductMap.size === 0) return;
+
+  // Group eligible products by recipient user
+  const userProductsMap = new Map<
+    string,
+    { user: User; products: Product[] }
+  >();
+
+  for (const product of eligibleProductMap.values()) {
+    const user = product.user;
+    if (!userProductsMap.has(user.id)) {
+      userProductsMap.set(user.id, { user, products: [] });
+    }
+    userProductsMap.get(user.id)!.products.push(product);
+  }
+
+  for (const { user, products } of userProductsMap.values()) {
+    sendBatchInventoryStockAlert(user, store, products);
+  }
+};
+
+export const processInvoiceStockUpdates = async (
+  billItems: Array<{ productId: string; netQuantity: number }>,
+  store: Store,
+  tx: TransactionClient,
+) => {
+  const updatedProducts = await Promise.all(
+    billItems.map((item) =>
+      updateInventoryStock(item.productId, item.netQuantity, store, tx),
+    ),
+  );
+
+  sendBatchStockAlertsForProducts(updatedProducts, store);
+
+  return updatedProducts;
 };
 
 export const exportProductsStream = async (
