@@ -36,8 +36,18 @@ function toDateStr(d: Date): string {
 }
 
 function parseDate(str: string): Date {
-  const [y, m, d] = str.split("-").map(Number);
-  return new Date(y, m - 1, d);
+  // Handle full ISO timestamps (e.g. "2036-08-20T00:00:00.000Z") and plain YYYY-MM-DD
+  if (!str) return new Date();
+  const isoDate = new Date(str);
+  if (!isNaN(isoDate.getTime())) {
+    // Use UTC parts to avoid timezone shift on date-only strings
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      const [y, m, d] = str.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    }
+    return isoDate;
+  }
+  return new Date();
 }
 
 function daysInMonth(year: number, month: number): number {
@@ -45,7 +55,9 @@ function daysInMonth(year: number, month: number): number {
 }
 
 function startDayOfMonth(year: number, month: number): number {
-  return new Date(year, month, 1).getDay();
+  const day = new Date(year, month, 1).getDay();
+  // Guard against NaN (invalid year/month) to prevent RangeError in Array()
+  return isNaN(day) ? 0 : day;
 }
 
 function formatDateDisplay(dateStr: string): string {
