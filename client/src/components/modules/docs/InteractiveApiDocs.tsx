@@ -1,386 +1,209 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/store/store";
-import { fetchStoreList } from "@/store/features/storeSlice";
-import { fetchApiKeyListThunk } from "@/store/features/apiKeySlice";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/utils/toast";
+import { useState, useEffect, useCallback } from "react";
 import { Play } from "lucide-react";
 import { cn } from "../../utils";
 import { ApiKeyInput } from "./ApiKeyInput";
-import { CollectionAccordion, Endpoint } from "./CollectionAccordion";
-import { QueryParamTable } from "./QueryParamTable";
+import { CollectionAccordion } from "./CollectionAccordion";
+import { QueryParamInputs } from "./QueryParamTable";
+import { PathParamInputs } from "./PathParamInputs";
+import { ScopeBadges } from "./ScopeBadges";
 import { RequestSnippet } from "./RequestSnippet";
-import { ResponseConsole } from "./ResponseConsole";
+import { ResponseConsole, ProxyResponse } from "./ResponseConsole";
 import { Textarea } from "@/components/ui/Textarea";
 import { Label } from "@/components/ui/Label";
 import { Button } from "@/components/ui/Button";
 import { SpreadText } from "@/components/ui/SpreadText";
+import { Badge } from "@/components/ui/Badge";
 import { useNavContext } from "@/contexts/NavContext";
+import { API_ENDPOINTS, ApiEndpoint } from "@/lib/api-explorer/endpoints";
 
-const TEST_KEY = "sk_easeinv_test_2026_ab89cf";
+const DUMMY_TEST_KEY = "sk_easeinv_test_dummy_key";
+const LS_KEY = "easeinv_docs_api_key";
 
-const endpoints: Endpoint[] = [
-  {
-    id: "list-products",
-    method: "GET",
-    path: "/v1/products",
-    name: "List Products",
-    description:
-      "Retrieve a paginated list of products in your store's inventory.",
-    collection: "products",
-    params: [
-      {
-        name: "limit",
-        type: "integer",
-        required: false,
-        desc: "Number of products to return (default 20).",
-      },
-      {
-        name: "page",
-        type: "integer",
-        required: false,
-        desc: "Page number to fetch.",
-      },
-    ],
-    mockResponse: () => ({
-      success: true,
-      data: [
-        {
-          id: "prod_01J0EAW",
-          name: "Wireless Ergonomic Mouse",
-          sku: "WRLS-MSE-01",
-          buyingPrice: 15.0,
-          sellingPrice: 29.99,
-          stock: 42,
-          currency: "USD",
-        },
-        {
-          id: "prod_02K1FBX",
-          name: "Bluetooth Mechanical Keyboard",
-          sku: "KB-MECH-87",
-          buyingPrice: 45.0,
-          sellingPrice: 89.99,
-          stock: 15,
-          currency: "USD",
-        },
-      ],
-    }),
-  },
-  {
-    id: "create-product",
-    method: "POST",
-    path: "/v1/products",
-    name: "Create Product",
-    description: "Add a new product item to your store catalog.",
-    collection: "products",
-    defaultBody: JSON.stringify(
-      {
-        name: "USB-C Laptop Docking Station",
-        sku: "DOCK-USBC-03",
-        buyingPrice: 60.0,
-        sellingPrice: 119.99,
-        stock: 30,
-      },
-      null,
-      2,
-    ),
-    mockResponse: (body) => {
-      try {
-        const parsed = JSON.parse(body || "{}");
-        return {
-          success: true,
-          message: "Product created successfully",
-          data: {
-            id: `prod_${Math.random().toString(36).substring(2, 9)}`,
-            name: parsed.name || "USB-C Laptop Docking Station",
-            sku: parsed.sku || "DOCK-USBC-03",
-            buyingPrice: parsed.buyingPrice || 60.0,
-            sellingPrice: parsed.sellingPrice || 119.99,
-            stock: parsed.stock || 30,
-            currency: "USD",
-            createdAt: new Date().toISOString(),
-          },
-        };
-      } catch (e) {
-        return { success: false, error: "Invalid JSON body provided" };
-      }
-    },
-  },
-  {
-    id: "list-customers",
-    method: "GET",
-    path: "/v1/customers",
-    name: "List Customers",
-    description:
-      "Retrieve customer list and aggregate statistics for your store.",
-    collection: "customers",
-    params: [
-      {
-        name: "searchTerm",
-        type: "string",
-        required: false,
-        desc: "Search customers by name, phone or email.",
-      },
-    ],
-    mockResponse: () => ({
-      success: true,
-      data: [
-        {
-          id: "cust_01J0EBF",
-          name: "John Doe",
-          email: "john.doe@example.com",
-          phone: "+1 (555) 019-2834",
-          invoicesCount: 3,
-          totalSpent: 149.97,
-        },
-        {
-          id: "cust_02K1GCA",
-          name: "Alice Smith",
-          email: "alice.smith@example.com",
-          phone: "+1 (555) 048-9921",
-          invoicesCount: 1,
-          totalSpent: 89.99,
-        },
-      ],
-    }),
-  },
-  {
-    id: "create-customer",
-    method: "POST",
-    path: "/v1/customers",
-    name: "Create Customer",
-    description:
-      "Create a new customer profile for tracking billing and transactions.",
-    collection: "customers",
-    defaultBody: JSON.stringify(
-      {
-        name: "Jane Smith",
-        email: "jane.smith@example.com",
-        phone: "+1 (555) 012-3456",
-      },
-      null,
-      2,
-    ),
-    mockResponse: (body) => {
-      try {
-        const parsed = JSON.parse(body || "{}");
-        return {
-          success: true,
-          message: "Customer created successfully",
-          data: {
-            id: `cust_${Math.random().toString(36).substring(2, 9)}`,
-            name: parsed.name || "Jane Smith",
-            email: parsed.email || "jane.smith@example.com",
-            phone: parsed.phone || "+1 (555) 012-3456",
-            invoicesCount: 0,
-            totalSpent: 0.0,
-            createdAt: new Date().toISOString(),
-          },
-        };
-      } catch (e) {
-        return { success: false, error: "Invalid JSON body provided" };
-      }
-    },
-  },
-  {
-    id: "list-invoices",
-    method: "GET",
-    path: "/v1/invoices",
-    name: "List Invoices",
-    description:
-      "Retrieve a history of generated billing invoices and transactions.",
-    collection: "invoices",
-    params: [
-      {
-        name: "limit",
-        type: "integer",
-        required: false,
-        desc: "Number of invoices to return (default 20).",
-      },
-      {
-        name: "page",
-        type: "integer",
-        required: false,
-        desc: "Page number to fetch.",
-      },
-    ],
-    mockResponse: () => ({
-      success: true,
-      data: [
-        {
-          invoiceId: "inv_2026_58291",
-          customerId: "cust_01J0EBF",
-          items: [{ productId: "prod_01J0EAW", quantity: 2 }],
-          subtotal: 59.98,
-          taxRate: 8.5,
-          taxAmount: 5.1,
-          discount: 0.0,
-          total: 65.08,
-          paymentMode: "UPI",
-          status: "PAID",
-          createdAt: "2026-06-25T14:30:00Z",
-        },
-      ],
-    }),
-  },
-  {
-    id: "create-invoice",
-    method: "POST",
-    path: "/v1/invoices",
-    name: "Create Invoice",
-    description: "Generate a new billing invoice transaction for a customer.",
-    collection: "invoices",
-    defaultBody: JSON.stringify(
-      {
-        customerId: "cust_01J0EBF",
-        items: [
-          { productId: "prod_01J0EAW", quantity: 2 },
-          { productId: "prod_02K1FBX", quantity: 1 },
-        ],
-        taxRate: 8.5,
-        discount: 5.0,
-        paymentMode: "UPI",
-      },
-      null,
-      2,
-    ),
-    mockResponse: (body) => {
-      try {
-        const parsed = JSON.parse(body || "{}");
-        const subtotal = 149.97;
-        const taxAmount = parseFloat(
-          ((subtotal * (parsed.taxRate || 8.5)) / 100).toFixed(2),
-        );
-        const total = parseFloat(
-          (subtotal + taxAmount - (parsed.discount || 5.0)).toFixed(2),
-        );
-        return {
-          success: true,
-          message: "Invoice generated successfully",
-          data: {
-            invoiceId: `inv_${new Date().getFullYear()}_${Math.floor(10000 + Math.random() * 90000)}`,
-            customerId: parsed.customerId || "cust_01J0EBF",
-            items: parsed.items || [],
-            subtotal,
-            taxRate: parsed.taxRate || 8.5,
-            taxAmount,
-            discount: parsed.discount || 5.0,
-            total,
-            paymentMode: parsed.paymentMode || "UPI",
-            status: "PAID",
-            createdAt: new Date().toISOString(),
-          },
-        };
-      } catch (e) {
-        return { success: false, error: "Invalid JSON body provided" };
-      }
-    },
-  },
-];
+const METHOD_COLORS: Record<string, string> = {
+  GET: "bg-emerald-50 text-emerald-700 border-emerald-100",
+  POST: "bg-blue-50 text-blue-700 border-blue-100",
+  PATCH: "bg-orange-50 text-orange-700 border-orange-100",
+  DELETE: "bg-rose-50 text-rose-700 border-rose-100",
+};
+
+/** Extract :paramName tokens from a path string */
+function extractPathParams(path: string): string[] {
+  return (path.match(/:([a-zA-Z]+)/g) || []).map((p) => p.slice(1));
+}
+
+/** Replace :param tokens in path with values from the map */
+function resolvePath(
+  path: string,
+  pathValues: Record<string, string>,
+): string {
+  let resolved = path;
+  for (const [key, val] of Object.entries(pathValues)) {
+    resolved = resolved.replace(`:${key}`, encodeURIComponent(val || `:${key}`));
+  }
+  return resolved;
+}
+
+/** Append non-empty query params to a path */
+function appendQuery(path: string, queryValues: Record<string, string>): string {
+  const qs = Object.entries(queryValues)
+    .filter(([, v]) => v.trim() !== "")
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join("&");
+  return qs ? `${path}?${qs}` : path;
+}
+
+function buildResolvedPath(
+  endpoint: ApiEndpoint,
+  pathValues: Record<string, string>,
+  queryValues: Record<string, string>,
+): string {
+  const withPath = resolvePath(endpoint.path, pathValues);
+  const queryParams = (endpoint.params || []).filter((p) => p.in === "query");
+  const queryOnlyValues: Record<string, string> = {};
+  for (const p of queryParams) {
+    if (queryValues[p.name]) queryOnlyValues[p.name] = queryValues[p.name];
+  }
+  return appendQuery(withPath, queryOnlyValues);
+}
+
+function initStateForEndpoint(endpoint: ApiEndpoint) {
+  const pathParamNames = extractPathParams(endpoint.path);
+  const pathValues: Record<string, string> = {};
+  for (const n of pathParamNames) pathValues[n] = "";
+
+  const queryValues: Record<string, string> = {};
+  for (const p of (endpoint.params || []).filter((p) => p.in === "query")) {
+    queryValues[p.name] = "";
+  }
+
+  const bodyStr = endpoint.defaultBody
+    ? JSON.stringify(endpoint.defaultBody, null, 2)
+    : "";
+
+  return { pathValues, queryValues, bodyStr };
+}
 
 export function InteractiveApiDocs() {
-  const dispatch = useDispatch<AppDispatch>();
-  const { isAuthenticated } = useAuth();
   const { navHeight } = useNavContext();
 
-  const [apiKey, setApiKey] = useState("");
-  const [activeEndpointId, setActiveEndpointId] = useState(endpoints[0].id);
-  const [reqBody, setReqBody] = useState("");
-  const [loadingPlayground, setLoadingPlayground] = useState(false);
-  const [playgroundResponse, setPlaygroundResponse] = useState<object | null>(
-    null,
-  );
-  const [responseStatus, setResponseStatus] = useState<string | null>(null);
-  const [responseTime, setResponseTime] = useState<number | null>(null);
+  const [apiKey, setApiKey] = useState(DUMMY_TEST_KEY);
+  const [activeEndpointId, setActiveEndpointId] = useState(API_ENDPOINTS[0].id);
+  const [pathValues, setPathValues] = useState<Record<string, string>>({});
+  const [queryValues, setQueryValues] = useState<Record<string, string>>({});
+  const [bodyStr, setBodyStr] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [response, setResponse] = useState<ProxyResponse | null>(null);
 
-  // Fetch store and API key list if authenticated
+  // Load saved API key from localStorage
   useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(fetchStoreList())
-        .unwrap()
-        .then((stores: Array<{ id: string }>) => {
-          if (stores && stores.length > 0) {
-            dispatch(fetchApiKeyListThunk(stores[0].id));
-          }
-        });
-    }
-  }, [isAuthenticated, dispatch]);
-
-  const activeEndpoint =
-    endpoints.find((e) => e.id === activeEndpointId) || endpoints[0];
-
-  const handleSelectEndpoint = (id: string) => {
-    setActiveEndpointId(id);
-    const selected = endpoints.find((e) => e.id === id) || endpoints[0];
-    setReqBody(selected.defaultBody || "");
-    setPlaygroundResponse(null);
-    setResponseStatus(null);
-    setResponseTime(null);
-  };
-
-  // Load key from localStorage on mount, defaulting to TEST_KEY
-  useEffect(() => {
-    const savedKey = localStorage.getItem("easeinv_docs_api_key");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setApiKey(savedKey || TEST_KEY);
+    const saved = localStorage.getItem(LS_KEY);
+    if (saved) setApiKey(saved);
   }, []);
 
-  const handleKeyChange = (newKey: string) => {
-    setApiKey(newKey);
-    localStorage.setItem("easeinv_docs_api_key", newKey);
+  const handleKeyChange = (key: string) => {
+    setApiKey(key);
+    localStorage.setItem(LS_KEY, key);
   };
 
   const handleResetKey = () => {
-    setApiKey(TEST_KEY);
-    localStorage.setItem("easeinv_docs_api_key", TEST_KEY);
-    toast.info("Reset to sandbox test key");
+    setApiKey(DUMMY_TEST_KEY);
+    localStorage.setItem(LS_KEY, DUMMY_TEST_KEY);
   };
 
-  const runPlayground = async () => {
-    setLoadingPlayground(true);
-    setPlaygroundResponse(null);
-    const start = performance.now();
+  const activeEndpoint =
+    API_ENDPOINTS.find((e) => e.id === activeEndpointId) ?? API_ENDPOINTS[0];
 
-    // simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 600));
+  const handleSelectEndpoint = useCallback((id: string) => {
+    const ep = API_ENDPOINTS.find((e) => e.id === id) ?? API_ENDPOINTS[0];
+    setActiveEndpointId(id);
+    const { pathValues, queryValues, bodyStr } = initStateForEndpoint(ep);
+    setPathValues(pathValues);
+    setQueryValues(queryValues);
+    setBodyStr(bodyStr);
+    setResponse(null);
+  }, []);
 
-    const res = activeEndpoint.mockResponse(reqBody);
-    const end = performance.now();
-
-    setResponseTime(Math.round(end - start));
-    setResponseStatus(
-      res.hasOwnProperty("error")
-        ? "400 Bad Request"
-        : activeEndpoint.method === "POST"
-          ? "201 Created"
-          : "200 OK",
+  // Init state for the first endpoint on mount
+  useEffect(() => {
+    const { pathValues, queryValues, bodyStr } = initStateForEndpoint(
+      API_ENDPOINTS[0],
     );
-    setPlaygroundResponse(res);
-    setLoadingPlayground(false);
+    setPathValues(pathValues);
+    setQueryValues(queryValues);
+    setBodyStr(bodyStr);
+  }, []);
+
+  const pathParams = (activeEndpoint.params || []).filter((p) => p.in === "path");
+  const queryParams = (activeEndpoint.params || []).filter((p) => p.in === "query");
+  const hasBody = ["POST", "PATCH"].includes(activeEndpoint.method);
+
+  const resolvedPath = buildResolvedPath(activeEndpoint, pathValues, queryValues);
+
+  const runPlayground = async () => {
+    setLoading(true);
+    setResponse(null);
+
+    let parsedBody: unknown = undefined;
+    if (hasBody && bodyStr.trim()) {
+      try {
+        parsedBody = JSON.parse(bodyStr);
+      } catch {
+        setResponse({
+          status: 400,
+          statusText: "Bad Request",
+          data: { message: "Invalid JSON in request body" },
+          elapsed: 0,
+        });
+        setLoading(false);
+        return;
+      }
+    }
+
+    try {
+      const res = await fetch("/api/docs-proxy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          method: activeEndpoint.method,
+          path: resolvedPath,
+          body: parsedBody,
+          apiKey,
+        }),
+      });
+      const data: ProxyResponse = await res.json();
+      setResponse(data);
+    } catch {
+      setResponse({
+        status: 500,
+        statusText: "Network Error",
+        data: { message: "Could not reach the proxy. Is the server running?" },
+        elapsed: 0,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="space-y-6">
-      {/* 1. Top Section: API Key Input */}
-      <div className="space-y-2">
-        <ApiKeyInput
-          apiKey={apiKey}
-          onKeyChange={handleKeyChange}
-          onReset={handleResetKey}
-        />
-      </div>
+    <div className="space-y-5">
+      {/* API Key Input */}
+      <ApiKeyInput
+        apiKey={apiKey}
+        onKeyChange={handleKeyChange}
+        onReset={handleResetKey}
+      />
 
-      {/* 2. Main Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: API Directory Accordion & Endpoint Info */}
+      {/* Main Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Left: Collection Accordion */}
         <div
-          className="lg:col-span-4 sticky pr-1.5 space-y-6"
+          className="lg:col-span-4 sticky pr-1.5"
           style={{
-            top: `${navHeight + 5}px`,
-            maxHeight: `calc(100vh-${navHeight + 5}px)`,
+            top: `${navHeight + 8}px`,
+            maxHeight: `calc(100vh - ${navHeight + 24}px)`,
+            overflowY: "auto",
           }}
         >
           <div className="space-y-2">
@@ -392,33 +215,31 @@ export function InteractiveApiDocs() {
               API Collections
             </SpreadText>
             <CollectionAccordion
-              endpoints={endpoints}
+              endpoints={API_ENDPOINTS}
               activeEndpointId={activeEndpointId}
               onSelectEndpoint={handleSelectEndpoint}
             />
           </div>
         </div>
 
-        {/* Right Column: Parameters, Sandbox Try out, Request Snippet & Response Block */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Endpoint Details */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2.5">
+        {/* Right: Endpoint details + Playground */}
+        <div className="lg:col-span-8 space-y-5">
+          {/* Endpoint Header */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <span
                 className={cn(
                   "text-[10px] font-extrabold px-2 py-0.5 rounded font-mono border",
-                  activeEndpoint.method === "GET"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                    : "bg-blue-50 text-blue-700 border-blue-100",
+                  METHOD_COLORS[activeEndpoint.method],
                 )}
               >
                 {activeEndpoint.method}
               </span>
-              <h3 className="text-xs font-bold font-mono text-slate-600">
-                https://api.easeinv.com{activeEndpoint.path}
-              </h3>
+              <code className="text-xs font-bold font-mono text-slate-600">
+                {activeEndpoint.path}
+              </code>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <h2 className="text-lg font-bold text-slate-900">
                 {activeEndpoint.name}
               </h2>
@@ -428,19 +249,44 @@ export function InteractiveApiDocs() {
             </div>
           </div>
 
-          {/* Request Config Card (Query Params, Body, Try it Out Button) - Now at the Top */}
-          <div className="bg-white border border-border rounded-2xl p-5 shadow-sm space-y-5">
+          {/* Scopes */}
+          <ScopeBadges scopes={activeEndpoint.scopes} />
+
+          {/* Request Inputs Card */}
+          <div className="bg-white border border-border rounded-2xl p-5 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <SpreadText className="text-xs text-slate-800">
                 Request Inputs
               </SpreadText>
+              {activeEndpoint.method !== "GET" && (
+                <Badge variant="info" className="text-[10px]">
+                  {activeEndpoint.method}
+                </Badge>
+              )}
             </div>
 
-            {/* Query parameters table */}
-            <QueryParamTable params={activeEndpoint.params} />
+            {/* Path params */}
+            {pathParams.length > 0 && (
+              <PathParamInputs
+                params={pathParams}
+                values={pathValues}
+                onChange={(name, val) =>
+                  setPathValues((prev) => ({ ...prev, [name]: val }))
+                }
+              />
+            )}
 
-            {/* Editable Request Body for POST */}
-            {activeEndpoint.method === "POST" && (
+            {/* Query params */}
+            <QueryParamInputs
+              params={queryParams}
+              values={queryValues}
+              onChange={(name, val) =>
+                setQueryValues((prev) => ({ ...prev, [name]: val }))
+              }
+            />
+
+            {/* Request body */}
+            {hasBody && (
               <div className="space-y-2">
                 <Label>
                   <SpreadText className="text-xs text-slate-800">
@@ -448,10 +294,11 @@ export function InteractiveApiDocs() {
                   </SpreadText>
                 </Label>
                 <Textarea
-                  value={reqBody}
-                  onChange={(e) => setReqBody(e)}
-                  rows={6}
+                  value={bodyStr}
+                  onChange={setBodyStr}
+                  rows={8}
                   className="font-mono text-xs"
+                  placeholder="{}"
                 />
               </div>
             )}
@@ -459,8 +306,8 @@ export function InteractiveApiDocs() {
             <Button
               className="w-full justify-center gap-2"
               loadingMessage="Sending request..."
-              loading={loadingPlayground}
-              disabled={loadingPlayground}
+              loading={loading}
+              disabled={loading}
               onClick={runPlayground}
             >
               <Play className="w-3.5 h-3.5 fill-current" />
@@ -468,16 +315,16 @@ export function InteractiveApiDocs() {
             </Button>
           </div>
 
-          {/* Request Snippet Block */}
-          <RequestSnippet endpoint={activeEndpoint} apiKey={apiKey} />
-
-          {/* Response Block */}
-          <ResponseConsole
-            loading={loadingPlayground}
-            response={playgroundResponse}
-            status={responseStatus}
-            time={responseTime}
+          {/* Code Snippet */}
+          <RequestSnippet
+            endpoint={activeEndpoint}
+            apiKey={apiKey}
+            resolvedPath={resolvedPath}
+            bodyStr={bodyStr}
           />
+
+          {/* Response */}
+          <ResponseConsole loading={loading} response={response} />
         </div>
       </div>
     </div>

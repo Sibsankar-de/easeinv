@@ -9,6 +9,7 @@ import { NavContextProvider } from "@/contexts/NavContext";
 import { AppLoadingLayout } from "@/components/layout/AppLoadingLayout";
 import { ResizeProvider } from "@/contexts/ResizeContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
+import { NavigationProgressBar } from "@/components/ui/NavigationProgressBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -73,6 +74,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <NavigationProgressBar />
         <ResizeProvider>
           <ToastProvider>
             <NavContextProvider>

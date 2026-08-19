@@ -99,7 +99,9 @@ export function DocsSidebar() {
       >
         {!isCollapsed ? (
           <>
-            <AppLogoFull size={115} />
+            <Link href="/" className="inline-flex items-center">
+              <AppLogoFull size={115} />
+            </Link>
             <Button
               variant="none"
               onClick={toggleCollapsed}

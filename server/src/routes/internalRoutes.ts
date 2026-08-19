@@ -1,4 +1,6 @@
 import { Router } from "express";
+import cors from "cors";
+import { env } from "../configs/env";
 import userRoutes from "./user.routes";
 import storeRoutes from "./store.routes";
 import productRoutes from "./product.routes";
@@ -15,6 +17,14 @@ import webhookRoutes from "./webhook.routes";
 import customerQueryRoutes from "./customerQuery.routes";
 
 const router = Router();
+
+const origins = env.CORS_ORIGIN.split(",");
+router.use(
+  cors({
+    origin: origins,
+    credentials: true,
+  }),
+);
 
 router.use("/users", userRoutes);
 router.use("/stores", storeRoutes);

@@ -18,5 +18,6 @@ declare namespace NodeJS {
     GOOGLE_CLIENT_SECRET: string;
     ACCESS_TOKEN_COOKIE_EXPIRY: number;
     REFRESH_TOKEN_COOKIE_EXPIRY: number;
+    DOCS_API_URI?: string;
   }
 }

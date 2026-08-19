@@ -16,6 +16,12 @@ export const productScope = {
   PRODUCT_DELETE: "product:delete",
 };
 
+export const categoryScope = {
+  CATEGORY_READ: "category:read",
+  CATEGORY_WRITE: "category:write",
+  CATEGORY_DELETE: "category:delete",
+};
+
 export const customerScope = {
   CUSTOMER_READ: "customer:read",
   CUSTOMER_WRITE: "customer:write",
@@ -29,9 +35,11 @@ export const apiKeyScope = {
   ADMIN: "admin",
   INVOICE_ALL: "invoice:all",
   PRODUCT_ALL: "product:all",
+  CATEGORY_ALL: "category:all",
   CUSTOMER_ALL: "customer:all",
   ...invoiceScope,
   ...productScope,
+  ...categoryScope,
   ...customerScope,
 };
 

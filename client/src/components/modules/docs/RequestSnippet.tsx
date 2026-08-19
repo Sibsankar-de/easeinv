@@ -1,93 +1,89 @@
 "use client";
 
 import { useState } from "react";
-import { Terminal, Copy, Check } from "lucide-react";
+import { Terminal } from "lucide-react";
 import { cn } from "../../utils";
 import { CodeHighlight } from "./CodeHighlight";
-import { Endpoint } from "./CollectionAccordion";
+import { CopyButton } from "./CopyButton";
+import { ApiEndpoint } from "@/lib/api-explorer/endpoints";
 import { SpreadText } from "../../ui/SpreadText";
 
 type CodeLang = "curl" | "javascript" | "python";
 
-const TEST_KEY = "sk_easeinv_test_2026_ab89cf";
-
 interface RequestSnippetProps {
-  endpoint: Endpoint;
+  endpoint: ApiEndpoint;
   apiKey: string;
+  resolvedPath: string; // path with :params already substituted + query string appended
+  bodyStr: string;      // current request body JSON string
 }
 
-const getCodeSnippet = (endpoint: Endpoint, lang: CodeLang, key: string) => {
-  const keyToUse = key || TEST_KEY;
-  const headers = `-H "Authorization: Bearer ${keyToUse}" \\\n  -H "Content-Type: application/json"`;
+function buildSnippet(
+  endpoint: ApiEndpoint,
+  lang: CodeLang,
+  apiKey: string,
+  resolvedPath: string,
+  bodyStr: string,
+): string {
+  const BASE = "https://api.easeinv.com";
+  const url = `${BASE}${resolvedPath}`;
+  const hasBody = ["POST", "PATCH"].includes(endpoint.method);
+  const bodyFormatted = bodyStr || "{}";
 
   if (lang === "curl") {
-    if (endpoint.method === "GET") {
-      return `curl -X GET https://api.easeinv.com${endpoint.path} \\\n  -H "Authorization: Bearer ${keyToUse}"`;
-    }
-    return `curl -X POST https://api.easeinv.com${endpoint.path} \\\n  ${headers} \\\n  -d '${endpoint.defaultBody?.replace(/\n/g, "\n  ")}'`;
+    const methodFlag =
+      endpoint.method === "GET" ? "" : `-X ${endpoint.method} `;
+    const headerLine = `-H "Authorization: Bearer ${apiKey}"`;
+    const contentHeader = hasBody ? ` \\\n  -H "Content-Type: application/json"` : "";
+    const bodyLine = hasBody
+      ? ` \\\n  -d '${bodyFormatted.replace(/\n/g, "\n  ")}'`
+      : "";
+    return `curl ${methodFlag}"${url}" \\\n  ${headerLine}${contentHeader}${bodyLine}`;
   }
 
   if (lang === "javascript") {
-    if (endpoint.method === "GET") {
-      return `fetch('https://api.easeinv.com${endpoint.path}', {
+    const methodProp =
+      endpoint.method === "GET" ? "" : `\n  method: '${endpoint.method}',`;
+    const bodyProp = hasBody
+      ? `\n  body: JSON.stringify(${bodyFormatted.replace(/\n/g, "\n  ")}),`
+      : "";
+    const contentTypeProp = hasBody
+      ? `\n    'Content-Type': 'application/json',`
+      : "";
+    return `fetch('${url}', {${methodProp}
   headers: {
-    'Authorization': 'Bearer ${keyToUse}'
-  }
-})
-  .then(res => res.json())
-  .then(data => console.log(data));`;
-    }
-    return `fetch('https://api.easeinv.com${endpoint.path}', {
-  method: 'POST',
-  headers: {
-    'Authorization': 'Bearer ${keyToUse}',
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify(${endpoint.defaultBody?.replace(/\n/g, "\n  ")})
+    'Authorization': 'Bearer ${apiKey}',${contentTypeProp}
+  },${bodyProp}
 })
   .then(res => res.json())
   .then(data => console.log(data));`;
   }
 
   if (lang === "python") {
-    if (endpoint.method === "GET") {
-      return `import requests
-
-url = "https://api.easeinv.com${endpoint.path}"
-headers = {
-    "Authorization": "Bearer ${keyToUse}"
-}
-
-response = requests.get(url, headers=headers)
-print(response.json())`;
-    }
+    const method = endpoint.method.toLowerCase();
+    const bodyArg = hasBody ? `, json=${bodyFormatted}` : "";
     return `import requests
 
-url = "https://api.easeinv.com${endpoint.path}"
+url = "${url}"
 headers = {
-    "Authorization": "Bearer ${keyToUse}",
-    "Content-Type": "application/json"
+    "Authorization": "Bearer ${apiKey}",${hasBody ? '\n    "Content-Type": "application/json",' : ""}
 }
-payload = ${endpoint.defaultBody}
 
-response = requests.post(url, headers=headers, json=payload)
+response = requests.${method}(url, headers=headers${bodyArg})
 print(response.json())`;
   }
 
   return "";
-};
+}
 
-export function RequestSnippet({ endpoint, apiKey }: RequestSnippetProps) {
+export function RequestSnippet({
+  endpoint,
+  apiKey,
+  resolvedPath,
+  bodyStr,
+}: RequestSnippetProps) {
   const [codeLang, setCodeLang] = useState<CodeLang>("curl");
-  const [isCopied, setIsCopied] = useState(false);
 
-  const codeSnippet = getCodeSnippet(endpoint, codeLang, apiKey);
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
-  };
+  const codeSnippet = buildSnippet(endpoint, codeLang, apiKey, resolvedPath, bodyStr);
 
   return (
     <div className="rounded-xl border border-slate-800 bg-[#0f172a] overflow-hidden shadow-sm">
@@ -120,20 +116,7 @@ export function RequestSnippet({ endpoint, apiKey }: RequestSnippetProps) {
               </button>
             ))}
           </div>
-          <button
-            onClick={() => copyToClipboard(codeSnippet)}
-            className={cn(
-              "text-slate-400 p-1.5 bg-slate-900 border border-slate-800 rounded-lg",
-              "hover:text-slate-200 transition-all cursor-pointer",
-            )}
-            title="Copy code"
-          >
-            {isCopied ? (
-              <Check className="w-3.5 h-3.5 text-emerald-500" />
-            ) : (
-              <Copy className="w-3.5 h-3.5" />
-            )}
-          </button>
+          <CopyButton text={codeSnippet} />
         </div>
       </div>
 

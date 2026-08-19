@@ -1,4 +1,5 @@
 import {
+  categoryScope,
   customerScope,
   invoiceScope,
   productScope,
@@ -23,6 +24,15 @@ export const apiKeyScopeData = [
       { key: productScope.PRODUCT_READ, isClientSideAllowed: true },
       { key: productScope.PRODUCT_WRITE, isClientSideAllowed: false },
       { key: productScope.PRODUCT_DELETE, isClientSideAllowed: false },
+    ],
+  },
+  {
+    key: "category:all",
+    value: "Category scopes",
+    subScopes: [
+      { key: categoryScope.CATEGORY_READ, isClientSideAllowed: true },
+      { key: categoryScope.CATEGORY_WRITE, isClientSideAllowed: false },
+      { key: categoryScope.CATEGORY_DELETE, isClientSideAllowed: false },
     ],
   },
   {
