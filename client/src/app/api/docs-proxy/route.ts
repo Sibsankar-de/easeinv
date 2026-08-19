@@ -4,14 +4,7 @@ export async function POST(req: NextRequest) {
   try {
     const { method, path, body, apiKey } = await req.json();
 
-    // Build the server base URL (strips /backend suffix used by the internal axios client)
-    const rawBase =
-      process.env.NEXT_PUBLIC_API_URI || "http://localhost:4000/backend";
-    const serverBase = rawBase
-      .replace(/\/+$/, "")
-      .replace(/\/backend$/, "");
-
-    const url = `${serverBase}${path}`;
+    const url = `${process.env.DOCS_API_URI}${path}`;
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -43,8 +36,7 @@ export async function POST(req: NextRequest) {
       elapsed,
     });
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "Proxy request failed";
+    const message = err instanceof Error ? err.message : "Proxy request failed";
     return NextResponse.json(
       { status: 500, statusText: "Proxy Error", data: { message }, elapsed: 0 },
       { status: 500 },

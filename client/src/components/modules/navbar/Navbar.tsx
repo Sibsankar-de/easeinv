@@ -10,6 +10,7 @@ import {
   PanelLeft,
 } from "lucide-react";
 import { NavMenuType } from "@/types/NavMenuTypes";
+import Link from "next/link";
 import { useSelector } from "react-redux";
 import { selectUserSate } from "@/store/features/userSlice";
 import { Avatar } from "../../ui/Avatar";
@@ -157,7 +158,9 @@ export function Sidebar() {
         >
           {!isCollapsed ? (
             <>
-              <AppLogoFull size={115} />
+              <Link href="/profile" className="inline-flex items-center">
+                <AppLogoFull size={115} />
+              </Link>
               <Button
                 variant="none"
                 onClick={toggleCollapsed}
@@ -210,7 +213,9 @@ export function Sidebar() {
       <MobileDrawer isOpen={isMobileOpen} onClose={closeMobile}>
         {/* Mobile Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-          <AppLogoFull size={110} />
+          <Link href="/profile" onClick={closeMobile} className="inline-flex items-center">
+            <AppLogoFull size={110} />
+          </Link>
           <Button
             variant="none"
             onClick={closeMobile}
@@ -246,9 +251,11 @@ export function Sidebar() {
 export function HeaderNavbar({
   showLogo = true,
   showMobileMenu = false,
+  logoHref = "/profile",
 }: {
   showLogo?: boolean;
   showMobileMenu?: boolean;
+  logoHref?: string;
 }) {
   const { data: user } = useSelector(selectUserSate);
   const router = useRouter();
@@ -290,8 +297,11 @@ export function HeaderNavbar({
             </Button>
           )}
 
-          {showLogo &&
-            (md ? <AppLogoFull size={120} /> : <AppLogo size={35} />)}
+          {showLogo && (
+            <Link href={logoHref} className="inline-flex items-center">
+              {md ? <AppLogoFull size={120} /> : <AppLogo size={35} />}
+            </Link>
+          )}
         </div>
 
         {/* Center: Search & Navigation buttons */}
