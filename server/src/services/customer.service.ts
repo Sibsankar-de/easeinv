@@ -17,6 +17,7 @@ import { Customer, Prisma } from "@prisma/client";
 
 import { InvoiceCustomerDto } from "../schemas/invoice.schema";
 import { toCustomerDto, toCustomerSummaryDto } from "../dto/customer.dto";
+import { publishElasticsearchJob } from "./elasticsearchPublisher.service";
 
 export const getCustomers = async (params: {
   storeId: string;
@@ -127,6 +128,13 @@ export const deleteCustomer = async (storeId: string, customerId: string) => {
       data: { totalCustomers: { decrement: 1 } },
     });
 
+    void publishElasticsearchJob({
+      action: "delete",
+      entity: "customer",
+      id: customerId,
+      storeId,
+    });
+
     return null;
   });
 };
@@ -155,6 +163,14 @@ export const updateCustomer = async (
     include: { invoices: true },
   });
 
+  void publishElasticsearchJob({
+    action: "index",
+    entity: "customer",
+    id: customerId,
+    storeId,
+    data: buildCustomerIndexDocument(updatedCustomer),
+  });
+
   const invoices = updatedCustomer.invoices;
   const dueCount = invoices.filter((inv) => inv.dueAmount > 0).length;
   return toCustomerDto(customer, invoices.length, dueCount);
@@ -174,6 +190,15 @@ export const createCustomer = async (
       where: { storeId },
       data: { totalCustomers: { increment: 1 } },
     });
+
+    void publishElasticsearchJob({
+      action: "index",
+      entity: "customer",
+      id: newCust.id,
+      storeId,
+      data: buildCustomerIndexDocument(newCust),
+    });
+
     return toCustomerDto(newCust);
   });
 
@@ -314,3 +339,13 @@ export const exportCustomersStream = async (
     await workbook.csv.write(res);
   }
 };
+
+export const buildCustomerIndexDocument = (
+  customer: Customer,
+): Record<string, unknown> => ({
+  id: customer.id,
+  name: customer.name,
+  phoneNumber: customer.phoneNumber,
+  email: customer.email,
+  address: customer.address,
+});

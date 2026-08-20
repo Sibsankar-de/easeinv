@@ -5,6 +5,8 @@ import { connectDB } from "./lib/prisma";
 import { initSocketServer } from "./lib/socket";
 import { startWorker } from "./services/emailPublisher.service";
 import { startNotificationWorker } from "./services/notificationPublisher.service";
+import { startElasticsearchWorker } from "./services/elasticsearchWorker.service";
+import { connectElasticsearch } from "./lib/elasticsearch";
 import { startCronJobs } from "./cron/index";
 import { createModuleLogger } from "./utils/logger";
 
@@ -29,6 +31,19 @@ connectDB().then(() => {
   startNotificationWorker().catch((err) => {
     log.error("Failed to start notification worker: " + err);
   });
+
+  // connect to Elasticsearch and start the indexing worker
+  connectElasticsearch()
+    .then(() => {
+      startElasticsearchWorker().catch((err) => {
+        log.error("Failed to start Elasticsearch worker: " + err);
+      });
+    })
+    .catch((err) => {
+      log.warn(
+        "Elasticsearch unavailable at startup, search will fall back to Prisma: " + err,
+      );
+    });
 
   // start cron jobs
   startCronJobs();

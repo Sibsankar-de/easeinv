@@ -15,6 +15,7 @@ import apiKeyRoutes from "./apiKey.routes";
 import notificationRoutes from "./notification.routes";
 import webhookRoutes from "./webhook.routes";
 import customerQueryRoutes from "./customerQuery.routes";
+import adminApiRoutes from "./adminApi.routes";
 
 const router = Router();
 
@@ -41,5 +42,6 @@ router.use("/notifications", notificationRoutes);
 router.use("/webhooks", webhookRoutes);
 router.use("/customer-queries", customerQueryRoutes);
 router.use("/contact", customerQueryRoutes);
+router.use("/admin", adminApiRoutes);
 
 export default router;

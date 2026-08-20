@@ -12,7 +12,11 @@ import {
   ProductExtraData,
 } from "../schemas/product.schema";
 
-import { toProductDto, toProductSummaryDto } from "../dto/product.dto";
+import {
+  toProductDto,
+  toProductSummaryDto,
+  ProductResponseDto,
+} from "../dto/product.dto";
 import {
   prismaTransaction,
   TransactionClient,
@@ -29,6 +33,7 @@ import * as transactionalEmailService from "./transactionalEmail.service";
 import * as transactionalNotification from "./transactionalNotification.service";
 import { clientPages } from "../constants/client.constant";
 import { productExtraDataConverter } from "../converters/product.converter";
+import { publishElasticsearchJob } from "./elasticsearchPublisher.service";
 
 export const getProducts = async (params: {
   storeId: string;
@@ -141,7 +146,17 @@ export const createProduct = async (
       await addOrRemoveProductImages(product.id, imageIds, tx);
     }
 
-    return await getPopulatedProductById(product.id, tx);
+    const populated = await getPopulatedProductById(product.id, tx);
+
+    void publishElasticsearchJob({
+      action: "index",
+      entity: "product",
+      id: product.id,
+      storeId,
+      data: buildProductIndexDocument(populated),
+    });
+
+    return populated;
   });
 
 export const updateProduct = async (
@@ -223,7 +238,17 @@ export const updateProduct = async (
       await addOrRemoveProductImages(productId, imageIds, tx);
     }
 
-    return await getPopulatedProductById(productId, tx);
+    const populated = await getPopulatedProductById(productId, tx);
+
+    void publishElasticsearchJob({
+      action: "index",
+      entity: "product",
+      id: productId,
+      storeId: populated.storeId,
+      data: buildProductIndexDocument(populated),
+    });
+
+    return populated;
   });
 
 export const getProductById = async (productId: string) => {
@@ -231,8 +256,20 @@ export const getProductById = async (productId: string) => {
 };
 
 export const deleteProduct = async (productId: string) => {
+  const product = await prisma.product.findFirst({ where: { id: productId } });
+
   // Related fields are cascade via relation
   await prisma.product.delete({ where: { id: productId } });
+
+  if (product) {
+    void publishElasticsearchJob({
+      action: "delete",
+      entity: "product",
+      id: productId,
+      storeId: product.storeId,
+    });
+  }
+
   return { productId };
 };
 
@@ -648,7 +685,6 @@ export const exportProductsStream = async (
 
   const where: Prisma.ProductWhereInput = { storeId };
 
-
   if (query) {
     where.OR = [
       { name: { contains: query, mode: "insensitive" } },
@@ -700,9 +736,7 @@ export const exportProductsStream = async (
   worksheet.getRow(1).font = { bold: true };
 
   products.forEach((p) => {
-    const categoryNames = p.categories
-      .map((c) => c.category.name)
-      .join(", ");
+    const categoryNames = p.categories.map((c) => c.category.name).join(", ");
 
     worksheet.addRow({
       id: p.id,
@@ -744,3 +778,12 @@ export const exportProductsStream = async (
   }
 };
 
+export const buildProductIndexDocument = (
+  product: ProductResponseDto,
+): Record<string, unknown> => ({
+  id: product.id,
+  name: product.name,
+  sku: product.sku,
+  gtin: product.gtin,
+  description: product.description,
+});
