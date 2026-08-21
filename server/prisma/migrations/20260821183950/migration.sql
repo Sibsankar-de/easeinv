@@ -1,3 +1,6 @@
+-- AlterTable
+ALTER TABLE "stores" ADD COLUMN     "deletedAt" TIMESTAMP(3);
+
 -- CreateTable
 CREATE TABLE "auth_tokens" (
     "id" UUID NOT NULL,
