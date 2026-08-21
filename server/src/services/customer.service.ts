@@ -206,15 +206,19 @@ export const getOrCreateInvoiceCustomer = async (
   storeId: string,
   customer: InvoiceCustomerDto,
   tx: TransactionClient,
-) => {
+): Promise<{ customer: Customer; isNew: boolean }> => {
   const customerId = customer.id;
-  let newCustomer;
+  let resolvedCustomer: Customer | null = null;
+  let isNew = false;
+
   if (customerId) {
-    newCustomer = await tx.customer.findFirst({ where: { id: customerId } });
+    resolvedCustomer = await tx.customer.findFirst({
+      where: { id: customerId },
+    });
   }
 
-  if (!newCustomer) {
-    newCustomer = await tx.customer.create({
+  if (!resolvedCustomer) {
+    resolvedCustomer = await tx.customer.create({
       data: {
         storeId,
         name: customer.name,
@@ -223,21 +227,17 @@ export const getOrCreateInvoiceCustomer = async (
         email: customer.email,
       },
     });
-
-    await tx.invoiceSummary.update({
-      where: { storeId },
-      data: { totalCustomers: { increment: 1 } },
-    });
+    isNew = true;
   }
 
-  if (!newCustomer) {
+  if (!resolvedCustomer) {
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,
       "Failed to create customer.",
     );
   }
 
-  return newCustomer;
+  return { customer: resolvedCustomer, isNew };
 };
 
 export const increamentCustomerDue = async (
