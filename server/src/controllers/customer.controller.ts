@@ -9,6 +9,7 @@ import {
   customerExportQuerySchema,
   updateCustomerSchema,
 } from "../schemas/customer.schema";
+import { searchCustomersInElasticsearch } from "../services/elasticsearch.service";
 
 
 export const getCustomers = asyncHandler(
@@ -39,17 +40,13 @@ export const searchCustomers = asyncHandler(
     const query = (req.query.query as string) || "";
     const page = parseInt((req.query.page as string) || "1");
     const limit = parseInt((req.query.limit as string) || "10");
-    const sortBy = (req.query.sortBy as string) || "createdAt";
-    const sortOrder = req.query.sortOrder === "desc" ? "desc" : "asc";
 
-    const results = await customerService.searchCustomers({
+    const results = await searchCustomersInElasticsearch(
       storeId,
       query,
       page,
       limit,
-      sortBy,
-      sortOrder,
-    });
+    );
 
     return res
       .status(StatusCodes.OK)

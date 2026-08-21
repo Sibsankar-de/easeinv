@@ -9,6 +9,7 @@ import {
   productExportQuerySchema,
   rearrangeImagesSchema,
 } from "../schemas/product.schema";
+import { searchProductsInElasticsearch } from "../services/elasticsearch.service";
 
 export const getProducts = asyncHandler(async (req: Request, res: Response) => {
   const { storeId } = req.params as { storeId: string };
@@ -122,7 +123,7 @@ export const searchProducts = asyncHandler(
     const { storeId } = req.params as { storeId: string };
     const query = (req.query.query as string) || "";
 
-    const searchResults = await inventoryService.searchProducts(storeId, query);
+    const searchResults = await searchProductsInElasticsearch(storeId, query);
 
     return res
       .status(StatusCodes.OK)
@@ -138,4 +139,3 @@ export const exportProducts = asyncHandler(
     await inventoryService.exportProductsStream(storeId, queryParams, res);
   },
 );
-

@@ -63,4 +63,10 @@ export const env = {
   CLOUDFLARE_TURNSTILE_SECRET: process.env.CLOUDFLARE_TURNSTILE_SECRET,
 
   SUPPORT_EMAIL: "support@easeinv.app",
+
+  ELASTICSEARCH_URL: process.env.ELASTICSEARCH_URL || "http://localhost:9200",
+  ELASTICSEARCH_PRODUCTS_INDEX:
+    process.env.ELASTICSEARCH_PRODUCTS_INDEX || "products",
+  ELASTICSEARCH_CUSTOMERS_INDEX:
+    process.env.ELASTICSEARCH_CUSTOMERS_INDEX || "customers",
 } as const;
