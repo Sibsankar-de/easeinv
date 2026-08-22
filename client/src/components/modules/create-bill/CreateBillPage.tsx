@@ -17,6 +17,7 @@ import { PrintModal } from "./PrintModal";
 import { useStoreNavigation } from "@/hooks/store-navigation";
 import {
   createInvoiceThunk,
+  updateInvoiceThunk,
   selectInvoiceState,
   invalidateInvoicePages,
   invalidateInvoiceSummary,
@@ -38,7 +39,7 @@ export const CreateBillPage = () => {
     status,
   } = useSelector(selectCurrentStoreState);
 
-  const { createStatus } = useSelector(selectInvoiceState);
+  const { createStatus, updateStatus } = useSelector(selectInvoiceState);
 
   const initialState: InvoiceFormState = {
     invoiceNumber: "",
@@ -55,8 +56,11 @@ export const CreateBillPage = () => {
   };
 
   const [formData, setFormData] = useState<InvoiceFormState>(initialState);
+  const [invoiceId, setInvoiceId] = useState<string | null>(null);
+  const [isInvoiceIssued, setIsInvoiceIssued] = useState(false);
 
   const handleFormChange = (key: keyof typeof formData, value: any) => {
+    if (isInvoiceIssued) return;
     setFormData((prev) => ({
       ...prev,
       [key]: value,
@@ -64,6 +68,7 @@ export const CreateBillPage = () => {
   };
 
   const handleBillchange = (data: Record<string, any>) => {
+    if (isInvoiceIssued) return;
     const {
       subTotal,
       total,
@@ -93,8 +98,6 @@ export const CreateBillPage = () => {
   // handle print modal
   const [openPrintModal, setOpenPrintModal] = useState(false);
 
-  const [isInvoiceSaved, setIsInvoiceSaved] = useState(false);
-
   const [resetKey, setResetKey] = useState(1);
 
   const invoiceNumber = getNextInvoiceNumber({
@@ -104,37 +107,66 @@ export const CreateBillPage = () => {
 
   // update invoice number
   useEffect(() => {
-    if (isInvoiceSaved) return;
+    if (isInvoiceIssued || invoiceId) return;
     handleFormChange("invoiceNumber", invoiceNumber);
-  }, [currentStore, invoiceNumber, isInvoiceSaved]);
+  }, [currentStore, invoiceNumber, isInvoiceIssued, invoiceId]);
 
-  // handle invoice save
+  const invalidateRelatedPages = () => {
+    dispatch(invalidateInvoicePages());
+    dispatch(invalidateInvoiceSummary());
+    dispatch(invalidateCustomerPages());
+  };
+
+  // handle invoice save / update / issue
   const handleInvoiceSave = async (
-    status: InvoiceStatus = InvoiceStatus.DRAFTED,
+    targetStatus: InvoiceStatus = InvoiceStatus.DRAFTED,
   ) => {
-    if (!storeId || isInvoiceSaved) return;
+    if (!storeId || isInvoiceIssued) return;
 
-    setIsInvoiceSaved(true);
     const apiPayload = transformInvoicePayload({
       storeId: storeId as string,
-      status,
+      status: targetStatus,
       ...formData,
+      ...(invoiceId ? { invoiceId, id: invoiceId } : {}),
     });
-    await dispatch(createInvoiceThunk(apiPayload))
-      .unwrap()
-      .then(() => {
-        toast.success(`Invoice saved`);
-        dispatch(invalidateInvoicePages());
-        dispatch(invalidateInvoiceSummary());
-        dispatch(invalidateCustomerPages());
-      })
-      .catch(() => {
-        setIsInvoiceSaved(false);
-      });
+
+    if (invoiceId) {
+      // Existing draft invoice -> update it (or issue it)
+      await dispatch(updateInvoiceThunk(apiPayload))
+        .unwrap()
+        .then(() => {
+          if (targetStatus === InvoiceStatus.ISSUED) {
+            setIsInvoiceIssued(true);
+            toast.success("Invoice issued successfully");
+          } else {
+            toast.success("Draft updated");
+          }
+          invalidateRelatedPages();
+        })
+        .catch(() => {});
+    } else {
+      // New invoice -> create draft or issue directly
+      await dispatch(createInvoiceThunk(apiPayload))
+        .unwrap()
+        .then((res: any) => {
+          if (res?.id) {
+            setInvoiceId(res.id);
+          }
+          if (targetStatus === InvoiceStatus.ISSUED) {
+            setIsInvoiceIssued(true);
+            toast.success("Invoice issued successfully");
+          } else {
+            toast.success("Invoice saved as draft");
+          }
+          invalidateRelatedPages();
+        })
+        .catch(() => {});
+    }
   };
 
   const handleReset = () => {
-    setIsInvoiceSaved(false);
+    setInvoiceId(null);
+    setIsInvoiceIssued(false);
     setFormData({
       ...initialState,
       invoiceNumber,
@@ -142,7 +174,7 @@ export const CreateBillPage = () => {
     setResetKey((p) => p + 1);
   };
 
-  const isSaving = createStatus === "loading";
+  const isSaving = createStatus === "loading" || updateStatus === "loading";
 
   useEffect(() => {
     setActionButtons(
@@ -151,17 +183,17 @@ export const CreateBillPage = () => {
         onClick={() => setOpenPrintModal(true)}
       >
         <PrinterCheck size={16} />
-        {isInvoiceSaved ? "Print bill" : "Save & print"}
+        {isInvoiceIssued ? "Print bill" : "Issue & print"}
       </NavActionButton>,
     );
-  }, [setActionButtons, isSaving, isInvoiceSaved, formData, storeId]);
+  }, [setActionButtons, isSaving, isInvoiceIssued, formData, storeId]);
 
   // keyboard events
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === "s") {
         e.preventDefault();
-        if (!isInvoiceSaved) {
+        if (!isInvoiceIssued) {
           handleInvoiceSave();
         }
       }
@@ -178,7 +210,7 @@ export const CreateBillPage = () => {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isInvoiceSaved, handleInvoiceSave, handleReset]);
+  }, [isInvoiceIssued, handleInvoiceSave, handleReset]);
 
   if (status === "loading") {
     return <FormSkeleton rows={6} />;
@@ -186,7 +218,11 @@ export const CreateBillPage = () => {
 
   return (
     <>
-      <div>
+      <div
+        className={
+          isInvoiceIssued ? "opacity-95 pointer-events-none select-none" : ""
+        }
+      >
         {/* Invoice Header */}
         <div className="mb-8">
           <CustomerDetailsForm
@@ -202,6 +238,7 @@ export const CreateBillPage = () => {
             <Input
               type="text"
               placeholder="INV-001"
+              disabled={isInvoiceIssued}
               value={formData.invoiceNumber}
               onChange={(e) => handleFormChange("invoiceNumber", e)}
             />
@@ -209,6 +246,7 @@ export const CreateBillPage = () => {
           <div>
             <Label>Invoice Date</Label>
             <DateInput
+              disabled={isInvoiceIssued}
               value={formatDateStr(formData.issueDate).dashedDate}
               onChange={(val) => handleFormChange("issueDate", val)}
             />
@@ -217,24 +255,24 @@ export const CreateBillPage = () => {
 
         <BillingForm key={`bf-${resetKey}`} onBillChange={handleBillchange} />
 
-        <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row gap-2">
+        <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row gap-2 pointer-events-auto">
           <Button
             className="w-full justify-center flex-1"
             disabled={isSaving}
             onClick={() => setOpenPrintModal(true)}
           >
             <PrinterCheck size={18} />
-            {isInvoiceSaved ? "Print bill" : "Save & print bill"}
+            {isInvoiceIssued ? "Print bill" : "Issue & print bill"}
           </Button>
           <Button
             variant="outline"
             className="text-green-700 bg-gray-100"
-            disabled={isSaving || isInvoiceSaved}
+            disabled={isSaving || isInvoiceIssued}
             loading={isSaving}
-            onClick={() => handleInvoiceSave()}
+            onClick={() => handleInvoiceSave(InvoiceStatus.DRAFTED)}
           >
             <CloudCheck size={18} />
-            Save as Draft
+            {invoiceId ? "Update Draft" : "Save as Draft"}
           </Button>
           <Button
             variant="outline"
@@ -251,7 +289,8 @@ export const CreateBillPage = () => {
       <PrintModal
         openState={openPrintModal}
         invoiceData={formData}
-        isInvoiceSaved={isInvoiceSaved}
+        isInvoiceIssued={isInvoiceIssued}
+        invoiceId={invoiceId}
         isSaving={isSaving}
         onSave={handleInvoiceSave}
         onClose={() => setOpenPrintModal(false)}
