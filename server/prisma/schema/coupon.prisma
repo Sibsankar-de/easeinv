@@ -1,0 +1,48 @@
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+model Coupon {
+  id               String       @id @default(uuid()) @db.Uuid
+  storeId          String       @db.Uuid
+  creatorId        String       @db.Uuid
+  code             String
+  name             String
+  description      String?
+  discountType     DiscountType @default(PERCENT)
+  discountValue    Float
+  maxDiscount      Float?
+  minOrderValue    Float?       @default(0)
+  usageLimit       Int?
+  usageCount       Int          @default(0)
+  perCustomerLimit Int?
+  isActive         Boolean      @default(true)
+  startsAt         DateTime?
+  endsAt           DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  // Relations
+  store      Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  creator    User             @relation("CreatedCoupons", fields: [creatorId], references: [id])
+  categories CouponCategory[]
+
+  @@unique([storeId, code])
+  @@index([storeId])
+  @@index([storeId, code])
+  @@index([storeId, isActive])
+  @@index([storeId, code, isActive])
+  @@map("coupons")
+}
+
+model CouponCategory {
+  couponId   String @db.Uuid
+  categoryId String @db.Uuid
+
+  coupon   Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([couponId, categoryId])
+  @@map("coupon_categories")
+}

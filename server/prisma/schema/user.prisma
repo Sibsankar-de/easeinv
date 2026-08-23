@@ -29,6 +29,7 @@ model User {
   apiKeys            ApiKey[]
   invoices           Invoice[]
   createdProducts    Product[]
+  createdCoupons     Coupon[]            @relation("CreatedCoupons")
   verificationTokens VerificationToken[]
   refreshToken       RefreshToken[]
   authTokens         AuthToken[]

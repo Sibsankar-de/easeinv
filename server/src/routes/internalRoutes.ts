@@ -16,6 +16,7 @@ import notificationRoutes from "./notification.routes";
 import webhookRoutes from "./webhook.routes";
 import customerQueryRoutes from "./customerQuery.routes";
 import adminApiRoutes from "./adminApi.routes";
+import couponRoutes from "./coupon.routes";
 
 const router = Router();
 
@@ -31,6 +32,7 @@ router.use("/users", userRoutes);
 router.use("/stores", storeRoutes);
 router.use("/products", productRoutes);
 router.use("/categories", categoryRoutes);
+router.use("/coupons", couponRoutes);
 router.use("/customers", customerRoutes);
 router.use("/invoices", invoiceRoutes);
 router.use("/analytics", analyticsRoutes);

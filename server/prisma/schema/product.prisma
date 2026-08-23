@@ -8,6 +8,7 @@ model Category {
   // Relations
   store    Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
   products ProductCategory[]
+  coupons  CouponCategory[]
 
   @@index([storeId])
   @@index([storeId, name])
