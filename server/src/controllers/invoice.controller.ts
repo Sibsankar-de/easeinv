@@ -5,18 +5,18 @@ import { StatusCodes } from "http-status-codes";
 import * as invoiceService from "../services/invoice.service";
 import { validateBody } from "../utils/validate.utils";
 import {
-  createInvoiceSchema,
+  invoiceCreateUpdateSchema,
   invoiceExportQuerySchema,
   updateInvoiceDueSchema,
 } from "../schemas/invoice.schema";
-
+import { InvoiceStatus, InvoicePaymentStatus } from "@prisma/client";
 
 export const createInvoice = asyncHandler(
   async (req: Request, res: Response) => {
     const userId = req.user?.id;
     const { storeId } = req.params as { storeId: string };
 
-    const validatedBody = validateBody(createInvoiceSchema, req.body);
+    const validatedBody = validateBody(invoiceCreateUpdateSchema, req.body);
 
     const newInvoice = await invoiceService.createInvoice(
       userId!,
@@ -63,8 +63,10 @@ export const searchInvoice = asyncHandler(
     const { storeId } = req.params as { storeId: string };
     const page = parseInt((req.query.page as string) || "1");
     const limit = parseInt((req.query.limit as string) || "10");
-    const status = req.query.status as string;
-    const paymentStatus = req.query.paymentStatus as string;
+    const status = req.query.status as InvoiceStatus | undefined;
+    const paymentStatus = req.query.paymentStatus as
+      | InvoicePaymentStatus
+      | undefined;
     const customerPrefix = req.query.customerPrefix as string;
     const customerId = req.query.customerId as string;
     const invoiceNumber = req.query.invoiceNumber as string;
@@ -113,3 +115,43 @@ export const exportInvoices = asyncHandler(
   },
 );
 
+export const updateInvoice = asyncHandler(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    const { storeId, invoiceId } = req.params as {
+      storeId: string;
+      invoiceId: string;
+    };
+
+    const validatedBody = validateBody(invoiceCreateUpdateSchema, req.body);
+
+    const invoice = await invoiceService.updateInvoice(
+      userId!,
+      storeId,
+      invoiceId,
+      validatedBody,
+    );
+
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        new ApiResponse(
+          StatusCodes.OK,
+          invoice,
+          "Invoice updated successfully.",
+        ),
+      );
+  },
+);
+
+export const deleteInvoice = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { invoiceId } = req.params as { invoiceId: string };
+
+    await invoiceService.deleteInvoice(invoiceId);
+
+    return res
+      .status(StatusCodes.OK)
+      .json(new ApiResponse(StatusCodes.OK, null, "Draft invoice deleted."));
+  },
+);

@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { pricePerQuantityItemSchema } from "./product.schema";
-import { invoiceStatusList } from "../enums/invoice.enum";
+import {
+  invoiceStatusList,
+  invoicePaymentStatusList,
+} from "../enums/invoice.enum";
 import { InvoiceStatus } from "@prisma/client";
 
 const billItemSchema = z.object({
@@ -19,7 +22,7 @@ const customerDetailsSchema = z.object({
   email: z.email().optional().nullable(),
 });
 
-export const createInvoiceSchema = z.object({
+export const invoiceCreateUpdateSchema = z.object({
   invoiceNumber: z.string().trim().min(1, "Invoice number is required"),
   issueDate: z
     .string()
@@ -66,15 +69,17 @@ export const invoiceExtraDataSchema = z.object({
 
 export type BillItemCreateDto = z.infer<typeof billItemSchema>;
 export type InvoiceCustomerDto = z.infer<typeof customerDetailsSchema>;
-export type InvoiceCreateDto = z.infer<typeof createInvoiceSchema>;
+export type InvoiceCreateUpdateDto = z.infer<typeof invoiceCreateUpdateSchema>;
 export type InvoiceUpdateDueDto = z.infer<typeof updateInvoiceDueSchema>;
 export type InvoiceExtraData = z.infer<typeof invoiceExtraDataSchema>;
 
 export const invoiceExportQuerySchema = z.object({
   format: z.enum(["csv", "xlsx"]).default("csv"),
   query: z.string().optional().default(""),
-  status: z.enum(["ISSUED", "DRAFTED"]).optional(),
-  paymentStatus: z.enum(["PAID", "DUE", "OVERDUE"]).optional(),
+  status: z.enum(invoiceStatusList as [string, ...string[]]).optional(),
+  paymentStatus: z
+    .enum(invoicePaymentStatusList as [string, ...string[]])
+    .optional(),
   customerId: z.string().optional(),
   invoiceNumber: z.string().optional(),
   sortBy: z.string().default("createdAt"),
@@ -82,4 +87,3 @@ export const invoiceExportQuerySchema = z.object({
 });
 
 export type InvoiceExportQueryDTO = z.infer<typeof invoiceExportQuerySchema>;
-

@@ -5,7 +5,7 @@ import { ApiError } from "../../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import * as invoiceService from "../../services/invoice.service";
 import { validateBody } from "../../utils/validate.utils";
-import { createInvoiceSchema } from "../../schemas/invoice.schema";
+import { invoiceCreateUpdateSchema } from "../../schemas/invoice.schema";
 
 export const getInvoiceById = asyncHandler(
   async (req: Request, res: Response) => {
@@ -29,7 +29,7 @@ export const createInvoice = asyncHandler(
     const userId = req.user!.id;
     const storeId = req.store!.id;
 
-    const validatedBody = validateBody(createInvoiceSchema, req.body);
+    const validatedBody = validateBody(invoiceCreateUpdateSchema, req.body);
 
     const newInvoice = await invoiceService.createInvoice(
       userId,

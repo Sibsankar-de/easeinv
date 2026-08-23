@@ -6,6 +6,8 @@ import {
   getInvoiceSummary,
   getInvoiceById,
   exportInvoices,
+  updateInvoice,
+  deleteInvoice,
 } from "../controllers/invoice.controller";
 import { verifyAuth } from "../middlewares/auth.middleware";
 import { verifyEmployeeLevelAccess } from "../middlewares/verifyStoreAccess.middleware";
@@ -16,9 +18,14 @@ router.use(verifyAuth);
 
 router.get("/:storeId", verifyEmployeeLevelAccess, searchInvoice);
 router.get("/:storeId/export", verifyEmployeeLevelAccess, exportInvoices);
+router.get("/:storeId/summary", verifyEmployeeLevelAccess, getInvoiceSummary);
+
 router.post("/:storeId", verifyEmployeeLevelAccess, createInvoice);
 
-router.get("/:storeId/summary", verifyEmployeeLevelAccess, getInvoiceSummary);
+router.put("/:storeId/:invoiceId", verifyEmployeeLevelAccess, updateInvoice);
+
+router.delete("/:storeId/:invoiceId", verifyEmployeeLevelAccess, deleteInvoice);
+
 router.patch(
   "/:storeId/:invoiceId",
   verifyEmployeeLevelAccess,

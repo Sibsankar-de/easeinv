@@ -16,7 +16,8 @@ type PrintModalType = {
   openState: boolean;
   invoiceData: InvoiceFormState;
   isSaving: boolean;
-  isInvoiceSaved: boolean;
+  isInvoiceIssued: boolean;
+  invoiceId?: string | null;
   onSave: (status: InvoiceStatus) => void;
   onClose: () => void;
 };
@@ -24,7 +25,8 @@ type PrintModalType = {
 export const PrintModal = ({
   openState,
   invoiceData,
-  isInvoiceSaved,
+  isInvoiceIssued,
+  invoiceId,
   isSaving,
   onSave,
   onClose,
@@ -49,8 +51,8 @@ export const PrintModal = ({
     `,
   });
 
-  const handleSaveAndPrint = () => {
-    if (!isInvoiceSaved) {
+  const handleIssueAndPrint = () => {
+    if (!isInvoiceIssued) {
       onSave(InvoiceStatus.ISSUED);
     }
     handlePrint();
@@ -61,7 +63,11 @@ export const PrintModal = ({
       openState={openState}
       className="w-[90vw] md:w-[60vw] lg:w-[50vw] max-w-5xl space-y-4"
       onClose={onClose}
-      header={<ModalHeader title="Save and print Invoice" />}
+      header={
+        <ModalHeader
+          title={isInvoiceIssued ? "Print Invoice" : "Issue and print Invoice"}
+        />
+      }
     >
       <div className="flex justify-end items-center gap-3">
         <Label className="mb-0">Page size:</Label>
@@ -82,23 +88,23 @@ export const PrintModal = ({
       <div className="flex gap-3 sticky bottom-0">
         <Button
           className="w-full justify-center flex-1"
-          onClick={handleSaveAndPrint}
+          onClick={handleIssueAndPrint}
           disabled={isSaving}
           loading={isSaving}
           autoFocus
         >
           <PrinterCheck size={18} />
-          {isInvoiceSaved ? "Print bill" : "Save & print bill"}
+          {isInvoiceIssued ? "Print bill" : "Issue & print bill"}
         </Button>
         <Button
           variant="outline"
           className="text-green-700 bg-gray-100"
-          disabled={isSaving || isInvoiceSaved}
+          disabled={isSaving || isInvoiceIssued}
           loading={isSaving}
           onClick={() => onSave(InvoiceStatus.DRAFTED)}
         >
           <CloudCheck size={18} />
-          Save as Draft
+          {invoiceId ? "Update Draft" : "Save as Draft"}
         </Button>
       </div>
     </Modal>

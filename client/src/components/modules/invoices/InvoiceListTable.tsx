@@ -12,7 +12,8 @@ import {
 } from "@/store/features/invoiceSlice";
 import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 import { useStoreNavigation } from "@/hooks/store-navigation";
-import { InvoiceSummaryDto } from "@/types/dto/invoiceDto";
+import { Badge } from "@/components/ui/Badge";
+import { InvoiceStatus, InvoiceSummaryDto } from "@/types/dto/invoiceDto";
 import { pageLimits } from "@/constants/pageLimits";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FilterSelector } from "@/components/ui/FilterSelector";
@@ -31,6 +32,8 @@ import { downloadExportFile } from "@/utils/export-utils";
 
 const filterOptions: SelectOptionType[] = [
   { value: "All", key: "all" },
+  { value: "Issued", key: "ISSUED" },
+  { value: "Draft", key: "DRAFTED" },
   { value: "Paid", key: "PAID" },
   { value: "Due", key: "DUE" },
   { value: "Overdue", key: "OVERDUE" },
@@ -127,12 +130,21 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
     const sortField = sorting[0]?.id || "createdAt";
     const sortOrder = sorting[0]?.desc ? "desc" : "asc";
 
+    const isStatusFilter =
+      filterStatus === InvoiceStatus.ISSUED ||
+      filterStatus === InvoiceStatus.DRAFTED;
+    const isPaymentStatusFilter =
+      filterStatus === "PAID" ||
+      filterStatus === "DUE" ||
+      filterStatus === "OVERDUE";
+
     await downloadExportFile({
       endpoint: `/invoices/${storeId}/export`,
       params: {
         format,
         query: debouncedSearchTerm || undefined,
-        paymentStatus: filterStatus !== "all" ? filterStatus : undefined,
+        status: isStatusFilter ? filterStatus : undefined,
+        paymentStatus: isPaymentStatusFilter ? filterStatus : undefined,
         customerId: customerId || undefined,
         sortBy: sortField,
         sortOrder,
@@ -165,12 +177,21 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
       const sortField = sorting[0]?.id;
       const sortOrder = sorting[0]?.desc ? "desc" : "asc";
 
+      const isStatusFilter =
+        filterStatus === InvoiceStatus.ISSUED ||
+        filterStatus === InvoiceStatus.DRAFTED;
+      const isPaymentStatusFilter =
+        filterStatus === "PAID" ||
+        filterStatus === "DUE" ||
+        filterStatus === "OVERDUE";
+
       dispatch(
         fetchInvoiceListThunk({
           storeId,
           page: currentPage,
           limit: pagination.pageSize,
-          paymentStatus: filterStatus !== "all" ? filterStatus : undefined,
+          status: isStatusFilter ? filterStatus : undefined,
+          paymentStatus: isPaymentStatusFilter ? filterStatus : undefined,
           query: debouncedSearchTerm || undefined,
           customerId,
           sortBy: sortField,
@@ -198,6 +219,19 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
           <span className="text-indigo-600 font-medium">{info.getValue()}</span>
         ),
         meta: { className: "text-left" },
+      }),
+      columnHelper.accessor("status", {
+        header: "Status",
+        cell: (info) => {
+          const status = info.getValue();
+          const isIssued = status === InvoiceStatus.ISSUED;
+          return (
+            <Badge variant={isIssued ? "primary" : "secondary"}>
+              {isIssued ? "Issued" : "Draft"}
+            </Badge>
+          );
+        },
+        meta: { className: "text-center" },
       }),
       columnHelper.accessor("customer.name", {
         header: "Customer",
@@ -291,7 +325,16 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
         isLoading={invoiceFetchStatus === "loading"}
         pageCount={invoicePagedData.totalPages}
         pagination={pagination}
-        onPaginationChange={setPagination}
+        onPaginationChange={(updater) => {
+          const next =
+            typeof updater === "function" ? updater(pagination) : updater;
+          if (next.pageSize !== pagination.pageSize) {
+            dispatch(invalidateInvoicePages());
+            setPagination({ ...next, pageIndex: 0 });
+          } else {
+            setPagination(next);
+          }
+        }}
         sorting={sorting}
         onSortingChange={(updater) => {
           const nextState =

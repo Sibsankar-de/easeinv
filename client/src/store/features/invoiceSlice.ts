@@ -10,10 +10,10 @@ export const fetchInvoiceListThunk: any = createApiThunk(
   "/invoices/list",
   async (payload: any) => {
     let url = `/invoices/${payload.storeId}?page=${payload.page}&limit=${payload.limit}`;
+    if (payload.status) url += `&status=${payload.status}`;
     if (payload.paymentStatus) url += `&paymentStatus=${payload.paymentStatus}`;
     if (payload.query) url += `&query=${payload.query}`;
-    else if (payload.customerPrefix)
-      url += `&query=${payload.customerPrefix}`;
+    else if (payload.customerPrefix) url += `&query=${payload.customerPrefix}`;
     if (payload.customerId) url += `&customerId=${payload.customerId}`;
     if (payload.sortBy) url += `&sortBy=${payload.sortBy}`;
     if (payload.sortOrder) url += `&sortOrder=${payload.sortOrder}`;
@@ -25,6 +25,12 @@ export const createInvoiceThunk: any = createApiThunk(
   "/invoices/create",
   async (payload: any) =>
     await api.post(`/invoices/${payload.storeId}`, payload),
+);
+
+export const updateInvoiceThunk: any = createApiThunk(
+  "/invoices/update",
+  async (payload: any) =>
+    await api.put(`/invoices/${payload.storeId}/${payload.invoiceId}`, payload),
 );
 
 export const updateInvoiceDueThunk: any = createApiThunk(
@@ -111,6 +117,23 @@ const invoiceSlice = createSlice({
       .addCase(createInvoiceThunk.fulfilled, (state, action) => {
         state.createStatus = "success";
         state.error = null;
+      })
+      .addCase(updateInvoiceThunk.pending, (state, action) =>
+        setState(state, action, "updateStatus"),
+      )
+      .addCase(updateInvoiceThunk.rejected, (state, action) =>
+        setState(state, action, "updateStatus"),
+      )
+      .addCase(updateInvoiceThunk.fulfilled, (state, action) => {
+        state.updateStatus = "success";
+        state.error = null;
+        const updatedInvoice = action.payload;
+        const existingIndex = state.data.invoiceListData.findIndex(
+          (inv) => inv.id === updatedInvoice.id,
+        );
+        if (existingIndex !== -1) {
+          state.data.invoiceListData[existingIndex] = updatedInvoice;
+        }
       })
       .addCase(fetchInvoiceListThunk.pending, setState)
       .addCase(fetchInvoiceListThunk.rejected, setState)
