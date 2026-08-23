@@ -325,7 +325,16 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
         isLoading={invoiceFetchStatus === "loading"}
         pageCount={invoicePagedData.totalPages}
         pagination={pagination}
-        onPaginationChange={setPagination}
+        onPaginationChange={(updater) => {
+          const next =
+            typeof updater === "function" ? updater(pagination) : updater;
+          if (next.pageSize !== pagination.pageSize) {
+            dispatch(invalidateInvoicePages());
+            setPagination({ ...next, pageIndex: 0 });
+          } else {
+            setPagination(next);
+          }
+        }}
         sorting={sorting}
         onSortingChange={(updater) => {
           const nextState =

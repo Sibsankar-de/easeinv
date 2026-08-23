@@ -258,7 +258,16 @@ export const CustomerListTable = () => {
         isLoading={status === "loading"}
         pageCount={customerListData.totalPages}
         pagination={pagination}
-        onPaginationChange={setPagination}
+        onPaginationChange={(updater) => {
+          const next =
+            typeof updater === "function" ? updater(pagination) : updater;
+          if (next.pageSize !== pagination.pageSize) {
+            dispatch(invalidateCustomerPages());
+            setPagination({ ...next, pageIndex: 0 });
+          } else {
+            setPagination(next);
+          }
+        }}
         sorting={sorting}
         onSortingChange={(updater) => {
           const nextState =

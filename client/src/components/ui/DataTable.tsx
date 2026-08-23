@@ -13,18 +13,25 @@ import {
 } from "@tanstack/react-table";
 import { TableBodySkeleton } from "./Skeleton";
 import { Pagination } from "./Pagination";
+import { Select } from "./Select";
 import { cn } from "../utils";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 declare module "@tanstack/react-table" {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
     className?: string;
   }
 }
 
+const PAGE_SIZE_OPTIONS = [
+  { key: "10", value: "10" },
+  { key: "15", value: "15" },
+  { key: "20", value: "20" },
+  { key: "50", value: "50" },
+  { key: "100", value: "100" },
+];
+
 interface DataTableProps<TData> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   columns: ColumnDef<TData, any>[];
   data: TData[];
   isLoading?: boolean;
@@ -61,6 +68,10 @@ export function DataTable<TData>({
     manualSorting: true,
     pageCount: pageCount ?? -1,
   });
+
+  const showPagination = Boolean(
+    (pageCount !== undefined && pageCount > 0) || pagination,
+  );
 
   return (
     <div className="space-y-6">
@@ -151,19 +162,48 @@ export function DataTable<TData>({
         </div>
       </div>
 
-      {pageCount !== undefined && pageCount > 1 && (
-        <Pagination
-          totalPage={pageCount}
-          currentPage={(pagination?.pageIndex ?? 0) + 1}
-          onPageChange={(page) => {
-            if (onPaginationChange) {
-              onPaginationChange((prev: PaginationState) => ({
-                ...prev,
-                pageIndex: page - 1,
-              }));
-            }
-          }}
-        />
+      {showPagination && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          {pagination && onPaginationChange ? (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Select
+                options={PAGE_SIZE_OPTIONS}
+                value={String(pagination.pageSize ?? 10)}
+                onChange={(val) => {
+                  const newPageSize = Number(val);
+                  onPaginationChange((prev: PaginationState) => ({
+                    ...prev,
+                    pageSize: newPageSize,
+                    pageIndex: 0,
+                  }));
+                }}
+                className="w-20"
+              />
+              <span>/ page</span>
+            </div>
+          ) : (
+            <div />
+          )}
+
+          <div>
+            {pageCount !== undefined && pageCount > 1 ? (
+              <Pagination
+                totalPage={pageCount}
+                currentPage={(pagination?.pageIndex ?? 0) + 1}
+                onPageChange={(page) => {
+                  if (onPaginationChange) {
+                    onPaginationChange((prev: PaginationState) => ({
+                      ...prev,
+                      pageIndex: page - 1,
+                    }));
+                  }
+                }}
+              />
+            ) : (
+              <div />
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
