@@ -31,7 +31,9 @@ const PAGE_SIZE_OPTIONS = [
   { key: "100", value: "100" },
 ];
 
-interface DataTableProps<TData> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface DataTableProps<TData, TValue = any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   columns: ColumnDef<TData, any>[];
   data: TData[];
   isLoading?: boolean;
@@ -69,8 +71,9 @@ export function DataTable<TData>({
     pageCount: pageCount ?? -1,
   });
 
+  const hasData = Boolean(!isLoading && data && data.length > 0);
   const showPagination = Boolean(
-    (pageCount !== undefined && pageCount > 0) || pagination,
+    hasData && ((pageCount !== undefined && pageCount > 0) || pagination),
   );
 
   return (
