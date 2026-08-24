@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/Input";
 import { DateInput } from "@/components/ui/DateInput";
 import { Button } from "@/components/ui/Button";
 import { CloudCheck, PrinterCheck, RotateCcw } from "lucide-react";
-import { BillingForm } from "./BillingForm";
-import { useEffect, useRef, useState } from "react";
+import { BillingForm, BillCalculationsType } from "./BillingForm";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { InvoiceFormState } from "@/helpers/invoiceHelper";
 import { formatDateStr } from "@/utils/formatDate";
 import { useDispatch, useSelector } from "react-redux";
@@ -15,15 +15,21 @@ import { selectCurrentStoreState } from "@/store/features/currentStoreSlice";
 import { getNextInvoiceNumber } from "@/utils/invoicenumber-generator";
 import { PrintModal } from "./PrintModal";
 import { useStoreNavigation } from "@/hooks/store-navigation";
+import { useSearchParams } from "next/navigation";
 import {
   createInvoiceThunk,
   updateInvoiceThunk,
+  fetchInvoiceByIdThunk,
   selectInvoiceState,
   invalidateInvoicePages,
   invalidateInvoiceSummary,
 } from "@/store/features/invoiceSlice";
 import { invalidateCustomerPages } from "@/store/features/customerSlice";
-import { InvoiceStatus } from "@/types/dto/invoiceDto";
+import {
+  InvoiceDto,
+  InvoiceStatus,
+  BillItemType,
+} from "@/types/dto/invoiceDto";
 import { transformInvoicePayload } from "@/helpers/invoiceHelper";
 import { toast } from "@/utils/toast";
 import { FormSkeleton } from "@/components/ui/Skeleton";
@@ -31,7 +37,9 @@ import { useNavContext } from "@/contexts/NavContext";
 import { NavActionButton } from "@/components/modules/navbar/Navbar";
 
 export const CreateBillPage = () => {
-  const { storeId } = useStoreNavigation();
+  const { storeId, router, basePath } = useStoreNavigation();
+  const searchParams = useSearchParams();
+  const invoiceQueryId = searchParams.get("invoice");
   const { setActionButtons } = useNavContext();
   const dispatch = useDispatch();
   const {
@@ -41,130 +49,204 @@ export const CreateBillPage = () => {
 
   const { createStatus, updateStatus } = useSelector(selectInvoiceState);
 
-  const initialState: InvoiceFormState = {
-    invoiceNumber: "",
-    billItems: [],
-    issueDate: new Date(),
-    subTotal: 0,
-    total: 0,
-    totalProfit: 0,
-    discountAmount: 0,
-    paidAmount: 0,
-    dueAmount: 0,
-    taxAmount: 0,
-    customer: {},
-  };
+  const invoiceNumber = getNextInvoiceNumber({
+    prefix: storeSettings.invoiceNumberPrefix || "",
+    lastInvoiceNumber: currentStore?.lastInvoiceNumber,
+  });
+
+  const initialState: InvoiceFormState = useMemo(
+    () => ({
+      invoiceNumber: invoiceNumber || "",
+      billItems: [],
+      issueDate: new Date(),
+      subTotal: 0,
+      total: 0,
+      totalProfit: 0,
+      discountAmount: 0,
+      paidAmount: 0,
+      dueAmount: 0,
+      taxAmount: 0,
+      customer: {},
+    }),
+    [invoiceNumber],
+  );
 
   const [formData, setFormData] = useState<InvoiceFormState>(initialState);
   const [invoiceId, setInvoiceId] = useState<string | null>(null);
   const [isInvoiceIssued, setIsInvoiceIssued] = useState(false);
+  const [isLoadingInvoice, setIsLoadingInvoice] = useState(
+    Boolean(invoiceQueryId),
+  );
 
-  const handleFormChange = (key: keyof typeof formData, value: any) => {
-    if (isInvoiceIssued) return;
-    setFormData((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
+  const handleFormChange = useCallback(
+    (key: keyof InvoiceFormState, value: unknown) => {
+      if (isInvoiceIssued) return;
+      setFormData((prev) => ({
+        ...prev,
+        [key]: value,
+      }));
+    },
+    [isInvoiceIssued],
+  );
 
-  const handleBillchange = (data: Record<string, any>) => {
-    if (isInvoiceIssued) return;
-    const {
-      subTotal,
-      total,
-      taxAmount,
-      discountAmount,
-      discountPercent,
-      totalProfit,
-      paidAmount,
-      dueAmount,
-      roundupTotal,
-    } = data.calculations;
-    setFormData((prev) => ({
-      ...prev,
-      billItems: data.items,
-      subTotal,
-      total,
-      taxAmount,
-      discountAmount,
-      discountPercent,
-      totalProfit,
-      paidAmount,
-      dueAmount,
-      roundupTotal,
-    }));
-  };
+  const handleBillchange = useCallback(
+    (data: { items: BillItemType[]; calculations: BillCalculationsType }) => {
+      if (isInvoiceIssued) return;
+      const {
+        subTotal,
+        total,
+        taxAmount,
+        discountAmount,
+        discountPercent,
+        totalProfit,
+        paidAmount,
+        dueAmount,
+        roundupTotal,
+      } = data.calculations;
+      setFormData((prev) => ({
+        ...prev,
+        billItems: data.items,
+        subTotal,
+        total,
+        taxAmount,
+        discountAmount,
+        discountPercent,
+        totalProfit,
+        paidAmount,
+        dueAmount,
+        roundupTotal,
+      }));
+    },
+    [isInvoiceIssued],
+  );
 
   // handle print modal
   const [openPrintModal, setOpenPrintModal] = useState(false);
 
   const [resetKey, setResetKey] = useState(1);
 
-  const invoiceNumber = getNextInvoiceNumber({
-    prefix: storeSettings.invoiceNumberPrefix || "",
-    lastInvoiceNumber: currentStore?.lastInvoiceNumber,
-  });
-
-  // update invoice number
+  // Fetch invoice details if invoice query param is provided
   useEffect(() => {
-    if (isInvoiceIssued || invoiceId) return;
-    handleFormChange("invoiceNumber", invoiceNumber);
-  }, [currentStore, invoiceNumber, isInvoiceIssued, invoiceId]);
+    if (!invoiceQueryId || !storeId) return;
 
-  const invalidateRelatedPages = () => {
+    dispatch(
+      fetchInvoiceByIdThunk({
+        storeId: storeId as string,
+        invoiceId: invoiceQueryId,
+      }),
+    )
+      .unwrap()
+      .then((invoice: InvoiceDto) => {
+        setInvoiceId(invoice.id);
+        const isIssued = invoice.status === InvoiceStatus.ISSUED;
+        setIsInvoiceIssued(isIssued);
+
+        const formattedItems: BillItemType[] = (invoice.billItems || []).map(
+          (bi, idx) => ({
+            id: bi.id || `item-${idx}`,
+            product: bi.product || {
+              id: "",
+              name: (bi as { productName?: string }).productName || "",
+              sku: "",
+            },
+            productName:
+              (bi as { productName?: string }).productName || bi.product?.name,
+            pricePerQuantity: bi.pricePerQuantity,
+            netQuantity: bi.netQuantity,
+            totalPrice: bi.totalPrice,
+            stockUnit: bi.stockUnit,
+            totalProfit: bi.totalProfit,
+          }),
+        );
+
+        setFormData({
+          invoiceNumber: invoice.invoiceNumber,
+          issueDate: new Date(invoice.issueDate),
+          customer: invoice.customer || {},
+          billItems: formattedItems,
+          subTotal: invoice.subTotal,
+          total: invoice.total,
+          totalProfit: invoice.totalProfit,
+          discountAmount: invoice.discountAmount || 0,
+          discountPercent: invoice.discountPercent || 0,
+          taxAmount: invoice.taxAmount || 0,
+          dueAmount: invoice.dueAmount || 0,
+          paidAmount: invoice.paidAmount || 0,
+          roundupTotal: invoice.roundupTotal || false,
+          note: invoice.note || "",
+        });
+        setResetKey((k) => k + 1);
+      })
+      .catch(() => {
+        toast.error("Failed to load invoice details");
+      })
+      .finally(() => {
+        setIsLoadingInvoice(false);
+      });
+  }, [invoiceQueryId, storeId, dispatch]);
+
+  const invalidateRelatedPages = useCallback(() => {
     dispatch(invalidateInvoicePages());
     dispatch(invalidateInvoiceSummary());
     dispatch(invalidateCustomerPages());
-  };
+  }, [dispatch]);
 
   // handle invoice save / update / issue
-  const handleInvoiceSave = async (
-    targetStatus: InvoiceStatus = InvoiceStatus.DRAFTED,
-  ) => {
-    if (!storeId || isInvoiceIssued) return;
+  const handleInvoiceSave = useCallback(
+    async (targetStatus: InvoiceStatus = InvoiceStatus.DRAFTED) => {
+      if (!storeId || isInvoiceIssued) return;
 
-    const apiPayload = transformInvoicePayload({
-      storeId: storeId as string,
-      status: targetStatus,
-      ...formData,
-      ...(invoiceId ? { invoiceId, id: invoiceId } : {}),
-    });
+      const apiPayload = transformInvoicePayload({
+        storeId: storeId as string,
+        status: targetStatus,
+        ...formData,
+        ...(invoiceId ? { invoiceId, id: invoiceId } : {}),
+      });
 
-    if (invoiceId) {
-      // Existing draft invoice -> update it (or issue it)
-      await dispatch(updateInvoiceThunk(apiPayload))
-        .unwrap()
-        .then(() => {
-          if (targetStatus === InvoiceStatus.ISSUED) {
-            setIsInvoiceIssued(true);
-            toast.success("Invoice issued successfully");
-          } else {
-            toast.success("Draft updated");
-          }
-          invalidateRelatedPages();
-        })
-        .catch(() => {});
-    } else {
-      // New invoice -> create draft or issue directly
-      await dispatch(createInvoiceThunk(apiPayload))
-        .unwrap()
-        .then((res: any) => {
-          if (res?.id) {
-            setInvoiceId(res.id);
-          }
-          if (targetStatus === InvoiceStatus.ISSUED) {
-            setIsInvoiceIssued(true);
-            toast.success("Invoice issued successfully");
-          } else {
-            toast.success("Invoice saved as draft");
-          }
-          invalidateRelatedPages();
-        })
-        .catch(() => {});
-    }
-  };
+      if (invoiceId) {
+        // Existing draft invoice -> update it (or issue it)
+        await dispatch(updateInvoiceThunk(apiPayload))
+          .unwrap()
+          .then(() => {
+            if (targetStatus === InvoiceStatus.ISSUED) {
+              setIsInvoiceIssued(true);
+              toast.success("Invoice issued successfully");
+            } else {
+              toast.success("Draft updated");
+            }
+            invalidateRelatedPages();
+          })
+          .catch(() => {});
+      } else {
+        // New invoice -> create draft or issue directly
+        await dispatch(createInvoiceThunk(apiPayload))
+          .unwrap()
+          .then((res: { id?: string }) => {
+            if (res?.id) {
+              setInvoiceId(res.id);
+            }
+            if (targetStatus === InvoiceStatus.ISSUED) {
+              setIsInvoiceIssued(true);
+              toast.success("Invoice issued successfully");
+            } else {
+              toast.success("Invoice saved as draft");
+            }
+            invalidateRelatedPages();
+          })
+          .catch(() => {});
+      }
+    },
+    [
+      storeId,
+      isInvoiceIssued,
+      formData,
+      invoiceId,
+      dispatch,
+      invalidateRelatedPages,
+    ],
+  );
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setInvoiceId(null);
     setIsInvoiceIssued(false);
     setFormData({
@@ -172,7 +254,10 @@ export const CreateBillPage = () => {
       invoiceNumber,
     });
     setResetKey((p) => p + 1);
-  };
+    if (invoiceQueryId) {
+      router.replace(`${basePath}/billing`);
+    }
+  }, [initialState, invoiceNumber, invoiceQueryId, router, basePath]);
 
   const isSaving = createStatus === "loading" || updateStatus === "loading";
 
@@ -212,7 +297,7 @@ export const CreateBillPage = () => {
     };
   }, [isInvoiceIssued, handleInvoiceSave, handleReset]);
 
-  if (status === "loading") {
+  if (status === "loading" || isLoadingInvoice) {
     return <FormSkeleton rows={6} />;
   }
 
@@ -227,6 +312,7 @@ export const CreateBillPage = () => {
         <div className="mb-8">
           <CustomerDetailsForm
             key={`cf-${resetKey}`}
+            data={formData.customer}
             onChange={(e) => handleFormChange("customer", e)}
           />
         </div>
@@ -253,7 +339,24 @@ export const CreateBillPage = () => {
           </div>
         </div>
 
-        <BillingForm key={`bf-${resetKey}`} onBillChange={handleBillchange} />
+        <BillingForm
+          key={`bf-${resetKey}`}
+          data={{
+            items: formData.billItems,
+            calculations: {
+              subTotal: formData.subTotal,
+              total: formData.total,
+              taxAmount: formData.taxAmount,
+              discountAmount: formData.discountAmount,
+              discountPercent: formData.discountPercent,
+              totalProfit: formData.totalProfit,
+              paidAmount: formData.paidAmount,
+              dueAmount: formData.dueAmount,
+              roundupTotal: formData.roundupTotal,
+            },
+          }}
+          onBillChange={handleBillchange}
+        />
 
         <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row gap-2 pointer-events-auto">
           <Button

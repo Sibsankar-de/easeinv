@@ -48,18 +48,29 @@ const InvoiceActions = ({
   invoice: InvoiceSummaryDto;
   page: number;
 }) => {
+  const { navigate } = useStoreNavigation();
   const [editOpen, setEditOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const { isDownloading, downloadInvoice, hiddenInvoiceComponent } =
     useInvoiceDownload();
+
+  const isDraft = invoice.status === InvoiceStatus.DRAFTED;
+
+  const handleEditClick = () => {
+    if (isDraft) {
+      navigate(`billing?invoice=${invoice.id}`);
+    } else {
+      setEditOpen(true);
+    }
+  };
 
   return (
     <div className="flex items-center justify-end gap-1 relative">
       <Button
         variant="outline"
         className="p-2 text-primary"
-        tooltip="Update due"
-        onClick={() => setEditOpen(true)}
+        tooltip={isDraft ? "Edit draft" : "Update due"}
+        onClick={handleEditClick}
       >
         <Pen className="w-4 h-4" />
       </Button>
@@ -84,12 +95,14 @@ const InvoiceActions = ({
 
       {hiddenInvoiceComponent}
 
-      <InvoiceDueEditModal
-        openState={editOpen}
-        invoice={invoice}
-        page={page}
-        onClose={() => setEditOpen(false)}
-      />
+      {!isDraft && (
+        <InvoiceDueEditModal
+          openState={editOpen}
+          invoice={invoice}
+          page={page}
+          onClose={() => setEditOpen(false)}
+        />
+      )}
 
       <InvoiceViewModal
         openState={viewOpen}
@@ -312,18 +325,16 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
         </div>
 
         <div className="flex items-center gap-2.5 justify-end">
-          <div className="flex-1 sm:w-40">
-            <FilterSelector
-              options={filterOptions}
-              value={filterStatus}
-              onChange={(val) => {
-                setFilterStatus(val);
-                setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-                dispatch(invalidateInvoicePages());
-              }}
-              className="w-full"
-            />
-          </div>
+          <FilterSelector
+            options={filterOptions}
+            value={filterStatus}
+            onChange={(val) => {
+              setFilterStatus(val);
+              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+              dispatch(invalidateInvoicePages());
+            }}
+            className="w-full"
+          />
           <ExportButton onExport={handleExport} loading={isExporting} />
         </div>
       </div>

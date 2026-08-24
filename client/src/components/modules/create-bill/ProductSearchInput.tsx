@@ -35,15 +35,21 @@ export function ProductSearchInput({
     data: { storeSettings, currencySymbol },
   } = useSelector(selectCurrentStoreState);
 
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(value || "");
+  const [prevValue, setPrevValue] = useState(value);
   const [searchList, setSearchList] = useState<ProductDto[]>([]);
+
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setInput(value || "");
+  }
 
   const handleSearch = (query: string) => {
     if (!query || !query.trim() || query.trim().length < 2) return;
 
     dispatch(searchProductsThunk({ storeId, query }))
       .unwrap()
-      .then((res: any) => {
+      .then((res: ProductDto[]) => {
         setSearchList(res);
       });
   };

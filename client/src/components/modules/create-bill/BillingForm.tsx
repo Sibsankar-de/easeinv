@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { Button } from "../../ui/Button";
 import { Input } from "../../ui/Input";
 import { Label } from "../../ui/Label";
@@ -18,9 +18,27 @@ const generateRandomId = () => {
   return Math.floor(1000 + Math.random() * 9000).toString();
 };
 
+export type BillCalculationsType = {
+  subTotal: number;
+  taxAmount: number;
+  discountAmount: number;
+  discountPercent?: number;
+  total: number;
+  paidAmount: number;
+  dueAmount: number;
+  totalProfit: number;
+  roundupTotal: boolean;
+};
+
 interface BillingFormProps {
-  data?: Record<string, any>;
-  onBillChange: (data: Record<string, any>) => void;
+  data?: {
+    items?: BillItemType[];
+    calculations?: Partial<BillCalculationsType>;
+  };
+  onBillChange: (data: {
+    items: BillItemType[];
+    calculations: BillCalculationsType;
+  }) => void;
 }
 
 export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
@@ -37,31 +55,56 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
     stockUnit: "",
   };
 
-  const initialCalculations = {
-    subTotal: 0,
-    taxAmount: 0,
-    discountAmount: 0,
-    total: 0,
-    paidAmount: 0,
-    dueAmount: 0,
-    totalProfit: 0,
-    roundupTotal: false,
-  };
+  const [items, setItems] = useState<BillItemType[]>(
+    data?.items && data.items.length > 0 ? data.items : [initialBillItem],
+  );
+  const [discountPercent, setDiscountPercent] = useState(
+    data?.calculations?.discountPercent
+      ? String(data.calculations.discountPercent)
+      : "",
+  );
+  const [roundupTotal, setRoundupTotal] = useState<boolean>(
+    data?.calculations?.roundupTotal ??
+      (storeSettings?.roundupInvoiceTotal || false),
+  );
+  const [paidAmountInput, setPaidAmountInput] = useState<number | null>(
+    data?.calculations?.paidAmount !== undefined
+      ? data.calculations.paidAmount
+      : null,
+  );
 
-  const [items, setItems] = useState<BillItemType[]>([initialBillItem]);
-  const [calculations, setCalculations] = useState(initialCalculations);
-  const [discountPercent, setDiscountPercent] = useState("");
+  const calculations: BillCalculationsType = useMemo(() => {
+    const subTotal = roundToDecimal(
+      items.reduce((sum, item) => sum + item.totalPrice, 0),
+    );
+    const subTotalProfit = items.reduce(
+      (sum, item) => sum + item.totalProfit,
+      0,
+    );
+    const taxAmount = 0;
+    const discountAmount = roundToDecimal(
+      (Number(discountPercent) * subTotal) / 100,
+    );
+    let total = roundToDecimal(subTotal + taxAmount - Number(discountAmount));
 
-  useEffect(() => {
-    if (data?.items) setItems(data.items);
-    if (data?.calculations) setCalculations(data.calculations);
-    if (storeSettings?.roundupInvoiceTotal) {
-      setCalculations((p) => ({
-        ...p,
-        roundupTotal: storeSettings.roundupInvoiceTotal || false,
-      }));
-    }
-  }, [data, storeSettings]);
+    if (roundupTotal) total = Math.round(total);
+
+    const paidAmount = paidAmountInput !== null ? paidAmountInput : total;
+    const dueAmount = roundToDecimal(Math.max(0, total - paidAmount));
+    const totalProfit = subTotalProfit - discountAmount;
+
+    return {
+      subTotal,
+      taxAmount,
+      discountAmount,
+      discountPercent: Number(discountPercent) || 0,
+      total,
+      paidAmount,
+      dueAmount,
+      totalProfit,
+      roundupTotal,
+    };
+  }, [items, discountPercent, roundupTotal, paidAmountInput]);
 
   const addItem = () => {
     setItems([
@@ -109,41 +152,12 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
   });
 
   useEffect(() => {
-    const subTotal = roundToDecimal(
-      items.reduce((sum, item) => sum + item.totalPrice, 0),
-    );
-    const subTotalProfit = items.reduce(
-      (sum, item) => sum + item.totalProfit,
-      0,
-    );
-    const tax = 0;
-    const discountAmount = roundToDecimal(
-      (Number(discountPercent) * subTotal) / 100,
-    );
-    let total = roundToDecimal(subTotal + tax - Number(discountAmount));
-
-    if (calculations.roundupTotal) total = Math.round(total);
-
-    setCalculations((p) => ({
-      ...p,
-      subTotal,
-      taxAmount: tax,
-      total,
-      discountAmount,
-      paidAmount: total,
-      dueAmount: 0,
-      totalProfit: subTotalProfit - discountAmount,
-      discountPercent: Number(discountPercent) || 0,
-    }));
-  }, [items, discountPercent, calculations.roundupTotal]);
-
-  useEffect(() => {
-    const filteredItems = items.filter((e) => e.product.id != "");
+    const filteredItems = items.filter((e) => e.product.id !== "");
     onBillChange({
       items: filteredItems,
       calculations,
     });
-  }, [items, calculations]);
+  }, [items, calculations, onBillChange]);
 
   return (
     <div>
@@ -208,10 +222,8 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
             </Label>
             <ToggleButton
               id="round-total"
-              isActive={calculations.roundupTotal}
-              onChange={(e) =>
-                setCalculations((p) => ({ ...p, roundupTotal: e }))
-              }
+              isActive={roundupTotal}
+              onChange={(e) => setRoundupTotal(e)}
             />
           </div>
         </div>
@@ -268,13 +280,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
                 className="w-32"
                 inputClass="text-right"
                 value={calculations.paidAmount}
-                onChange={(e) =>
-                  setCalculations((p) => ({
-                    ...p,
-                    paidAmount: Number(e),
-                    dueAmount: p.total - Number(e),
-                  }))
-                }
+                onChange={(e) => setPaidAmountInput(Number(e))}
               />
             </div>
 
