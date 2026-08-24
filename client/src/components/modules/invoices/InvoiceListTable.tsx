@@ -299,24 +299,32 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
   );
 
   return (
-    <div>
+    <div className="space-y-4">
       {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
-        <SearchInput
-          placeholder="Search by invoice number or client name..."
-          value={searchTerm}
-          onChange={(val) => setSearchTerm(val)}
-        />
-        <FilterSelector
-          options={filterOptions}
-          value={filterStatus}
-          onChange={(val) => {
-            setFilterStatus(val);
-            setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-            dispatch(invalidateInvoicePages());
-          }}
-        />
-        <ExportButton onExport={handleExport} loading={isExporting} />
+      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+        <div className="w-full md:max-w-md flex-1">
+          <SearchInput
+            placeholder="Search by invoice number or client name..."
+            value={searchTerm}
+            onChange={(val) => setSearchTerm(val)}
+            className="w-full"
+          />
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0 overflow-x-auto pb-1 md:pb-0">
+          <div className="w-40 shrink-0">
+            <FilterSelector
+              options={filterOptions}
+              value={filterStatus}
+              onChange={(val) => {
+                setFilterStatus(val);
+                setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                dispatch(invalidateInvoicePages());
+              }}
+            />
+          </div>
+          <ExportButton onExport={handleExport} loading={isExporting} />
+        </div>
       </div>
 
       <DataTable

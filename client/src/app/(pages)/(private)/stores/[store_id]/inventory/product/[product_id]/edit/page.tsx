@@ -12,14 +12,16 @@ export const metadata: Metadata = {
 export default function ProductEditPage() {
   return (
     <StorePageContainer>
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <h1 className="text-gray-900 mb-2">Edit product</h1>
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h1 className="text-gray-900 mb-2">Edit product</h1>
+            </div>
           </div>
         </div>
+        <ProductForm formFor="edit" />
       </div>
-      <ProductForm formFor="edit" />
     </StorePageContainer>
   );
 }

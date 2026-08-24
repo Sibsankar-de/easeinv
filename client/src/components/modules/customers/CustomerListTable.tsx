@@ -234,22 +234,28 @@ export const CustomerListTable = () => {
   }, [setActionButtons]);
 
   return (
-    <div>
+    <div className="space-y-4">
       {/* Search and Filters */}
-      <div className="mb-4 flex items-center gap-3">
-        <SearchInput
-          placeholder="Search by name or phone number..."
-          value={searchTerm}
-          onChange={(val) => setSearchTerm(val)}
-        />
-        <Button
-          className="whitespace-nowrap"
-          onClick={() => setCustomerAddModalOpen(true)}
-        >
-          <UserPlus size={15} />
-          Add customer
-        </Button>
-        <ExportButton onExport={handleExport} loading={isExporting} />
+      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+        <div className="w-full md:max-w-md flex-1">
+          <SearchInput
+            placeholder="Search by name or phone number..."
+            value={searchTerm}
+            onChange={(val) => setSearchTerm(val)}
+            className="w-full"
+          />
+        </div>
+
+        <div className="flex items-center gap-2.5 shrink-0 overflow-x-auto pb-1 md:pb-0">
+          <ExportButton onExport={handleExport} loading={isExporting} />
+          <Button
+            className="gap-1.5 shrink-0 whitespace-nowrap"
+            onClick={() => setCustomerAddModalOpen(true)}
+          >
+            <UserPlus size={16} />
+            Add customer
+          </Button>
+        </div>
       </div>
 
       <DataTable

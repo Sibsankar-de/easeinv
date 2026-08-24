@@ -44,26 +44,37 @@ export const SidebarProvider = ({
   useEffect(() => {
     if (width === 0) return; // Wait for resize context initialization
 
-    if (!userToggled) {
-      if (md && !lg) {
-        // Medium screens (tablet): collapse to icon-only view
-        setIsCollapsed(true);
-      } else if (lg) {
-        // Large screens (desktop): expand sidebar
-        setIsCollapsed(false);
+    const timer = setTimeout(() => {
+      if (!userToggled) {
+        if (md && !lg) {
+          // Medium screens (tablet): collapse to icon-only view
+          setIsCollapsed(true);
+        } else if (lg) {
+          // Large screens (desktop): expand sidebar
+          setIsCollapsed(false);
+        }
       }
-    }
 
-    // Always close mobile drawer on breakpoint resize to desktop/tablet
-    if (md) {
-      setIsMobileOpen(false);
-    }
+      // Always close mobile drawer on breakpoint resize to desktop/tablet
+      if (md) {
+        setIsMobileOpen(false);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [width, md, lg, userToggled]);
 
-  // Close mobile menu on route changes
+  // Close mobile menu and collapse tablet overlay on route changes
   useEffect(() => {
-    setIsMobileOpen(false);
-  }, [pathname]);
+    const timer = setTimeout(() => {
+      setIsMobileOpen(false);
+      if (md && !lg) {
+        setIsCollapsed(true);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [pathname, md, lg]);
 
   const toggleCollapsed = () => {
     setUserToggled(true);

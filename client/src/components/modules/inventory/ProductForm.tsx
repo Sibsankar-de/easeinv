@@ -7,7 +7,18 @@ import { CategorySelector } from "./CategorySelector";
 import { StockUnitInput } from "../../ui/StockUnitInput";
 import { PriceBreakdownInput } from "./PriceBreakdownInput";
 import { Button } from "../../ui/Button";
-import { CloudCheck, Info, Clock, Package, ArrowLeft } from "lucide-react";
+import {
+  CloudCheck,
+  Info,
+  Package,
+  ArrowLeft,
+  Image as ImageIcon,
+  Layers,
+  Coins,
+  Boxes,
+  ShieldCheck,
+  Receipt,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   PricePerQuantityType,
@@ -43,13 +54,35 @@ import { convertUnit } from "@/utils/conversion";
 import { unitMap } from "@/constants/UnitMaps";
 import { formatDateStr } from "@/utils/formatDate";
 import { PriceInput } from "@/components/ui/PriceInput";
+import { Card, CardHeader } from "@/components/ui/Card";
+import { AppDispatch } from "@/store/store";
+
+interface ProductFormData {
+  name: string;
+  sku: string;
+  gtin: string;
+  description: string;
+  categoryIds: string[];
+  buyingPricePerQuantity: number;
+  mrp?: number;
+  stockUnit: string;
+  totalStock: number;
+  trackInventory: boolean;
+  alertThreshold: number;
+  emailAlert: boolean;
+  pricePerQuantity: PricePerQuantityType[];
+  imageIds: string[];
+  unitGroups: UnitGroupType[];
+  lastStockAddedAt?: Date | string | null;
+  lastStockAmount?: number | null;
+}
 
 export const ProductForm = ({ formFor }: { formFor: string }) => {
   const router = useRouter();
   const params = useParams();
   const storeId = params?.store_id as string;
-  const productId = params?.product_id;
-  const dispatch = useDispatch();
+  const productId = params?.product_id as string;
+  const dispatch = useDispatch<AppDispatch>();
   const { getStatus, createStatus, updateStatus } =
     useSelector(selectInventoryState);
   const {
@@ -59,12 +92,12 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
   const { setActionButtons } = useNavContext();
 
   // Data state (Numeric values for backend)
-  const [formData, setFormData] = useState<Record<string, any>>({
+  const [formData, setFormData] = useState<ProductFormData>({
     name: "",
     sku: "",
     gtin: "",
     description: "",
-    categoryIds: [] as string[],
+    categoryIds: [],
     buyingPricePerQuantity: 0,
     mrp: undefined,
     stockUnit: unitMap[0].key,
@@ -72,9 +105,9 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     trackInventory: false,
     alertThreshold: 0,
     emailAlert: false,
-    pricePerQuantity: [] as PricePerQuantityType[],
-    imageIds: [] as string[],
-    unitGroups: [] as UnitGroupType[],
+    pricePerQuantity: [],
+    imageIds: [],
+    unitGroups: [],
   });
 
   const [selectedImages, setSelectedImages] = useState<ProductImageType[]>([]);
@@ -95,13 +128,31 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
       dispatch(getProductDetailsThunk({ productId, storeId }))
         .unwrap()
         .then((product: ProductDto) => {
+          const cats = product.categories || [];
           setFormData({
-            ...product,
-            imageIds: product.images?.map((img: any) => img.id) || [],
+            name: product.name,
+            sku: product.sku,
+            gtin: product.gtin || "",
+            description: product.description || "",
+            categoryIds: cats.map((c) => c.id),
+            buyingPricePerQuantity: product.buyingPricePerQuantity,
+            mrp: product.mrp ?? undefined,
+            stockUnit: product.stockUnit,
+            totalStock: product.totalStock ?? 0,
+            trackInventory: Boolean(product.trackInventory),
+            alertThreshold: product.alertThreshold ?? 0,
+            emailAlert: Boolean(product.emailAlert),
+            pricePerQuantity: product.pricePerQuantity || [],
+            imageIds:
+              product.images?.map(
+                (img: ProductImageType) => img.id || img.imageId,
+              ) || [],
             unitGroups: product.unitGroups || [],
+            lastStockAddedAt: product.lastStockAddedAt ?? null,
+            lastStockAmount: product.lastStockAmount,
           });
           setSelectedImages(product.images || []);
-          setSelectedCategories(product.categories || []);
+          setSelectedCategories(cats);
 
           setLocalInputs({
             buyingPricePerQuantity:
@@ -123,9 +174,12 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
           });
         });
     }
-  }, [productId, formFor, storeId]);
+  }, [productId, formFor, storeId, dispatch]);
 
-  function handleFormData(key: keyof typeof formData, value: any) {
+  function handleFormData<K extends keyof ProductFormData>(
+    key: K,
+    value: ProductFormData[K],
+  ) {
     setFormData((prev) => ({
       ...prev,
       [key]: value,
@@ -148,7 +202,10 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
     );
   };
 
-  const handleNumberChange = (key: keyof typeof formData, rawValue: string) => {
+  const handleNumberChange = (
+    key: keyof typeof localInputs,
+    rawValue: string,
+  ) => {
     setLocalInputs((prev) => ({
       ...prev,
       [key]: rawValue,
@@ -161,7 +218,10 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
         : 0
       : numValue;
 
-    handleFormData(key, safeValue);
+    setFormData((prev) => ({
+      ...prev,
+      [key]: safeValue,
+    }));
   };
 
   const handleCreateProduct = async () => {
@@ -218,6 +278,7 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
         Save Product
       </NavActionButton>,
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setActionButtons, isLoading, isSubmitting, formData]);
 
   if (getStatus === "loading") {
@@ -225,283 +286,354 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <Label htmlFor="name" className="block text-gray-600 mb-1.5" required>
-          Product name
-        </Label>
-        <Input
-          placeholder="Enter product name"
-          id="name"
-          value={formData.name}
-          onChange={(e) => handleFormData("name", e)}
-          disabled={isLoading}
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* 1. Basic Details */}
+      <Card>
+        <CardHeader
+          icon={<Package className="w-5 h-5 text-indigo-600" />}
+          title="Basic Details"
         />
-      </div>
-      <div className="flex gap-6">
-        <div className="flex-1">
-          <Label htmlFor="sku" className="block text-gray-600 mb-1.5" required>
-            Product SKU
-          </Label>
-          <Input
-            placeholder="Enter sku"
-            id="sku"
-            value={formData.sku}
-            onChange={(e) => handleFormData("sku", e)}
-            disabled={isLoading}
-          />
-        </div>
-        <div className="flex-1">
-          <Label htmlFor="gtin" className="block text-gray-600 mb-1.5">
-            GTIN / UPC / EAN / Barcode
-          </Label>
-          <Input
-            placeholder="Enter GTIN"
-            id="gtin"
-            value={formData.gtin}
-            onChange={(e) => handleFormData("gtin", e)}
-            disabled={isLoading}
-          />
-        </div>
-      </div>
-      <div>
-        <Label htmlFor="description" className="block text-gray-600 mb-1.5">
-          Product description
-        </Label>
-        <Textarea
-          placeholder="Write product description"
-          id="description"
-          value={formData.description}
-          onChange={(e) => handleFormData("description", e)}
-          disabled={isLoading}
-        />
-      </div>
 
-      <Separator text={"Product images"} className="mb-8 mt-10" />
-
-      <div>
-        <Label className="flex items-center gap-3" htmlFor="">
-          <p>Add product images</p>
-          <IconTooltip
-            icon={<Info size={15} />}
-            tooltip={descriptiveTooltip.PRODUCT_IMAGE}
-          />
-        </Label>
-        <ProductImageSection
-          selectedImages={selectedImages}
-          onImageChange={handleSelectedImageChange}
-          storeId={storeId}
-          productId={productId as string}
-          rearrangeAllowed={formFor === "edit"}
-        />
-      </div>
-
-      <Separator text={"Categories"} className="mb-8 mt-10" />
-
-      <div>
-        <Label htmlFor="category" className="block text-gray-600 mb-1.5">
-          Select categories
-        </Label>
-        <CategorySelector
-          value={selectedCategories}
-          onChange={handleSelectedCategoryChange}
-        />
-      </div>
-
-      <Separator text={"Buying price"} className="mb-8 mt-10" />
-
-      <div className="flex items-center gap-3">
-        <div className="flex-1">
-          <Label
-            htmlFor="price"
-            className="block text-gray-600 mb-1.5"
-            required
-          >
-            Buying price
-          </Label>
-          <PriceInput
-            placeholder="Enter price for 1 unit"
-            id="price"
-            value={localInputs.buyingPricePerQuantity}
-            onChange={(e) => handleNumberChange("buyingPricePerQuantity", e)}
-            disabled={isLoading}
-          />
-        </div>
-        <p className="mt-7 text-gray-500">/</p>
-        <div className="flex-1">
-          <Label
-            htmlFor="stock-unit"
-            className="block text-gray-600 mb-1.5"
-            required
-          >
-            Stock unit
-          </Label>
-          <StockUnitInput
-            id="stock-unit"
-            value={formData.stockUnit}
-            onChange={(e) => handleFormData("stockUnit", e)}
-            disabled={isLoading}
-          />
-        </div>
-      </div>
-
-      <div>
-        <Label htmlFor="mrp">MRP</Label>
-        <PriceInput
-          placeholder="Enter MRP"
-          id="mrp"
-          value={localInputs.mrp}
-          onChange={(e) => handleNumberChange("mrp", e)}
-          disabled={isLoading}
-        />
-      </div>
-
-      <Separator text={"Unit Groups"} className="mb-8 mt-10" />
-
-      <div>
-        <Label className="flex items-center gap-3 mb-3">
-          <p>Unit groups (optional)</p>
-          <IconTooltip
-            icon={<Info size={15} />}
-            tooltip={descriptiveTooltip.UNIT_GROUPS}
-          />
-        </Label>
-        <UnitGroupsSection
-          baseUnit={formData.stockUnit}
-          value={formData.unitGroups}
-          onChange={(groups) => handleFormData("unitGroups", groups)}
-          disabled={isLoading}
-        />
-      </div>
-
-      <Separator text={"Inventory tracking"} className="mb-8 mt-10" />
-
-      <div className="space-y-4">
-        {/* Toggle Inventory Tracking */}
-        <div className="flex items-center gap-6 mb-3">
-          <Label
-            className="flex items-center gap-3 mb-0"
-            htmlFor="enable-tracking"
-          >
-            <p>Enable Inventory tracking</p>
-            <IconTooltip
-              icon={<Info size={15} />}
-              tooltip={descriptiveTooltip.STOCK_TRACKING}
-            />
-          </Label>
-          <ToggleButton
-            id="enable-tracking"
-            isActive={formData.trackInventory}
-            onChange={(e) => {
-              handleFormData("trackInventory", e);
-              if (
-                e &&
-                (!formData.alertThreshold || formData.alertThreshold === 0) &&
-                formData.totalStock > 0
-              ) {
-                const defaultThreshold =
-                  Math.round(formData.totalStock * 0.1 * 100) / 100;
-                handleFormData("alertThreshold", defaultThreshold);
-                setLocalInputs((prev) => ({
-                  ...prev,
-                  alertThreshold: String(defaultThreshold),
-                }));
-              }
-            }}
-            disabled={isLoading}
-          />
-        </div>
-
-        {/* Inventory details grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-5">
           <div>
             <Label
-              htmlFor="stock"
-              className="block text-gray-600 mb-1.5"
-              required={formData.trackInventory}
+              htmlFor="name"
+              className="block text-gray-700 mb-1.5"
+              required
             >
-              Total Stock
+              Product Name
             </Label>
-            <StockInput
-              type="number"
-              id="stock"
-              placeholder="Enter stock"
-              value={localInputs.totalStock}
-              unit={formData.stockUnit}
-              onChange={(e) => handleNumberChange("totalStock", e)}
-              disabled={!formData.trackInventory || isLoading}
+            <Input
+              placeholder="Enter product name"
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleFormData("name", e)}
+              disabled={isLoading}
             />
-            {formData.trackInventory && formData.lastStockAddedAt && (
-              <p className="mt-1.5 text-xs text-gray-500">
-                Last stock update: {formData.lastStockAmount}{" "}
-                {convertUnit(formData.stockUnit, storeSettings.customUnits)} on{" "}
-                {formatDateStr(formData.lastStockAddedAt).dateStr} at{" "}
-                {formatDateStr(formData.lastStockAddedAt).timeStr}
-              </p>
-            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <Label
+                htmlFor="sku"
+                className="block text-gray-700 mb-1.5"
+                required
+              >
+                Product SKU
+              </Label>
+              <Input
+                placeholder="Enter sku"
+                id="sku"
+                value={formData.sku}
+                onChange={(e) => handleFormData("sku", e)}
+                disabled={isLoading}
+              />
+            </div>
+            <div>
+              <Label htmlFor="gtin" className="block text-gray-700 mb-1.5">
+                GTIN / UPC / EAN / Barcode
+              </Label>
+              <Input
+                placeholder="Enter GTIN"
+                id="gtin"
+                value={formData.gtin}
+                onChange={(e) => handleFormData("gtin", e)}
+                disabled={isLoading}
+              />
+            </div>
           </div>
 
           <div>
-            <Label
-              htmlFor="alert-threshold"
-              className="block text-gray-600 mb-1.5"
-            >
-              Low Stock Alert Threshold
+            <Label htmlFor="description" className="block text-gray-700 mb-1.5">
+              Product Description
             </Label>
-            <StockInput
-              type="number"
-              id="alert-threshold"
-              placeholder="Enter threshold"
-              value={localInputs.alertThreshold}
-              unit={formData.stockUnit}
+            <Textarea
+              placeholder="Write product description..."
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleFormData("description", e)}
+              disabled={isLoading}
+              rows={3}
+            />
+          </div>
+        </div>
+      </Card>
+
+      {/* 2. Product Images */}
+      <Card>
+        <CardHeader
+          icon={<ImageIcon className="w-5 h-5 text-indigo-600" />}
+          title={
+            <div className="flex items-center gap-2">
+              <span>Product Images</span>
+              <IconTooltip
+                icon={<Info size={15} />}
+                tooltip={descriptiveTooltip.PRODUCT_IMAGE}
+              />
+            </div>
+          }
+        />
+
+        <div>
+          <ProductImageSection
+            selectedImages={selectedImages}
+            onImageChange={handleSelectedImageChange}
+            storeId={storeId}
+            productId={productId as string}
+            rearrangeAllowed={formFor === "edit"}
+          />
+        </div>
+      </Card>
+
+      {/* 3. Categories */}
+      <Card>
+        <CardHeader
+          icon={<Layers className="w-5 h-5 text-indigo-600" />}
+          title="Categories"
+        />
+
+        <div>
+          <CategorySelector
+            value={selectedCategories}
+            onChange={handleSelectedCategoryChange}
+          />
+        </div>
+      </Card>
+
+      {/* 4. Buying Price & Base Unit */}
+      <Card>
+        <CardHeader
+          icon={<Coins className="w-5 h-5 text-indigo-600" />}
+          title="Pricing & Base Unit"
+        />
+
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <Label
+                htmlFor="price"
+                className="block text-gray-700 mb-1.5"
+                required
+              >
+                Buying Price ({currencySymbol})
+              </Label>
+              <PriceInput
+                placeholder="Enter price for 1 unit"
+                id="price"
+                value={localInputs.buyingPricePerQuantity}
+                onChange={(e) =>
+                  handleNumberChange("buyingPricePerQuantity", e)
+                }
+                disabled={isLoading}
+              />
+            </div>
+
+            <div>
+              <Label
+                htmlFor="stock-unit"
+                className="block text-gray-700 mb-1.5"
+                required
+              >
+                Stock Base Unit
+              </Label>
+              <StockUnitInput
+                id="stock-unit"
+                value={formData.stockUnit}
+                onChange={(e) => handleFormData("stockUnit", e)}
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="mrp" className="block text-gray-700 mb-1.5">
+              Maximum Retail Price (MRP) ({currencySymbol})
+            </Label>
+            <PriceInput
+              placeholder="Enter MRP (Optional)"
+              id="mrp"
+              value={localInputs.mrp}
+              onChange={(e) => handleNumberChange("mrp", e)}
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+      </Card>
+
+      {/* 5. Unit Groups */}
+      <Card>
+        <CardHeader
+          icon={<Boxes className="w-5 h-5 text-indigo-600" />}
+          title={
+            <div className="flex items-center gap-2">
+              <span>Unit Groups (Optional)</span>
+              <IconTooltip
+                icon={<Info size={15} />}
+                tooltip={descriptiveTooltip.UNIT_GROUPS}
+              />
+            </div>
+          }
+        />
+
+        <div>
+          <UnitGroupsSection
+            baseUnit={formData.stockUnit}
+            value={formData.unitGroups}
+            onChange={(groups) => handleFormData("unitGroups", groups)}
+            disabled={isLoading}
+          />
+        </div>
+      </Card>
+
+      {/* 6. Inventory Tracking */}
+      <Card>
+        <CardHeader
+          icon={<ShieldCheck className="w-5 h-5 text-indigo-600" />}
+          title="Inventory Tracking"
+        />
+
+        <div className="space-y-5">
+          {/* Toggle Inventory Tracking */}
+          <div className="flex items-center justify-between p-3.5 bg-gray-50 rounded-lg border border-gray-200">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium text-gray-900 text-sm">
+                  Enable Inventory Tracking
+                </span>
+                <IconTooltip
+                  icon={<Info size={15} />}
+                  tooltip={descriptiveTooltip.STOCK_TRACKING}
+                />
+              </div>
+              <span className="text-gray-500 text-xs block">
+                Track stock levels and receive automatic low-stock
+                notifications.
+              </span>
+            </div>
+            <ToggleButton
+              id="enable-tracking"
+              isActive={formData.trackInventory}
               onChange={(e) => {
-                handleNumberChange("alertThreshold", e);
-                if (formFor === "create") {
-                  const num = parseFloat(e);
-                  if (!isNaN(num) && num > 0) {
-                    handleFormData("emailAlert", true);
-                  } else {
-                    handleFormData("emailAlert", false);
-                  }
+                handleFormData("trackInventory", e);
+                if (
+                  e &&
+                  (!formData.alertThreshold || formData.alertThreshold === 0) &&
+                  formData.totalStock > 0
+                ) {
+                  const defaultThreshold =
+                    Math.round(formData.totalStock * 0.1 * 100) / 100;
+                  handleFormData("alertThreshold", defaultThreshold);
+                  setLocalInputs((prev) => ({
+                    ...prev,
+                    alertThreshold: String(defaultThreshold),
+                  }));
                 }
               }}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Inventory details grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <Label
+                htmlFor="stock"
+                className="block text-gray-700 mb-1.5"
+                required={formData.trackInventory}
+              >
+                Total Stock
+              </Label>
+              <StockInput
+                type="number"
+                id="stock"
+                placeholder="Enter stock"
+                value={localInputs.totalStock}
+                unit={formData.stockUnit}
+                onChange={(e) => handleNumberChange("totalStock", e)}
+                disabled={!formData.trackInventory || isLoading}
+              />
+              {formData.trackInventory && formData.lastStockAddedAt && (
+                <p className="mt-1.5 text-xs text-gray-500">
+                  Last stock update: {formData.lastStockAmount}{" "}
+                  {convertUnit(formData.stockUnit, storeSettings.customUnits)}{" "}
+                  on {formatDateStr(formData.lastStockAddedAt).dateStr} at{" "}
+                  {formatDateStr(formData.lastStockAddedAt).timeStr}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label
+                htmlFor="alert-threshold"
+                className="block text-gray-700 mb-1.5"
+              >
+                Low Stock Alert Threshold
+              </Label>
+              <StockInput
+                type="number"
+                id="alert-threshold"
+                placeholder="Enter threshold"
+                value={localInputs.alertThreshold}
+                unit={formData.stockUnit}
+                onChange={(e) => {
+                  handleNumberChange("alertThreshold", e);
+                  if (formFor === "create") {
+                    const num = parseFloat(e);
+                    if (!isNaN(num) && num > 0) {
+                      handleFormData("emailAlert", true);
+                    } else {
+                      handleFormData("emailAlert", false);
+                    }
+                  }
+                }}
+                disabled={!formData.trackInventory || isLoading}
+              />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Email Alert Toggle */}
+          <div className="flex items-center justify-between pt-1">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium text-gray-900 text-sm">
+                  Enable Email Alerts
+                </span>
+                <IconTooltip
+                  icon={<Info size={15} />}
+                  tooltip={descriptiveTooltip.EMAIL_ALERT}
+                />
+              </div>
+              <span className="text-gray-500 text-xs block">
+                Receive email alerts when stock falls below the threshold.
+              </span>
+            </div>
+            <ToggleButton
+              id="email-alert"
+              isActive={formData.emailAlert}
+              onChange={(e) => handleFormData("emailAlert", e)}
               disabled={!formData.trackInventory || isLoading}
             />
           </div>
         </div>
+      </Card>
 
-        {/* Email Alert Toggle */}
-        <div className="flex items-center gap-6 pt-2">
-          <Label className="flex items-center gap-3 mb-0" htmlFor="email-alert">
-            <p>Enable Email Alerts</p>
-            <IconTooltip
-              icon={<Info size={15} />}
-              tooltip={descriptiveTooltip.EMAIL_ALERT}
-            />
-          </Label>
-          <ToggleButton
-            id="email-alert"
-            isActive={formData.emailAlert}
-            onChange={(e) => handleFormData("emailAlert", e)}
-            disabled={!formData.trackInventory || isLoading}
-          />
-        </div>
-      </div>
+      {/* 7. Selling Prices */}
+      <Card>
+        <CardHeader
+          icon={<Receipt className="w-5 h-5 text-indigo-600" />}
+          title={
+            <div className="flex items-center gap-2">
+              <span>Selling Prices (Price per Quantity)</span>
+              <IconTooltip
+                icon={<Info size={15} />}
+                tooltip={descriptiveTooltip.PRICE_PER_QUANTITY}
+              />
+            </div>
+          }
+        />
 
-      <Separator text={"Selling price"} className="mb-8 mt-10" />
-
-      <div>
-        <Label
-          className="flex items-center gap-3"
-          htmlFor="price-breakdown"
-          required
-        >
-          <p>Add price per quantity (Selling prices)</p>
-          <IconTooltip
-            icon={<Info size={15} />}
-            tooltip={descriptiveTooltip.PRICE_PER_QUANTITY}
-          />
-        </Label>
         <div>
           <PriceBreakdownInput
             value={formData.pricePerQuantity}
@@ -512,20 +644,28 @@ export const ProductForm = ({ formFor }: { formFor: string }) => {
             unitGroups={formData.unitGroups}
           />
         </div>
-      </div>
+      </Card>
 
-      <div className="mt-10 flex items-center gap-3 justify-end">
-        <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft size={15} />
+      {/* Bottom Actions */}
+      <div className="flex items-center justify-end gap-3 pt-3">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.back()}
+          disabled={isLoading}
+        >
+          <ArrowLeft size={16} />
           Back
         </Button>
         <Button
+          type="button"
           onClick={handleSaveProduct}
           disabled={isLoading}
           loading={isSubmitting}
+          className="gap-2"
         >
-          <CloudCheck size={17} />
-          Save product
+          <CloudCheck size={18} />
+          {formFor === "create" ? "Create Product" : "Save Changes"}
         </Button>
       </div>
     </div>

@@ -30,6 +30,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSidebar } from "@/contexts/SidebarContext";
 import { StoreSelector } from "./StoreSelector";
 import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/store/store";
 import {
   fetchNotificationsThunk,
   selectNotificationState,
@@ -37,7 +38,7 @@ import {
 import { NotificationPane } from "../notifications/NotificationPane";
 
 function NotificationBellButton() {
-  const dispatch = useDispatch<any>();
+  const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated } = useAuth();
   const { unreadCount } = useSelector(selectNotificationState);
   const [isOpen, setIsOpen] = useState(false);
@@ -96,13 +97,18 @@ function MobileDrawer({
 
   useEffect(() => {
     if (isOpen) {
-      setMounted(true);
-      const timer = setTimeout(() => setActive(true), 10);
+      const timer = setTimeout(() => {
+        setMounted(true);
+        setActive(true);
+      }, 0);
       return () => clearTimeout(timer);
     } else {
-      setActive(false);
-      const timer = setTimeout(() => setMounted(false), 300);
-      return () => clearTimeout(timer);
+      const activeTimer = setTimeout(() => setActive(false), 0);
+      const mountTimer = setTimeout(() => setMounted(false), 300);
+      return () => {
+        clearTimeout(activeTimer);
+        clearTimeout(mountTimer);
+      };
     }
   }, [isOpen]);
 
@@ -136,17 +142,42 @@ function MobileDrawer({
 
 export function Sidebar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { isCollapsed, toggleCollapsed, isMobileOpen, closeMobile } =
-    useSidebar();
+  const {
+    isCollapsed,
+    toggleCollapsed,
+    setCollapsed,
+    isMobileOpen,
+    closeMobile,
+  } = useSidebar();
+  const { md, lg } = useResize();
+
+  const isTablet = md && !lg;
+  const isTabletOverlay = isTablet && !isCollapsed;
 
   return (
     <>
+      {/* Tablet Overlay Backdrop when opened */}
+      {isTabletOverlay && (
+        <div
+          className="fixed inset-0 bg-black/25 z-40 backdrop-blur-[1px] md:block lg:hidden"
+          onClick={() => setCollapsed(true)}
+        />
+      )}
+
+      {/* Normal flow placeholder for tablet view when expanded so page layout doesn't shift */}
+      {isTabletOverlay && (
+        <div className="hidden md:block lg:hidden w-16 shrink-0 h-full border-r border-transparent" />
+      )}
+
       {/* 1. Desktop & Tablet Sidebar */}
       <aside
         className={cn(
-          "hidden md:flex flex-col bg-white border-r border-gray-200",
-          "transition-all duration-300 relative select-none h-full",
-          isCollapsed ? "w-16" : "w-64",
+          "hidden md:flex flex-col bg-white border-r border-gray-200 select-none h-full",
+          "transition-all duration-300",
+          isTabletOverlay
+            ? "fixed inset-y-0 left-0 z-50 w-64 shadow-2xl"
+            : "relative",
+          !isTabletOverlay && (isCollapsed ? "w-16" : "w-64"),
         )}
       >
         {/* Top Sidebar Header with AppLogo & PanelLeft Toggle Icon */}

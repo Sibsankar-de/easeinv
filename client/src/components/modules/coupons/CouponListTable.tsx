@@ -7,7 +7,6 @@ import {
   Edit2,
   Trash2,
   Plus,
-  Percent,
   CheckCircle2,
   XCircle,
 } from "lucide-react";
@@ -341,8 +340,8 @@ export const CouponListTable = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="flex-1 w-full sm:w-auto max-w-md">
+      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+        <div className="w-full md:max-w-md flex-1">
           <SearchInput
             placeholder="Search coupon by code or name..."
             value={searchTerm}
@@ -351,8 +350,8 @@ export const CouponListTable = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-          <div className="w-36">
+        <div className="flex items-center gap-2.5 shrink-0 overflow-x-auto pb-1 md:pb-0">
+          <div className="w-36 shrink-0">
             <Select
               options={statusOptions}
               value={statusFilter}
@@ -364,7 +363,7 @@ export const CouponListTable = () => {
             />
           </div>
 
-          <div className="w-40">
+          <div className="w-40 shrink-0">
             <Select
               options={discountTypeOptions}
               value={discountTypeFilter}
@@ -378,7 +377,7 @@ export const CouponListTable = () => {
 
           <Button
             onClick={() => navigate("/coupons/add-coupon")}
-            className="gap-1.5"
+            className="gap-1.5 shrink-0 whitespace-nowrap"
           >
             <Plus size={16} />
             Add Coupon
