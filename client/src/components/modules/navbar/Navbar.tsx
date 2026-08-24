@@ -19,7 +19,7 @@ import { useEffect, useRef, useState } from "react";
 import { AppLogo, AppLogoFull } from "../../ui/AppLogo";
 import { useResize } from "@/contexts/ResizeContext";
 import { NavbarSearch } from "./NavbarSearch";
-import { useRouter } from "next/navigation";
+import { useAppRouter as useRouter } from "@/hooks/useAppRouter";
 import { Button, ButtonType } from "../../ui/Button";
 import { cn } from "../../utils";
 import { useNavContext } from "@/contexts/NavContext";

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useRouter } from "next/navigation";
+import { useAppRouter as useRouter } from "@/hooks/useAppRouter";
 import { toast } from "@/utils/toast";
 import { PrimaryBox } from "@/components/ui/PrimaryBox";
 import { Button } from "@/components/ui/Button";
@@ -34,11 +34,10 @@ export const SecuritySettingsTabContent = () => {
   const storeName = currentStore?.name || "";
   const confirmationLine = `delete/${storeName}`;
 
-  useEffect(() => {
-    if (!modalOpen) {
-      setConfInput("");
-    }
-  }, [modalOpen]);
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setConfInput("");
+  };
 
   const handleDelete = () => {
     if (confInput !== confirmationLine) {
@@ -86,12 +85,13 @@ export const SecuritySettingsTabContent = () => {
 
       <Modal
         openState={modalOpen}
-        onClose={() => !isDeleting && setModalOpen(false)}
-        className="p-4 space-y-4 w-[90vw] sm:w-[28rem] md:w-[35vw]"
-        header={<ModalHeader title="Delete Store" />}
+        onClose={handleCloseModal}
+        className="space-y-6 p-4 w-[90vw] sm:w-lg"
+        header={<ModalHeader title="Delete Store Permanently" />}
       >
-        <p className="text-sm text-gray-600 font-sans">
-          This action will permanently delete the store{" "}
+        <p className="text-gray-600 mb-6 font-sans">
+          This action <strong className="text-red-500">cannot</strong> be
+          undone. This will permanently delete the store{" "}
           <strong className="font-semibold">{storeName}</strong> and all of its
           associated records.
         </p>
@@ -114,7 +114,7 @@ export const SecuritySettingsTabContent = () => {
         <div className="flex justify-end gap-3 pt-2">
           <Button
             variant="outline"
-            onClick={() => setModalOpen(false)}
+            onClick={handleCloseModal}
             disabled={isDeleting}
           >
             Cancel

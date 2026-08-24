@@ -236,8 +236,8 @@ export const CustomerListTable = () => {
   return (
     <div className="space-y-4">
       {/* Search and Filters */}
-      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-        <div className="w-full md:max-w-md flex-1">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        <div className="w-full lg:w-72 xl:w-80">
           <SearchInput
             placeholder="Search by name or phone number..."
             value={searchTerm}
@@ -246,10 +246,10 @@ export const CustomerListTable = () => {
           />
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0 overflow-x-auto pb-1 md:pb-0">
+        <div className="flex items-center gap-2.5 justify-end">
           <ExportButton onExport={handleExport} loading={isExporting} />
           <Button
-            className="gap-1.5 shrink-0 whitespace-nowrap"
+            className="gap-1.5 whitespace-nowrap"
             onClick={() => setCustomerAddModalOpen(true)}
           >
             <UserPlus size={16} />

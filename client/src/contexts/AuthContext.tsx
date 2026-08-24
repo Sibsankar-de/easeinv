@@ -4,15 +4,14 @@ import api from "@/configs/axios-config";
 import { AppDispatch } from "@/store/store";
 import { requestHandler } from "@/utils/api-request";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchCurrentUser, selectUserSate } from "@/store/features/userSlice";
-import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { fetchCurrentUser } from "@/store/features/userSlice";
 
 type AuthContextTypes = {
   isAuthenticated: boolean;
   isAuthChecking: boolean;
-  registerUser: (payload: any) => void;
-  loginUser: (payload: any) => void;
+  registerUser: (payload: unknown) => void;
+  loginUser: (payload: unknown) => void;
   logoutUser: () => void;
   loginWithGoogle: () => void;
 };
@@ -23,11 +22,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch<AppDispatch>();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isAuthChecking, setIsAuthChecking] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   // fetch current user
   useEffect(() => {
-    setIsAuthChecking(true);
     dispatch(fetchCurrentUser())
       .unwrap()
       .then(() => {
@@ -56,19 +54,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const redirectTo = getRedirectUrl();
 
     await api.post("/users/login", payload).then(() => {
-      window.location.href = `${window.location.origin}${redirectTo}`;
+      window.location.assign(`${window.location.origin}${redirectTo}`);
     });
   });
 
   const logoutUser = requestHandler(async () => {
     await api.post("/users/logout").then(() => {
-      window.location.href = `${window.location.origin}/auth/login`;
+      window.location.assign(`${window.location.origin}/auth/login`);
     });
   });
 
   const loginWithGoogle = requestHandler(async () => {
     const redirectTo = getRedirectUrl();
-    window.location.href = `${api.defaults.baseURL}/oauth/authenticate?redirect=${encodeURIComponent(redirectTo)}`;
+    window.location.assign(
+      `${api.defaults.baseURL}/oauth/authenticate?redirect=${encodeURIComponent(redirectTo)}`,
+    );
   });
 
   return (

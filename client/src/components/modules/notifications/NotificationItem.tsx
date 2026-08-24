@@ -8,7 +8,7 @@ import {
   getNotificationNavigation,
 } from "@/utils/notificationHelpers";
 import { Check, Trash2, ExternalLink } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useAppRouter as useRouter } from "@/hooks/useAppRouter";
 import { cn } from "@/components/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

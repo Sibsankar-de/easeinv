@@ -34,7 +34,8 @@ import {
   updateProductThunk,
   invalidateProductPages,
 } from "@/store/features/inventorySlice";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
+import { useAppRouter as useRouter } from "@/hooks/useAppRouter";
 import { toast } from "@/utils/toast";
 import { useStoreNavigation } from "@/hooks/store-navigation";
 import { StockInput } from "@/components/ui/StockInput";

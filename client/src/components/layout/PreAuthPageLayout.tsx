@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useAppRouter as useRouter } from "@/hooks/useAppRouter";
 import React, { useEffect } from "react";
 
 export const PreAuthPageLayout = ({
@@ -11,18 +11,22 @@ export const PreAuthPageLayout = ({
 }) => {
   const router = useRouter();
   const { isAuthenticated, isAuthChecking } = useAuth();
-  if (!isAuthChecking && !isAuthenticated) {
-    return children;
-  }
 
   useEffect(() => {
     if (!isAuthChecking && isAuthenticated) {
       const searchParams = new URLSearchParams(window.location.search);
       const redirectParam = searchParams.get("redirect");
-      const redirectTo = (redirectParam && redirectParam.startsWith('/')) ? redirectParam : "/profile";
+      const redirectTo =
+        redirectParam && redirectParam.startsWith("/")
+          ? redirectParam
+          : "/profile";
       router.push(redirectTo);
     }
   }, [router, isAuthenticated, isAuthChecking]);
+
+  if (!isAuthChecking && !isAuthenticated) {
+    return children;
+  }
 
   return null;
 };

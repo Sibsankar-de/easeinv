@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter as useRouter } from "@/hooks/useAppRouter";
 import { PrimaryBox } from "@/components/ui/PrimaryBox";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";

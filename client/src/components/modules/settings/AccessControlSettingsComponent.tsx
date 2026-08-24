@@ -181,8 +181,8 @@ export const AccessControlSettingsComponent = () => {
 
   return (
     <TabContent tabId="access-control" className="space-y-4">
-      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-        <div className="w-full md:max-w-md flex-1">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        <div className="w-full lg:w-72 xl:w-80">
           <SearchInput
             placeholder="Search by email or name..."
             value={searchTerm}
@@ -191,10 +191,10 @@ export const AccessControlSettingsComponent = () => {
           />
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2.5 justify-end">
           <Button
             onClick={() => setIsAddModalOpen(true)}
-            className="gap-1.5 shrink-0 whitespace-nowrap"
+            className="gap-1.5 whitespace-nowrap"
           >
             <UserPlus size={16} />
             Invite new user

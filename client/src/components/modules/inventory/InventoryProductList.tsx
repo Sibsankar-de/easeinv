@@ -296,8 +296,8 @@ export const InventoryProductList = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-        <div className="w-full md:max-w-md flex-1">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        <div className="w-full lg:w-72 xl:w-80">
           <SearchInput
             placeholder="Search products by name or SKU..."
             value={searchTerm}
@@ -306,29 +306,31 @@ export const InventoryProductList = () => {
           />
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0 overflow-x-auto pb-1 md:pb-0">
-          <div className="w-44 shrink-0">
-            <Select
-              options={categoryOptions}
-              value={selectedCategory}
-              onChange={(val) => {
-                setSelectedCategory(val);
-                setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-                dispatch(invalidateProductPages());
-              }}
-              placeholder="Select category"
-              className="w-full"
-              dropdownClass="max-h-100"
-              icon={<ListFilterPlus size={18} />}
-            />
-          </div>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 justify-end">
+          <div className="flex items-center gap-2.5 flex-1 sm:flex-initial">
+            <div className="flex-1 sm:w-44">
+              <Select
+                options={categoryOptions}
+                value={selectedCategory}
+                onChange={(val) => {
+                  setSelectedCategory(val);
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                  dispatch(invalidateProductPages());
+                }}
+                placeholder="Select category"
+                className="w-full"
+                dropdownClass="max-h-100"
+                icon={<ListFilterPlus size={18} />}
+              />
+            </div>
 
-          <ExportButton onExport={handleExport} loading={isExporting} />
+            <ExportButton onExport={handleExport} loading={isExporting} />
+          </div>
 
           <Button
             variant="primary"
             onClick={() => navigate("/inventory/add-product")}
-            className="gap-1.5 shrink-0 whitespace-nowrap"
+            className="gap-1.5 whitespace-nowrap justify-center"
           >
             <Plus size={16} />
             Add Product

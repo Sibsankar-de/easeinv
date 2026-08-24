@@ -301,8 +301,8 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
   return (
     <div className="space-y-4">
       {/* Search and Filters */}
-      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-        <div className="w-full md:max-w-md flex-1">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        <div className="w-full lg:w-72 xl:w-80">
           <SearchInput
             placeholder="Search by invoice number or client name..."
             value={searchTerm}
@@ -311,8 +311,8 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
           />
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0 overflow-x-auto pb-1 md:pb-0">
-          <div className="w-40 shrink-0">
+        <div className="flex items-center gap-2.5 justify-end">
+          <div className="flex-1 sm:w-40">
             <FilterSelector
               options={filterOptions}
               value={filterStatus}
@@ -321,6 +321,7 @@ export const InvoiceListTable = ({ customerId }: { customerId?: string }) => {
                 setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                 dispatch(invalidateInvoicePages());
               }}
+              className="w-full"
             />
           </div>
           <ExportButton onExport={handleExport} loading={isExporting} />
