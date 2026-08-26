@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CreateBillPage } from "@/components/modules/create-bill/CreateBillPage";
 import { StorePageContainer } from "@/components/ui/PageContainer";
-import React from "react";
+import React, { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Create Invoice",
@@ -23,7 +23,9 @@ export default function BillingPage() {
 
       <div className="bg-white rounded-xl border border-gray-200 p-8">
         {/* Billing sector */}
-        <CreateBillPage />
+        <Suspense fallback={null}>
+          <CreateBillPage />
+        </Suspense>
       </div>
     </StorePageContainer>
   );

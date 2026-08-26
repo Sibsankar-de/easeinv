@@ -5,7 +5,7 @@ import { Button } from "../../ui/Button";
 import { LogOut, Store, User } from "lucide-react";
 import { useContext, useState } from "react";
 import AuthContext from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useAppRouter as useRouter } from "@/hooks/useAppRouter";
 
 type ProfileDropdownProps = {
   openState: boolean;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useAppRouter as useRouter } from "@/hooks/useAppRouter";
 import React, { useEffect } from "react";
 
 export const PrivatePageLayout = ({
@@ -11,9 +11,6 @@ export const PrivatePageLayout = ({
 }) => {
   const router = useRouter();
   const { isAuthenticated, isAuthChecking } = useAuth();
-  if (!isAuthChecking && isAuthenticated) {
-    return children;
-  }
 
   useEffect(() => {
     if (!isAuthChecking && !isAuthenticated) {
@@ -21,6 +18,10 @@ export const PrivatePageLayout = ({
       router.push(`/auth/login?redirect=${encodeURIComponent(currentUrl)}`);
     }
   }, [router, isAuthenticated, isAuthChecking]);
+
+  if (!isAuthChecking && isAuthenticated) {
+    return children;
+  }
 
   return null;
 };

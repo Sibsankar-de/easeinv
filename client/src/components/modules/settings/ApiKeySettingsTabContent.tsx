@@ -108,7 +108,7 @@ export const ApiKeyTabContent = () => {
     if (fetchStatus === "idle") {
       dispatch(fetchApiKeyListThunk(storeId));
     }
-  }, [fetchStatus]);
+  }, [fetchStatus, storeId, dispatch]);
 
   // Search rules configuration - Search only on name
   const searchRules = useMemo<SearchRule<ApiKeyDto>[]>(
@@ -232,13 +232,14 @@ export const ApiKeyTabContent = () => {
         meta: { className: "text-center" },
       },
       {
+        id: "actions",
         header: "Actions",
         enableSorting: false,
         meta: { className: "text-right" },
         cell: ({ row }) => <ApiKeyTableActions apiKey={row.original} />,
       },
     ],
-    [apiKeyList],
+    [],
   );
 
   const isLoading = fetchStatus === "loading";
@@ -251,18 +252,25 @@ export const ApiKeyTabContent = () => {
       </Banner>
 
       {/* Search and action bar */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        <div className="w-full lg:w-72 xl:w-80">
           <SearchInput
             placeholder="Search API keys by name..."
             value={searchTerm}
             onChange={(val) => setSearchTerm(val)}
+            className="w-full"
           />
         </div>
-        <Button onClick={() => setCreateModalOpen(true)}>
-          <Plus size={16} />
-          Create API Key
-        </Button>
+
+        <div className="flex items-center gap-2.5 justify-end">
+          <Button
+            onClick={() => setCreateModalOpen(true)}
+            className="gap-1.5 whitespace-nowrap"
+          >
+            <Plus size={16} />
+            Create API Key
+          </Button>
+        </div>
       </div>
 
       {/* DataTable */}

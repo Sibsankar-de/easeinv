@@ -35,7 +35,6 @@ export function ProductSearchInput({
     data: { storeSettings, currencySymbol },
   } = useSelector(selectCurrentStoreState);
 
-  const [input, setInput] = useState("");
   const [searchList, setSearchList] = useState<ProductDto[]>([]);
 
   const handleSearch = (query: string) => {
@@ -43,9 +42,14 @@ export function ProductSearchInput({
 
     dispatch(searchProductsThunk({ storeId, query }))
       .unwrap()
-      .then((res: any) => {
+      .then((res: ProductDto[]) => {
         setSearchList(res);
       });
+  };
+
+  const handleSelect = (p: ProductDto) => {
+    setSearchList([]);
+    onSelect(p);
   };
 
   // key board event
@@ -68,7 +72,7 @@ export function ProductSearchInput({
   return (
     <SearchableInput
       items={searchList}
-      value={input}
+      value={value}
       placeholder="Type product name/sku/gtin"
       inputProps={{ ref: inputRef, autoFocus: index > 0 }}
       closeOnEmpty={false}
@@ -77,7 +81,7 @@ export function ProductSearchInput({
       isLoading={isSearching}
       onSearch={handleSearch}
       getLabel={(p) => p.name}
-      onSelect={onSelect}
+      onSelect={handleSelect}
     >
       {(items) =>
         items.map((p, i) => (

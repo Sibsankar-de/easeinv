@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useAppRouter as useRouter } from "@/hooks/useAppRouter";
 import { FileText, Layout, ExternalLink } from "lucide-react";
 import Fuse from "fuse.js";
 import { useStoreNavigation } from "@/hooks/store-navigation";

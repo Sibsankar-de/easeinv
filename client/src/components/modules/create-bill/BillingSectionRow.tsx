@@ -2,7 +2,7 @@
 
 import { BillItemType } from "@/types/dto/invoiceDto";
 import { calculatePrice } from "@/utils/price-calculator";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { ProductSearchInput } from "./ProductSearchInput";
 import { StockInput } from "@/components/ui/StockInput";
 import { Input } from "@/components/ui/Input";
@@ -19,12 +19,14 @@ export function BillingSectionRow({
   item,
   index,
   onFieldUpdate,
+  onSelectProduct,
   onRemoveItem,
 }: {
   id: string;
   item: BillItemType;
   index: number;
   onFieldUpdate: (doc: BillItemType) => void;
+  onSelectProduct?: (product: ProductDto) => void;
   onRemoveItem: (id: string) => void;
 }) {
   const baseId = useId();
@@ -32,15 +34,28 @@ export function BillingSectionRow({
     data: { storeSettings },
   } = useSelector(selectCurrentStoreState);
 
-  const [selectedItem, setSelectedItem] = useState<ProductDto | null>(null);
-  const [selectedUnit, setSelectedUnit] = useState<string>("");
-  const [productFields, setProductFields] = useState<BillItemType>(item);
+  const selectedItem =
+    item.product && item.product.id
+      ? (item.product as unknown as ProductDto)
+      : null;
+  const selectedUnit =
+    item.stockUnit || (item.product as unknown as ProductDto)?.stockUnit || "";
 
-  // We maintain a separate state for input strings to allow "0." or "0.05"
-  const [localInputs, setLocalInputs] = useState({
-    netQuantity: String(item.netQuantity || 0),
-    totalPrice: String(item.totalPrice || 0),
-  });
+  // Maintain local state for input strings during active typing
+  const [localInputs, setLocalInputs] = useState<{
+    netQuantity?: string;
+    totalPrice?: string;
+  }>({});
+
+  const netQuantityDisplay =
+    localInputs.netQuantity !== undefined
+      ? localInputs.netQuantity
+      : String(item.netQuantity || 0);
+
+  const totalPriceDisplay =
+    localInputs.totalPrice !== undefined
+      ? localInputs.totalPrice
+      : String(item.totalPrice || 0);
 
   // Build unit options from product's unitGroups + stockUnit
   const groupUnitOptions: SelectOptionType[] = selectedItem
@@ -54,99 +69,109 @@ export function BillingSectionRow({
           value: convertUnit(selectedItem.stockUnit, storeSettings.customUnits),
         },
       ]
-    : [];
+    : item.stockUnit
+      ? [
+          {
+            key: item.stockUnit,
+            value: convertUnit(item.stockUnit, storeSettings.customUnits),
+          },
+        ]
+      : [];
 
-  useEffect(() => {
-    if (selectedItem) {
-      // Reset selected unit to base unit when product changes
-      setSelectedUnit(selectedItem.stockUnit);
-
-      const quantity = 1;
-      const calc = calculatePrice(quantity, selectedItem.pricePerQuantity, {
-        baseUnit: selectedItem.stockUnit,
-        selectedUnit: selectedItem.stockUnit,
-        unitGroups: selectedItem.unitGroups ?? [],
-      });
-
-      const newItem: BillItemType = {
-        ...item,
-        id,
-        product: {
-          id: selectedItem.id,
-          name: selectedItem.name,
-          sku: selectedItem.sku,
-        },
-        pricePerQuantity: calc.chosenTier,
-        netQuantity: quantity,
-        totalPrice: calc.price,
-        stockUnit: selectedItem.stockUnit,
-        totalProfit: calc.profit,
-      };
-
-      setProductFields(newItem);
-      setLocalInputs({
-        netQuantity: String(quantity),
-        totalPrice: String(calc.price),
-      });
-      onFieldUpdate(newItem);
+  const handleSelectProduct = (p: ProductDto) => {
+    setLocalInputs({});
+    if (onSelectProduct) {
+      onSelectProduct(p);
+      return;
     }
-  }, [selectedItem]);
+
+    const quantity = 1;
+    const calc = calculatePrice(quantity, p.pricePerQuantity, {
+      baseUnit: p.stockUnit,
+      selectedUnit: p.stockUnit,
+      unitGroups: p.unitGroups ?? [],
+    });
+
+    const newItem: BillItemType = {
+      ...item,
+      id,
+      product: {
+        id: p.id,
+        name: p.name,
+        sku: p.sku,
+      },
+      pricePerQuantity: calc.chosenTier,
+      netQuantity: quantity,
+      totalPrice: calc.price,
+      stockUnit: p.stockUnit,
+      totalProfit: calc.profit,
+    };
+
+    onFieldUpdate(newItem);
+  };
 
   const handleUnitChange = (unit: string) => {
-    setSelectedUnit(unit);
-    const quantity = parseFloat(localInputs.netQuantity) || 0;
-    if (selectedItem) {
+    const quantity = parseFloat(netQuantityDisplay) || 0;
+    if (selectedItem && selectedItem.pricePerQuantity) {
       const calc = calculatePrice(quantity, selectedItem.pricePerQuantity, {
         baseUnit: selectedItem.stockUnit,
         selectedUnit: unit,
         unitGroups: selectedItem.unitGroups ?? [],
       });
       const withTotal = {
-        ...productFields,
+        ...item,
         stockUnit: unit,
         pricePerQuantity: calc.chosenTier,
         totalPrice: calc.price,
         totalProfit: calc.profit,
       };
-      setProductFields(withTotal);
       setLocalInputs((prev) => ({ ...prev, totalPrice: String(calc.price) }));
+      onFieldUpdate(withTotal);
+    } else {
+      const withTotal = {
+        ...item,
+        stockUnit: unit,
+      };
       onFieldUpdate(withTotal);
     }
   };
 
-  const handleInputChange = (key: keyof BillItemType, rawValue: string) => {
-    if (key === "netQuantity" || key === "totalPrice") {
-      setLocalInputs((prev) => ({ ...prev, [key]: rawValue }));
-    }
+  const handleInputChange = (
+    key: "netQuantity" | "totalPrice",
+    val: string,
+  ) => {
+    setLocalInputs((prev) => ({ ...prev, [key]: val }));
 
-    const numValue = parseFloat(rawValue);
-    const safeValue = isNaN(numValue) ? 0 : numValue;
-
-    const updated = { ...productFields, id, [key]: safeValue };
-    setProductFields(updated);
-    onFieldUpdate(updated);
-
-    if (key === "netQuantity" && selectedItem) {
-      const calc = calculatePrice(safeValue, selectedItem.pricePerQuantity, {
-        baseUnit: selectedItem.stockUnit,
-        selectedUnit,
-        unitGroups: selectedItem.unitGroups ?? [],
-      });
-
+    if (key === "netQuantity") {
+      const quantity = parseFloat(val) || 0;
+      if (selectedItem && selectedItem.pricePerQuantity) {
+        const calc = calculatePrice(quantity, selectedItem.pricePerQuantity, {
+          baseUnit: selectedItem.stockUnit,
+          selectedUnit,
+          unitGroups: selectedItem.unitGroups ?? [],
+        });
+        const withTotal = {
+          ...item,
+          netQuantity: quantity,
+          pricePerQuantity: calc.chosenTier,
+          totalPrice: calc.price,
+          totalProfit: calc.profit,
+        };
+        setLocalInputs((prev) => ({ ...prev, totalPrice: String(calc.price) }));
+        onFieldUpdate(withTotal);
+      } else {
+        const withQuantity = {
+          ...item,
+          netQuantity: quantity,
+        };
+        onFieldUpdate(withQuantity);
+      }
+    } else if (key === "totalPrice") {
+      const price = parseFloat(val) || 0;
       const withTotal = {
-        ...updated,
-        pricePerQuantity: calc.chosenTier,
-        totalPrice: calc.price,
-        totalProfit: calc.profit,
+        ...item,
+        totalPrice: price,
       };
-
-      setProductFields(withTotal);
-
-      setLocalInputs((prev) => ({
-        ...prev,
-        totalPrice: String(calc.price),
-      }));
-
       onFieldUpdate(withTotal);
     }
   };
@@ -155,8 +180,8 @@ export function BillingSectionRow({
     <tr className="border-t border-gray-200">
       <td className="px-2 py-3">
         <ProductSearchInput
-          onSelect={(e) => setSelectedItem(e)}
-          value={productFields.product.name}
+          onSelect={handleSelectProduct}
+          value={item.product.name}
           index={index}
         />
       </td>
@@ -165,11 +190,11 @@ export function BillingSectionRow({
         <StockInput
           id={`${baseId}-quantity`}
           placeholder="0.00"
-          value={localInputs.netQuantity}
+          value={netQuantityDisplay}
           onChange={(e) => handleInputChange("netQuantity", e)}
           isSelect={true}
           options={groupUnitOptions}
-          unit={selectedUnit}
+          unit={selectedUnit || item.stockUnit || ""}
           onUnitChange={handleUnitChange}
           className="w-30"
         />
@@ -180,7 +205,7 @@ export function BillingSectionRow({
           type="number"
           placeholder="0.00"
           inputClass="text-right"
-          value={localInputs.totalPrice}
+          value={totalPriceDisplay}
           onChange={(e) => handleInputChange("totalPrice", e)}
         />
       </td>

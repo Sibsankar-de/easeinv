@@ -355,11 +355,19 @@ export const updateInvoiceDueAmount = async (
         paidAmount: true,
         customerId: true,
         storeId: true,
+        status: true,
       },
     });
 
     if (!currentInvoice) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Invoice not found");
+    }
+
+    if (currentInvoice.status === InvoiceStatus.DRAFTED) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Cannot update due amount for a draft invoice",
+      );
     }
 
     if (paidAmount > currentInvoice.dueAmount) {
@@ -452,7 +460,14 @@ export const getPopulatedInvoice = async (
       billItems: {
         include: {
           product: {
-            select: { id: true, name: true, sku: true },
+            select: {
+              id: true,
+              name: true,
+              sku: true,
+              stockUnit: true,
+              unitGroups: true,
+              pricePerQuantity: true,
+            },
           },
         },
       },

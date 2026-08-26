@@ -8,13 +8,17 @@ type ProgressState = "idle" | "loading" | "completing";
 // Custom event helpers for programmatic progress control
 export const startPageProgress = () => {
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("app:progress-start"));
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("app:progress-start"));
+    }, 0);
   }
 };
 
 export const completePageProgress = () => {
   if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("app:progress-complete"));
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("app:progress-complete"));
+    }, 0);
   }
 };
 
@@ -128,6 +132,15 @@ function NavigationProgressBarInner() {
     return () => document.removeEventListener("click", handleClick, true);
   }, [startProgress]);
 
+  // Listen to popstate (browser back/forward button)
+  useEffect(() => {
+    const handlePopState = () => {
+      startProgress();
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [startProgress]);
+
   // Listen to custom programmatic navigation events
   useEffect(() => {
     const handleStart = () => startProgress();
@@ -141,6 +154,16 @@ function NavigationProgressBarInner() {
       window.removeEventListener("app:progress-complete", handleComplete);
     };
   }, [startProgress, completeProgress]);
+
+  // Safety fallback timeout: prevent progress bar from staying indefinitely if navigation cancels/aborts
+  useEffect(() => {
+    if (state === "loading") {
+      const timer = setTimeout(() => {
+        completeProgress();
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [state, completeProgress]);
 
   // Detect navigation completion: usePathname / searchParams only update after RSC render commits
   useEffect(() => {

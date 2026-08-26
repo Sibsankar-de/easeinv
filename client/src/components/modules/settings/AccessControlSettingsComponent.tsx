@@ -168,30 +168,38 @@ export const AccessControlSettingsComponent = () => {
         meta: { className: "text-center" },
       },
       {
+        id: "actions",
         header: "Actions",
         meta: { className: "text-right" },
         cell: ({ row }) => StoreUserActions({ row: row.original }),
       },
     ],
-    [accessorsList],
+    [],
   );
 
   const isLoading = accessorsStatus === "loading";
 
   return (
-    <TabContent tabId="access-control" className="space-y-6">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="flex-1">
+    <TabContent tabId="access-control" className="space-y-4">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        <div className="w-full lg:w-72 xl:w-80">
           <SearchInput
-            placeholder="Search by email or name"
+            placeholder="Search by email or name..."
             value={searchTerm}
             onChange={(val) => setSearchTerm(val)}
+            className="w-full"
           />
         </div>
-        <Button className="py-2" onClick={() => setIsAddModalOpen(true)}>
-          <UserPlus size={15} />
-          Invite new user
-        </Button>
+
+        <div className="flex items-center gap-2.5 justify-end">
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            className="gap-1.5 whitespace-nowrap"
+          >
+            <UserPlus size={16} />
+            Invite new user
+          </Button>
+        </div>
       </div>
 
       <DataTable
@@ -415,7 +423,7 @@ const UserDeleteModal = ({
       header={<ModalHeader title="Remove User Access" />}
     >
       <p className="text-gray-600">
-        Are you sure you want to remove <strong>{userData.userName}</strong>'s
+        Are you sure you want to remove <strong>{userData.userName}</strong>&apos;s
         access to this store? They will no longer be able to view or manage any
         data in this store.
       </p>

@@ -7,7 +7,6 @@ import {
   Edit2,
   Trash2,
   Plus,
-  Percent,
   CheckCircle2,
   XCircle,
 } from "lucide-react";
@@ -341,8 +340,8 @@ export const CouponListTable = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="flex-1 w-full sm:w-auto max-w-md">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        <div className="w-full lg:w-72 xl:w-80">
           <SearchInput
             placeholder="Search coupon by code or name..."
             value={searchTerm}
@@ -351,34 +350,38 @@ export const CouponListTable = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-          <div className="w-36">
-            <Select
-              options={statusOptions}
-              value={statusFilter}
-              onChange={(val) => {
-                setStatusFilter(val);
-                setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-                dispatch(invalidateCouponPages());
-              }}
-            />
-          </div>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 justify-end">
+          <div className="flex items-center gap-2.5 flex-1 sm:flex-initial">
+            <div className="flex-1 sm:w-36">
+              <Select
+                options={statusOptions}
+                value={statusFilter}
+                onChange={(val) => {
+                  setStatusFilter(val);
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                  dispatch(invalidateCouponPages());
+                }}
+                className="w-full"
+              />
+            </div>
 
-          <div className="w-40">
-            <Select
-              options={discountTypeOptions}
-              value={discountTypeFilter}
-              onChange={(val) => {
-                setDiscountTypeFilter(val);
-                setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-                dispatch(invalidateCouponPages());
-              }}
-            />
+            <div className="flex-1 sm:w-40">
+              <Select
+                options={discountTypeOptions}
+                value={discountTypeFilter}
+                onChange={(val) => {
+                  setDiscountTypeFilter(val);
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                  dispatch(invalidateCouponPages());
+                }}
+                className="w-full"
+              />
+            </div>
           </div>
 
           <Button
             onClick={() => navigate("/coupons/add-coupon")}
-            className="gap-1.5"
+            className="gap-1.5 whitespace-nowrap justify-center"
           >
             <Plus size={16} />
             Add Coupon

@@ -53,6 +53,12 @@ export const fetchInvoiceByIdThunk: any = createApiThunk(
     await api.get(`/invoices/${payload.storeId}/${payload.invoiceId}`),
 );
 
+export const deleteInvoiceThunk: any = createApiThunk(
+  "/invoices/delete",
+  async (payload: { storeId: string; invoiceId: string }) =>
+    await api.delete(`/invoices/${payload.storeId}/${payload.invoiceId}`),
+);
+
 const initialState = {
   data: {
     invoicePagedData: {
@@ -72,6 +78,7 @@ const initialState = {
   getStatus: "idle",
   createStatus: "idle",
   updateStatus: "idle",
+  deleteStatus: "idle",
   summaryStatus: "idle",
   error: null,
 };
@@ -200,6 +207,16 @@ const invoiceSlice = createSlice({
         } else {
           state.data.invoiceListData.push(fetchedInvoice);
         }
+      })
+      .addCase(deleteInvoiceThunk.pending, (state, action) =>
+        setState(state, action, "deleteStatus"),
+      )
+      .addCase(deleteInvoiceThunk.rejected, (state, action) =>
+        setState(state, action, "deleteStatus"),
+      )
+      .addCase(deleteInvoiceThunk.fulfilled, (state) => {
+        state.deleteStatus = "success";
+        state.error = null;
       });
   },
 });

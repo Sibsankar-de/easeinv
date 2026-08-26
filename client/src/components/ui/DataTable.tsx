@@ -18,6 +18,7 @@ import { cn } from "../utils";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 declare module "@tanstack/react-table" {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ColumnMeta<TData extends RowData, TValue> {
     className?: string;
   }
@@ -31,8 +32,7 @@ const PAGE_SIZE_OPTIONS = [
   { key: "100", value: "100" },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-interface DataTableProps<TData, TValue = any> {
+interface DataTableProps<TData> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   columns: ColumnDef<TData, any>[];
   data: TData[];

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
+import { useAppRouter as useRouter } from "@/hooks/useAppRouter";
 import { useDispatch, useSelector } from "react-redux";
 import { ChevronDown, Check, Loader2, Store } from "lucide-react";
 import { cn } from "@/components/utils";

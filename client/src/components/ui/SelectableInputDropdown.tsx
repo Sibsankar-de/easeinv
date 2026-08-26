@@ -22,6 +22,7 @@ type Ctx<T> = {
   handleSelect: (item: T) => void;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SearchWrapperContext = createContext<Ctx<any> | null>(null);
 
 export function useSelectableInputDropdown<T>() {
@@ -38,7 +39,7 @@ type Props<T> = {
   isLoading?: boolean;
   onChange: (value: string) => void;
   onSelect: (item: T) => void;
-  getLabel: (item: T) => string;
+  getLabel?: (item: T) => string;
   children: (items: T[]) => ReactNode;
 };
 
@@ -50,6 +51,7 @@ export function SelectableInputDropdown<T>({
   isLoading = false,
   onChange,
   onSelect,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getLabel,
   children,
 }: Props<T>) {
@@ -67,9 +69,8 @@ export function SelectableInputDropdown<T>({
 
   function handleSelect(item: T) {
     setSelected(item);
-    onSelect(item);
-    onChange(getLabel(item));
     setOpen(false);
+    onSelect(item);
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
@@ -152,12 +153,18 @@ export function SelectableItem<T>({
   const { focusedIndex, selected, handleSelect } =
     useSelectableInputDropdown<T>();
 
+  const selectedRecord = selected as Record<string, unknown> | null;
+  const itemRecord = item as Record<string, unknown>;
+  const isSelected = Boolean(
+    selectedRecord?.id && itemRecord?.id && selectedRecord.id === itemRecord.id,
+  );
+
   return (
     <li
       className={cn(
         "p-2 px-3 rounded cursor-pointer",
         index === focusedIndex && "bg-accent!",
-        ((selected as any)?.id === (item as any).id || (selected as any)?._id === (item as any)._id) && "bg-muted",
+        isSelected && "bg-muted",
         className,
       )}
       onClick={() => handleSelect(item)}
