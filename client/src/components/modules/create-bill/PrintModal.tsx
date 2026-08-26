@@ -7,10 +7,11 @@ import { Modal, ModalHeader } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { pageSizes } from "@/constants/pageSizeMaps";
 import { InvoiceFormState } from "@/helpers/invoiceHelper";
-import { CloudCheck, PrinterCheck, X } from "lucide-react";
+import { CloudCheck, PrinterCheck, CheckCheck, Printer } from "lucide-react";
 import { useRef, useState } from "react";
 import { useReactToPrint } from "react-to-print";
 import { InvoiceStatus } from "@/types/dto/invoiceDto";
+import { DropdownButton, DropdownMenuItem } from "@/components/ui/DropdownButton";
 
 type PrintModalType = {
   openState: boolean;
@@ -58,6 +59,19 @@ export const PrintModal = ({
     handlePrint();
   };
 
+  const issueDropdownItems: DropdownMenuItem[] = [
+    {
+      label: "Issue without printing",
+      icon: <CheckCheck className="w-4 h-4 text-primary" />,
+      onClick: () => onSave(InvoiceStatus.ISSUED),
+    },
+    {
+      label: "Print without issuing",
+      icon: <Printer className="w-4 h-4 text-gray-600" />,
+      onClick: handlePrint,
+    },
+  ];
+
   return (
     <Modal
       openState={openState}
@@ -86,16 +100,31 @@ export const PrintModal = ({
         />
       </div>
       <div className="flex gap-3 sticky bottom-0">
-        <Button
-          className="w-full justify-center flex-1"
-          onClick={handleIssueAndPrint}
-          disabled={isSaving}
-          loading={isSaving}
-          autoFocus
-        >
-          <PrinterCheck size={18} />
-          {isInvoiceIssued ? "Print bill" : "Issue & print bill"}
-        </Button>
+        {!isInvoiceIssued ? (
+          <DropdownButton
+            className="flex-1"
+            onClick={handleIssueAndPrint}
+            items={issueDropdownItems}
+            variant="primary"
+            disabled={isSaving}
+            loading={isSaving}
+            placement="top"
+          >
+            <PrinterCheck size={18} />
+            Issue & print bill
+          </DropdownButton>
+        ) : (
+          <Button
+            className="w-full justify-center flex-1"
+            onClick={handlePrint}
+            disabled={isSaving}
+            loading={isSaving}
+            autoFocus
+          >
+            <PrinterCheck size={18} />
+            Print bill
+          </Button>
+        )}
         <Button
           variant="outline"
           className="text-green-700 bg-gray-100"

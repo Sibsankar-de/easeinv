@@ -17,7 +17,9 @@ export interface DropdownMenuItem {
 
 export interface DropdownButtonProps extends ButtonType {
   items: DropdownMenuItem[];
+  secondaryVariant?: ButtonType["variant"];
   dropdownClassName?: string;
+  placement?: "top" | "bottom";
 }
 
 export const DropdownButton: React.FC<DropdownButtonProps> = ({
@@ -25,15 +27,19 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
   onClick,
   items,
   variant = "primary",
+  secondaryVariant,
   disabled = false,
   loading = false,
   loadingMessage,
   className,
   dropdownClassName,
+  placement = "bottom",
   tooltip,
   ...props
 }) => {
   const [open, setOpen] = useState(false);
+
+  const resolvedSecondaryVariant = secondaryVariant || variant;
 
   const handleMainClick = (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
@@ -53,11 +59,13 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
   };
 
   const dividerClass =
-    variant === "primary"
-      ? "border-l border-primary-foreground/25"
-      : variant === "dark"
-        ? "border-l border-white/20"
-        : "border-l border-border";
+    resolvedSecondaryVariant === "outline"
+      ? ""
+      : resolvedSecondaryVariant === "primary"
+        ? "border-l border-primary-foreground/25"
+        : resolvedSecondaryVariant === "dark"
+          ? "border-l border-white/20"
+          : "border-l border-border";
 
   return (
     <div className={cn("relative inline-flex items-stretch", className)}>
@@ -68,13 +76,13 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
         loadingMessage={loadingMessage}
         onClick={handleMainClick}
         tooltip={tooltip}
-        className="rounded-r-none border-r-0 self-stretch"
+        className="rounded-r-none border-r-0 self-stretch flex-1 justify-center"
         {...props}
       >
         {children}
       </Button>
       <Button
-        variant={variant}
+        variant={resolvedSecondaryVariant}
         disabled={disabled || loading}
         onClick={(e) => {
           e.stopPropagation();
@@ -98,7 +106,8 @@ export const DropdownButton: React.FC<DropdownButtonProps> = ({
         openState={open}
         onClose={() => setOpen(false)}
         className={cn(
-          "w-48 right-0 left-auto top-full mt-1 p-1 shadow-lg border border-border bg-white z-50",
+          "w-52 right-0 left-auto p-1 shadow-lg border border-border bg-white z-50",
+          placement === "top" ? "bottom-full mb-1" : "top-full mt-1",
           dropdownClassName,
         )}
       >

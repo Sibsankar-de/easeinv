@@ -17,24 +17,18 @@ import { PrintModal } from "./PrintModal";
 import { useStoreNavigation } from "@/hooks/store-navigation";
 import { useSearchParams } from "next/navigation";
 import {
-  createInvoiceThunk,
-  updateInvoiceThunk,
   fetchInvoiceByIdThunk,
-  selectInvoiceState,
-  invalidateInvoicePages,
-  invalidateInvoiceSummary,
 } from "@/store/features/invoiceSlice";
-import { invalidateCustomerPages } from "@/store/features/customerSlice";
 import {
   InvoiceDto,
   InvoiceStatus,
   BillItemType,
 } from "@/types/dto/invoiceDto";
-import { transformInvoicePayload } from "@/helpers/invoiceHelper";
 import { toast } from "@/utils/toast";
 import { FormSkeleton } from "@/components/ui/Skeleton";
 import { useNavContext } from "@/contexts/NavContext";
 import { NavActionButton } from "@/components/modules/navbar/Navbar";
+import { useInvoiceActions } from "@/hooks/use-invoice-actions";
 
 export const CreateBillPage = () => {
   const { storeId, router, basePath } = useStoreNavigation();
@@ -47,7 +41,7 @@ export const CreateBillPage = () => {
     status,
   } = useSelector(selectCurrentStoreState);
 
-  const { createStatus, updateStatus } = useSelector(selectInvoiceState);
+  const { draftInvoice, issueInvoice, isSaving } = useInvoiceActions();
 
   const invoiceNumber = getNextInvoiceNumber({
     prefix: storeSettings.invoiceNumberPrefix || "",
@@ -63,10 +57,13 @@ export const CreateBillPage = () => {
       total: 0,
       totalProfit: 0,
       discountAmount: 0,
-      paidAmount: 0,
-      dueAmount: 0,
+      discountPercent: 0,
       taxAmount: 0,
-      customer: {},
+      taxRate: 0,
+      dueAmount: 0,
+      paidAmount: 0,
+      roundupTotal: false,
+      note: "",
     }),
     [invoiceNumber],
   );
@@ -185,65 +182,33 @@ export const CreateBillPage = () => {
       });
   }, [invoiceQueryId, storeId, dispatch]);
 
-  const invalidateRelatedPages = useCallback(() => {
-    dispatch(invalidateInvoicePages());
-    dispatch(invalidateInvoiceSummary());
-    dispatch(invalidateCustomerPages());
-  }, [dispatch]);
-
   // handle invoice save / update / issue
   const handleInvoiceSave = useCallback(
     async (targetStatus: InvoiceStatus = InvoiceStatus.DRAFTED) => {
       if (!storeId || isInvoiceIssued) return;
 
-      const apiPayload = transformInvoicePayload({
-        storeId: storeId as string,
-        status: targetStatus,
+      const payload = {
         ...formData,
         ...(invoiceId ? { invoiceId, id: invoiceId } : {}),
-      });
+      };
 
-      if (invoiceId) {
-        // Existing draft invoice -> update it (or issue it)
-        await dispatch(updateInvoiceThunk(apiPayload))
-          .unwrap()
-          .then(() => {
-            if (targetStatus === InvoiceStatus.ISSUED) {
-              setIsInvoiceIssued(true);
-              toast.success("Invoice issued successfully");
-            } else {
-              toast.success("Draft updated");
-            }
-            invalidateRelatedPages();
-          })
-          .catch(() => {});
-      } else {
-        // New invoice -> create draft or issue directly
-        await dispatch(createInvoiceThunk(apiPayload))
-          .unwrap()
-          .then((res: { id?: string }) => {
-            if (res?.id) {
-              setInvoiceId(res.id);
-            }
-            if (targetStatus === InvoiceStatus.ISSUED) {
-              setIsInvoiceIssued(true);
-              toast.success("Invoice issued successfully");
-            } else {
-              toast.success("Invoice saved as draft");
-            }
-            invalidateRelatedPages();
-          })
-          .catch(() => {});
+      try {
+        const res =
+          targetStatus === InvoiceStatus.ISSUED
+            ? await issueInvoice(payload)
+            : await draftInvoice(payload);
+
+        if (res?.id) {
+          setInvoiceId(res.id);
+        }
+        if (targetStatus === InvoiceStatus.ISSUED) {
+          setIsInvoiceIssued(true);
+        }
+      } catch {
+        // Handled
       }
     },
-    [
-      storeId,
-      isInvoiceIssued,
-      formData,
-      invoiceId,
-      dispatch,
-      invalidateRelatedPages,
-    ],
+    [storeId, isInvoiceIssued, formData, invoiceId, issueInvoice, draftInvoice],
   );
 
   const handleReset = useCallback(() => {
@@ -258,8 +223,6 @@ export const CreateBillPage = () => {
       router.replace(`${basePath}/billing`);
     }
   }, [initialState, invoiceNumber, invoiceQueryId, router, basePath]);
-
-  const isSaving = createStatus === "loading" || updateStatus === "loading";
 
   useEffect(() => {
     setActionButtons(

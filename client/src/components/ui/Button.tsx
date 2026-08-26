@@ -103,7 +103,7 @@ export const Button = ({
 
       {mounted &&
         createPortal(
-          <Tooltip id={tooltipId} place="bottom" delayShow={800} />,
+          <Tooltip id={tooltipId} place="bottom" delayShow={800} className="z-100" />,
           document.body,
         )}
     </button>
