@@ -19,12 +19,14 @@ export function BillingSectionRow({
   item,
   index,
   onFieldUpdate,
+  onSelectProduct,
   onRemoveItem,
 }: {
   id: string;
   item: BillItemType;
   index: number;
   onFieldUpdate: (doc: BillItemType) => void;
+  onSelectProduct?: (product: ProductDto) => void;
   onRemoveItem: (id: string) => void;
 }) {
   const baseId = useId();
@@ -32,19 +34,28 @@ export function BillingSectionRow({
     data: { storeSettings },
   } = useSelector(selectCurrentStoreState);
 
-  const [selectedItem, setSelectedItem] = useState<ProductDto | null>(
-    (item.product as unknown as ProductDto) || null,
-  );
-  const [selectedUnit, setSelectedUnit] = useState<string>(
-    item.stockUnit || (item.product as unknown as ProductDto)?.stockUnit || "",
-  );
-  const [productFields, setProductFields] = useState<BillItemType>(item);
+  const selectedItem =
+    item.product && item.product.id
+      ? (item.product as unknown as ProductDto)
+      : null;
+  const selectedUnit =
+    item.stockUnit || (item.product as unknown as ProductDto)?.stockUnit || "";
 
-  // We maintain a separate state for input strings to allow "0." or "0.05"
-  const [localInputs, setLocalInputs] = useState({
-    netQuantity: String(item.netQuantity || 0),
-    totalPrice: String(item.totalPrice || 0),
-  });
+  // Maintain local state for input strings during active typing
+  const [localInputs, setLocalInputs] = useState<{
+    netQuantity?: string;
+    totalPrice?: string;
+  }>({});
+
+  const netQuantityDisplay =
+    localInputs.netQuantity !== undefined
+      ? localInputs.netQuantity
+      : String(item.netQuantity || 0);
+
+  const totalPriceDisplay =
+    localInputs.totalPrice !== undefined
+      ? localInputs.totalPrice
+      : String(item.totalPrice || 0);
 
   // Build unit options from product's unitGroups + stockUnit
   const groupUnitOptions: SelectOptionType[] = selectedItem
@@ -68,8 +79,11 @@ export function BillingSectionRow({
       : [];
 
   const handleSelectProduct = (p: ProductDto) => {
-    setSelectedItem(p);
-    setSelectedUnit(p.stockUnit);
+    setLocalInputs({});
+    if (onSelectProduct) {
+      onSelectProduct(p);
+      return;
+    }
 
     const quantity = 1;
     const calc = calculatePrice(quantity, p.pricePerQuantity, {
@@ -93,32 +107,31 @@ export function BillingSectionRow({
       totalProfit: calc.profit,
     };
 
-    setProductFields(newItem);
-    setLocalInputs({
-      netQuantity: String(quantity),
-      totalPrice: String(calc.price),
-    });
     onFieldUpdate(newItem);
   };
 
   const handleUnitChange = (unit: string) => {
-    setSelectedUnit(unit);
-    const quantity = parseFloat(localInputs.netQuantity) || 0;
-    if (selectedItem) {
+    const quantity = parseFloat(netQuantityDisplay) || 0;
+    if (selectedItem && selectedItem.pricePerQuantity) {
       const calc = calculatePrice(quantity, selectedItem.pricePerQuantity, {
         baseUnit: selectedItem.stockUnit,
         selectedUnit: unit,
         unitGroups: selectedItem.unitGroups ?? [],
       });
       const withTotal = {
-        ...productFields,
+        ...item,
         stockUnit: unit,
         pricePerQuantity: calc.chosenTier,
         totalPrice: calc.price,
         totalProfit: calc.profit,
       };
-      setProductFields(withTotal);
       setLocalInputs((prev) => ({ ...prev, totalPrice: String(calc.price) }));
+      onFieldUpdate(withTotal);
+    } else {
+      const withTotal = {
+        ...item,
+        stockUnit: unit,
+      };
       onFieldUpdate(withTotal);
     }
   };
@@ -131,37 +144,34 @@ export function BillingSectionRow({
 
     if (key === "netQuantity") {
       const quantity = parseFloat(val) || 0;
-      if (selectedItem) {
+      if (selectedItem && selectedItem.pricePerQuantity) {
         const calc = calculatePrice(quantity, selectedItem.pricePerQuantity, {
           baseUnit: selectedItem.stockUnit,
           selectedUnit,
           unitGroups: selectedItem.unitGroups ?? [],
         });
         const withTotal = {
-          ...productFields,
+          ...item,
           netQuantity: quantity,
           pricePerQuantity: calc.chosenTier,
           totalPrice: calc.price,
           totalProfit: calc.profit,
         };
-        setProductFields(withTotal);
         setLocalInputs((prev) => ({ ...prev, totalPrice: String(calc.price) }));
         onFieldUpdate(withTotal);
       } else {
         const withQuantity = {
-          ...productFields,
+          ...item,
           netQuantity: quantity,
         };
-        setProductFields(withQuantity);
         onFieldUpdate(withQuantity);
       }
     } else if (key === "totalPrice") {
       const price = parseFloat(val) || 0;
       const withTotal = {
-        ...productFields,
+        ...item,
         totalPrice: price,
       };
-      setProductFields(withTotal);
       onFieldUpdate(withTotal);
     }
   };
@@ -171,7 +181,7 @@ export function BillingSectionRow({
       <td className="px-2 py-3">
         <ProductSearchInput
           onSelect={handleSelectProduct}
-          value={productFields.product.name}
+          value={item.product.name}
           index={index}
         />
       </td>
@@ -180,7 +190,7 @@ export function BillingSectionRow({
         <StockInput
           id={`${baseId}-quantity`}
           placeholder="0.00"
-          value={localInputs.netQuantity}
+          value={netQuantityDisplay}
           onChange={(e) => handleInputChange("netQuantity", e)}
           isSelect={true}
           options={groupUnitOptions}
@@ -195,7 +205,7 @@ export function BillingSectionRow({
           type="number"
           placeholder="0.00"
           inputClass="text-right"
-          value={localInputs.totalPrice}
+          value={totalPriceDisplay}
           onChange={(e) => handleInputChange("totalPrice", e)}
         />
       </td>

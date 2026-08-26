@@ -8,7 +8,7 @@ type IndexedItem<T> = T & {
   _search: Record<string, string>;
 };
 
-export function createIndex<T extends Record<string, any>>(
+export function createIndex<T extends Record<string, unknown>>(
   list: T[],
   rules: SearchRule<T>[]
 ) {
@@ -66,7 +66,13 @@ function binarySearchPrefix<T>(
   return firstMatchIndex;
 }
 
-export function search<T extends Record<string, any>>(
+type SearchResultItem<T> = T & {
+  rank: number;
+  matchPosition: number;
+  id?: string;
+};
+
+export function search<T extends Record<string, unknown>>(
   index: ReturnType<typeof createIndex<T>>,
   query: string,
   limit = 25
@@ -74,7 +80,7 @@ export function search<T extends Record<string, any>>(
   if (!query.trim()) return [];
 
   const key = query.toLowerCase();
-  const results: any[] = [];
+  const results: SearchResultItem<T>[] = [];
   const { indexed, sortedByField, rules } = index;
 
   for (const rule of rules) {
@@ -121,7 +127,7 @@ export function search<T extends Record<string, any>>(
   // DEDUPE + SORT =====================================================
   const unique = new Map();
   results.forEach((item) =>
-    unique.set(item.id ?? (item as any)._id ?? JSON.stringify(item), item)
+    unique.set(item.id ?? JSON.stringify(item), item),
   );
 
   return Array.from(unique.values())

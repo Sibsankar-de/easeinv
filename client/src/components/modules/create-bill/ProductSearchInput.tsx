@@ -35,14 +35,7 @@ export function ProductSearchInput({
     data: { storeSettings, currencySymbol },
   } = useSelector(selectCurrentStoreState);
 
-  const [input, setInput] = useState(value || "");
-  const [prevValue, setPrevValue] = useState(value);
   const [searchList, setSearchList] = useState<ProductDto[]>([]);
-
-  if (value !== prevValue) {
-    setPrevValue(value);
-    setInput(value || "");
-  }
 
   const handleSearch = (query: string) => {
     if (!query || !query.trim() || query.trim().length < 2) return;
@@ -52,6 +45,11 @@ export function ProductSearchInput({
       .then((res: ProductDto[]) => {
         setSearchList(res);
       });
+  };
+
+  const handleSelect = (p: ProductDto) => {
+    setSearchList([]);
+    onSelect(p);
   };
 
   // key board event
@@ -74,7 +72,7 @@ export function ProductSearchInput({
   return (
     <SearchableInput
       items={searchList}
-      value={input}
+      value={value}
       placeholder="Type product name/sku/gtin"
       inputProps={{ ref: inputRef, autoFocus: index > 0 }}
       closeOnEmpty={false}
@@ -83,7 +81,7 @@ export function ProductSearchInput({
       isLoading={isSearching}
       onSearch={handleSearch}
       getLabel={(p) => p.name}
-      onSelect={onSelect}
+      onSelect={handleSelect}
     >
       {(items) =>
         items.map((p, i) => (

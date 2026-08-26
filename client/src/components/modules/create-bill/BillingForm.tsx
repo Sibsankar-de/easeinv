@@ -13,6 +13,8 @@ import { ConditionalDiv } from "@/components/ui/ConditionalDiv";
 import { ToggleButton } from "@/components/ui/ToggleButton";
 import { BillingSectionRow } from "./BillingSectionRow";
 import { roundToDecimal } from "@/utils/conversion";
+import { ProductDto } from "@/types/dto/productDto";
+import { calculatePrice } from "@/utils/price-calculator";
 
 const generateRandomId = () => {
   return Math.floor(1000 + Math.random() * 9000).toString();
@@ -139,6 +141,88 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
     });
   };
 
+  const handleSelectProduct = (rowId: string, product: ProductDto) => {
+    setItems((prev) => {
+      // Find if another row already exists with the same productId
+      const existingIndex = prev.findIndex(
+        (item) => item.product.id === product.id && item.id !== rowId,
+      );
+
+      if (existingIndex !== -1) {
+        // Merge into existing item: quantity + 1, keep existing unit, recalculate price
+        const existingItem = prev[existingIndex];
+        const newQuantity = (existingItem.netQuantity || 0) + 1;
+        const currentUnit = existingItem.stockUnit || product.stockUnit;
+
+        const calc = calculatePrice(newQuantity, product.pricePerQuantity, {
+          baseUnit: product.stockUnit,
+          selectedUnit: currentUnit,
+          unitGroups: product.unitGroups ?? [],
+        });
+
+        const updatedExistingItem: BillItemType = {
+          ...existingItem,
+          netQuantity: newQuantity,
+          pricePerQuantity: calc.chosenTier,
+          totalPrice: calc.price,
+          totalProfit: calc.profit,
+          stockUnit: currentUnit,
+        };
+
+        const updatedList = [...prev];
+        updatedList[existingIndex] = updatedExistingItem;
+
+        // Clear the duplicate row instead of removing it
+        const currentIndex = updatedList.findIndex((item) => item.id === rowId);
+        if (currentIndex !== -1) {
+          updatedList[currentIndex] = {
+            id: rowId,
+            product: {
+              id: "",
+              name: "",
+              sku: "",
+            },
+            netQuantity: 0,
+            totalPrice: 0,
+            totalProfit: 0,
+            stockUnit: "",
+          };
+        }
+
+        return updatedList;
+      }
+
+      // No duplicate found: update current row with 1 quantity
+      const currentIndex = prev.findIndex((item) => item.id === rowId);
+      if (currentIndex === -1) return prev;
+
+      const quantity = 1;
+      const calc = calculatePrice(quantity, product.pricePerQuantity, {
+        baseUnit: product.stockUnit,
+        selectedUnit: product.stockUnit,
+        unitGroups: product.unitGroups ?? [],
+      });
+
+      const newItem: BillItemType = {
+        ...prev[currentIndex],
+        product: {
+          id: product.id,
+          name: product.name,
+          sku: product.sku,
+        },
+        pricePerQuantity: calc.chosenTier,
+        netQuantity: quantity,
+        totalPrice: calc.price,
+        stockUnit: product.stockUnit,
+        totalProfit: calc.profit,
+      };
+
+      const updatedList = [...prev];
+      updatedList[currentIndex] = newItem;
+      return updatedList;
+    });
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === "i") {
@@ -195,6 +279,9 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
                   item={item}
                   index={index}
                   onFieldUpdate={updateItem}
+                  onSelectProduct={(product) =>
+                    handleSelectProduct(item.id, product)
+                  }
                   onRemoveItem={removeItem}
                 />
               ))}
