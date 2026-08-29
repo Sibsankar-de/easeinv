@@ -27,6 +27,7 @@ model Coupon {
   store      Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
   creator    User             @relation("CreatedCoupons", fields: [creatorId], references: [id])
   categories CouponCategory[]
+  orders     Order[]
 
   @@unique([storeId, code])
   @@index([storeId])

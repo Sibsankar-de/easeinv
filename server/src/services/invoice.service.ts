@@ -125,7 +125,7 @@ const updateInvoiceSummaryOnCreate = (
     },
   });
 
-const applyIssueSideEffects = async (
+export const applyIssueSideEffects = async (
   storeId: string,
   store: Store & { settings: StoreSettings | null },
   customer: Customer,
@@ -153,8 +153,9 @@ export const createInvoice = async (
   userId: string,
   storeId: string,
   billData: InvoiceCreateUpdateDto,
-) =>
-  prismaTransaction(async (tx) => {
+  txClient?: TransactionClient,
+) => {
+  const runner = async (tx: TransactionClient) => {
     // Update store lastInvoiceNumber and fetch settings
     const store = await tx.store.update({
       where: { id: storeId },
@@ -224,7 +225,120 @@ export const createInvoice = async (
 
     const createdInvoice = await getPopulatedInvoice(invoice.id, tx);
     return toInvoiceDto(createdInvoice);
-  });
+  };
+
+  return txClient ? runner(txClient) : prismaTransaction(runner);
+};
+
+export const issueInvoice = async (
+  storeId: string,
+  invoiceId: string,
+  txClient?: TransactionClient,
+) => {
+  const runner = async (tx: TransactionClient) => {
+    const invoice = await tx.invoice.findUnique({
+      where: { id: invoiceId },
+      include: {
+        customer: true,
+        billItems: true,
+      },
+    });
+
+    if (!invoice || invoice.storeId !== storeId) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Invoice not found");
+    }
+
+    if (invoice.status === InvoiceStatus.ISSUED) {
+      const populated = await getPopulatedInvoice(invoiceId, tx);
+      return toInvoiceDto(populated);
+    }
+
+    const store = await tx.store.findUnique({
+      where: { id: storeId },
+      include: { settings: true },
+    });
+
+    if (!store) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Store not found");
+    }
+
+    const customer = invoice.customer;
+    if (!customer) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Invoice customer not found");
+    }
+
+    await tx.invoice.update({
+      where: { id: invoiceId },
+      data: {
+        status: InvoiceStatus.ISSUED,
+        paymentStatus:
+          invoice.dueAmount <= 0
+            ? InvoicePaymentStatus.PAID
+            : InvoicePaymentStatus.DUE,
+      },
+    });
+
+    const calculations: CalculatedInvoice = {
+      subTotal: invoice.subTotal,
+      discountAmount: invoice.discountAmount,
+      discountPercent: invoice.discountPercent,
+      taxAmount: invoice.taxAmount,
+      taxRate: invoice.taxRate,
+      total: invoice.total,
+      paidAmount: invoice.paidAmount,
+      dueAmount: invoice.dueAmount,
+      totalProfit: invoice.totalProfit,
+      roundupTotal: invoice.roundupTotal,
+      billItems: invoice.billItems.map((item) => ({
+        productId: item.productId || "",
+        netQuantity: item.netQuantity,
+        totalPrice: item.totalPrice,
+        stockUnit: item.stockUnit,
+        totalProfit: item.totalProfit,
+      })),
+    };
+
+    const billData: InvoiceCreateUpdateDto = {
+      invoiceNumber: invoice.invoiceNumber,
+      issueDate: invoice.issueDate,
+      paidAmount: invoice.paidAmount,
+      discountPercent: invoice.discountPercent,
+      taxRate: invoice.taxRate,
+      roundupTotal: invoice.roundupTotal,
+      note: invoice.note || undefined,
+      status: InvoiceStatus.ISSUED,
+      billItems: invoice.billItems.map((item) => ({
+        productId: item.productId!,
+        netQuantity: item.netQuantity,
+        totalPrice: item.totalPrice,
+        stockUnit: item.stockUnit,
+        pricePerQuantity: item.pricePerQty as any,
+      })),
+      customer: {
+        id: customer.id,
+        name: customer.name,
+        phoneNumber: customer.phoneNumber,
+        email: customer.email,
+        address: customer.address,
+      },
+    };
+
+    await applyIssueSideEffects(
+      storeId,
+      store,
+      customer,
+      false,
+      billData,
+      calculations,
+      tx,
+    );
+
+    const populated = await getPopulatedInvoice(invoiceId, tx);
+    return toInvoiceDto(populated);
+  };
+
+  return txClient ? runner(txClient) : prismaTransaction(runner);
+};
 
 export const updateInvoice = async (
   userId: string,

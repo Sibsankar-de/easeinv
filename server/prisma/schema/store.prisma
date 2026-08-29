@@ -51,6 +51,7 @@ model Store {
   invoices           Invoice[]
   coupons            Coupon[]
   webhooks           Webhook[]
+  orders             Order[]
   invoiceSummary     InvoiceSummary?
   invoiceDailyStats  InvoiceDailyStat[]
   productDailyStats  ProductDailyStat[]

@@ -27,6 +27,7 @@ model Customer {
   // Relations
   store              Store              @relation(fields: [storeId], references: [id], onDelete: Cascade)
   invoices           Invoice[]
+  orders             Order[]
   customerDailyStats CustomerDailyStat[]
 
   @@index([storeId])

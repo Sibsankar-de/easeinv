@@ -84,4 +84,33 @@ export const INVOICE_DELETE_SCOPES: ApiKeyScope[] = [
   ApiKeyScope.INVOICE_DELETE,
 ];
 
+export const ORDER_READ_SCOPES: ApiKeyScope[] = [
+  ApiKeyScope.ADMIN,
+  ApiKeyScope.READ,
+  ApiKeyScope.ORDER_ALL,
+  ApiKeyScope.ORDER_READ,
+];
+
+export const ORDER_CREATE_SCOPES: ApiKeyScope[] = [
+  ApiKeyScope.ADMIN,
+  ApiKeyScope.WRITE,
+  ApiKeyScope.ORDER_ALL,
+  ApiKeyScope.ORDER_CREATE,
+];
+
+export const ORDER_WRITE_SCOPES: ApiKeyScope[] = [
+  ApiKeyScope.ADMIN,
+  ApiKeyScope.WRITE,
+  ApiKeyScope.ORDER_ALL,
+  ApiKeyScope.ORDER_WRITE,
+];
+
+export const ORDER_DELETE_SCOPES: ApiKeyScope[] = [
+  ApiKeyScope.ADMIN,
+  ApiKeyScope.DELETE,
+  ApiKeyScope.ORDER_ALL,
+  ApiKeyScope.ORDER_DELETE,
+];
+
+
 

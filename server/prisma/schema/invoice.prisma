@@ -38,6 +38,7 @@ model Invoice {
   store     Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
   customer  Customer?     @relation(fields: [customerId], references: [id])
   billItems InvoiceItem[]
+  orders    Order[]
 
   @@index([storeId])
   @@index([invoiceNumber])
