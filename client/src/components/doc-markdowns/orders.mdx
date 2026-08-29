@@ -1,0 +1,65 @@
+# Order Management
+
+The Orders module provides end-to-end fulfillment tracking for customer orders—from placement to invoice generation and inventory deduction.
+
+---
+
+## Order Fulfillment Workflow
+
+Every order moves through a clear, structured progression:
+
+1. **Pending**
+   * The order is placed by the customer (via API, store checkout, or mobile app).
+   * A draft invoice is created automatically in the background to reserve pricing and line items.
+
+2. **Processing**
+   * Your team accepts and begins preparing the items for packaging.
+   * The customer receives an automated confirmation that their order is being prepared.
+
+3. **Dispatched**
+   * The order is handed over to the delivery partner or shipping courier.
+   * Enter the **Delivery Reference / Tracking ID** and optional dispatch notes.
+   * The customer receives an email notification with their tracking details.
+
+4. **Completed**
+   * The customer receives the package.
+   * The draft invoice is automatically converted to **Issued**.
+   * Product inventory is deducted for tracked items, and revenue is recorded.
+
+> [!NOTE]
+> **Cancellation & Rejections:** An order can be marked as **`Rejected`** from any active state before completion. When rejected, a cancellation reason is recorded and an email notice is sent to the customer.
+
+---
+
+## Lifecycle States Overview
+
+| Status | Stage | Customer Notification | Inventory & Invoice Impact |
+|---|---|---|---|
+| **`PENDING`** | Order Placed | Order Received | Draft invoice created; no stock deduction |
+| **`PROCESSING`** | In Preparation | Preparation in Progress | Draft invoice retained |
+| **`DISPATCHED`** | Shipped | Dispatched with Tracking ID | Shipping reference recorded |
+| **`COMPLETED`** | Fulfilled | Receipt & Completion Confirmation | Draft invoice **ISSUED**; inventory stock deducted |
+| **`REJECTED`** | Cancelled | Order Cancellation Notice | Order closed with recorded reason |
+
+---
+
+## Managing Orders in the Dashboard
+
+### 1. Status Filter & Quick Search
+* **Status Filter**: Use the selector to view orders by state (`Pending`, `Processing`, `Dispatched`, `Completed`, `Rejected`, or `All Orders`). Defaults to **Pending** for fast access to new orders.
+* **Debounced Search**: Instantly find orders by Order Number (e.g. `ORD-XXXX-XXXX`) or customer name and phone number.
+
+### 2. Direct Status Transitions
+From the Orders table or the Order Details page, click **Update Status**:
+* **Mark as Processing**: Acknowledges the order and triggers a preparation notice.
+* **Dispatch Order**: Prompts for the carrier tracking/consignment number (`deliveryReference`) and optional delivery instructions.
+* **Complete Order**: Finalizes fulfillment, issues the linked invoice, updates stock balances, and logs revenue.
+* **Reject Order**: Cancels the order with a recorded explanation.
+
+### 3. Comprehensive Order Details
+Click any **Order Number** link to view the complete order breakdown:
+* **Customer Profile**: Contact information, delivery address, and a direct link to the customer directory.
+* **Delivery & Tracking**: Consignment number, courier notes, and status timeline.
+* **Linked Invoice**: Current invoice status, payment dues, and document preview/print tools.
+* **Line Items Table**: Product names, SKUs, quantity, pricing tiers, and line totals.
+* **Financial Breakdown**: Subtotal, coupon discounts, applicable taxes, shipping fees, and grand total.

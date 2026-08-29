@@ -28,6 +28,13 @@ export const customerScope = {
   CUSTOMER_DELETE: "customer:delete",
 };
 
+export const orderScope = {
+  ORDER_READ: "order:read",
+  ORDER_CREATE: "order:create",
+  ORDER_WRITE: "order:write",
+  ORDER_DELETE: "order:delete",
+};
+
 export const apiKeyScope = {
   READ: "read",
   WRITE: "write",
@@ -37,10 +44,12 @@ export const apiKeyScope = {
   PRODUCT_ALL: "product:all",
   CATEGORY_ALL: "category:all",
   CUSTOMER_ALL: "customer:all",
+  ORDER_ALL: "order:all",
   ...invoiceScope,
   ...productScope,
   ...categoryScope,
   ...customerScope,
+  ...orderScope,
 };
 
 export type ApiKeyScope = (typeof apiKeyScope)[keyof typeof apiKeyScope];

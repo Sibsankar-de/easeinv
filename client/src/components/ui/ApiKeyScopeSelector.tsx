@@ -2,12 +2,23 @@ import {
   categoryScope,
   customerScope,
   invoiceScope,
+  orderScope,
   productScope,
 } from "@/constants/apiKeyConstants";
 import { useEffect, useState } from "react";
 import { Checkbox } from "./Checkbox";
 
 export const apiKeyScopeData = [
+  {
+    key: "order:all",
+    value: "Order scopes",
+    subScopes: [
+      { key: orderScope.ORDER_READ, isClientSideAllowed: true },
+      { key: orderScope.ORDER_CREATE, isClientSideAllowed: true },
+      { key: orderScope.ORDER_WRITE, isClientSideAllowed: false },
+      { key: orderScope.ORDER_DELETE, isClientSideAllowed: false },
+    ],
+  },
   {
     key: "invoice:all",
     value: "Invoice scopes",

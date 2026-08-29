@@ -10,6 +10,7 @@ import {
   Receipt,
   Users,
   Ticket,
+  ShoppingBag,
 } from "lucide-react";
 import { Button } from "../../ui/Button";
 import { useStoreNavigation } from "@/hooks/store-navigation";
@@ -21,6 +22,12 @@ const menuItems: NavMenuType[] = [
     label: "Dashboard",
     icon: LayoutDashboard,
     basePath: "/dashboard",
+  },
+  {
+    id: "orders",
+    label: "Orders",
+    icon: ShoppingBag,
+    basePath: "/orders",
   },
   {
     id: "billing",

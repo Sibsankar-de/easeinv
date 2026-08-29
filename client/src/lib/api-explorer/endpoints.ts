@@ -9,7 +9,8 @@ export type ApiCollection =
   | "products"
   | "categories"
   | "customers"
-  | "invoices";
+  | "invoices"
+  | "orders";
 
 export interface ApiParam {
   name: string;
@@ -84,6 +85,11 @@ const CUSTOMER_DELETE_SCOPES = [
 
 const INVOICE_READ_SCOPES = ["admin", "read", "invoice:all", "invoice:read"];
 const INVOICE_WRITE_SCOPES = ["admin", "write", "invoice:all", "invoice:write"];
+
+const ORDER_READ_SCOPES = ["admin", "read", "order:all", "order:read"];
+const ORDER_CREATE_SCOPES = ["admin", "write", "order:all", "order:create"];
+const ORDER_WRITE_SCOPES = ["admin", "write", "order:all", "order:write"];
+const ORDER_DELETE_SCOPES = ["admin", "delete", "order:all", "order:delete"];
 
 // Endpoint definitions
 export const API_ENDPOINTS: ApiEndpoint[] = [
@@ -682,6 +688,220 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
       ],
     },
   },
+
+  // Orders
+  {
+    id: "list-orders",
+    method: "GET",
+    path: "/api/v1/orders",
+    name: "List Orders",
+    description:
+      "Retrieve a paginated list of customer orders with optional status, search query, and customer filtering.",
+    collection: "orders",
+    scopes: ORDER_READ_SCOPES,
+    params: [
+      {
+        name: "page",
+        type: "integer",
+        required: false,
+        desc: "Page number (default: 1).",
+        in: "query",
+      },
+      {
+        name: "limit",
+        type: "integer",
+        required: false,
+        desc: "Items per page (default: 10).",
+        in: "query",
+      },
+      {
+        name: "query",
+        type: "string",
+        required: false,
+        desc: "Search query to filter by order number or customer name.",
+        in: "query",
+      },
+      {
+        name: "status",
+        type: "string",
+        required: false,
+        desc: "Filter by status: PENDING, PROCESSING, DISPATCHED, COMPLETED, or REJECTED.",
+        in: "query",
+      },
+      {
+        name: "customerId",
+        type: "string",
+        required: false,
+        desc: "Filter orders for a specific customer ID.",
+        in: "query",
+      },
+      {
+        name: "sortBy",
+        type: "string",
+        required: false,
+        desc: "Field to sort by (e.g. createdAt, totalAmount).",
+        in: "query",
+      },
+      {
+        name: "sortOrder",
+        type: "string",
+        required: false,
+        desc: "Sort order: asc or desc.",
+        in: "query",
+      },
+    ],
+  },
+  {
+    id: "get-order",
+    method: "GET",
+    path: "/api/v1/orders/:orderId",
+    name: "Get Order",
+    description:
+      "Retrieve full details of a specific order including linked customer, draft/issued invoice, bill items, and shipping metadata.",
+    collection: "orders",
+    scopes: ORDER_READ_SCOPES,
+    params: [
+      {
+        name: "orderId",
+        type: "string",
+        required: true,
+        desc: "The unique ID of the order.",
+        in: "path",
+      },
+    ],
+  },
+  {
+    id: "create-order",
+    method: "POST",
+    path: "/api/v1/orders",
+    name: "Create Order",
+    description:
+      "Place a new order for an existing customer with product line items. Total prices are calculated server-side, and an automatic draft invoice is created.",
+    collection: "orders",
+    scopes: ORDER_CREATE_SCOPES,
+    bodyFields: [
+      {
+        name: "customerId",
+        type: "string",
+        required: true,
+        desc: "Valid customer UUID registered in the store.",
+      },
+      {
+        name: "invoiceData",
+        type: "object",
+        required: true,
+        desc: "Invoice payload with billItems array containing productId, netQuantity, and optional stockUnit.",
+      },
+      {
+        name: "couponCode",
+        type: "string",
+        required: false,
+        desc: "Optional promotional coupon code to apply discount.",
+      },
+      {
+        name: "shippingAmount",
+        type: "number",
+        required: false,
+        desc: "Delivery or shipping charges.",
+      },
+      {
+        name: "note",
+        type: "string",
+        required: false,
+        desc: "Customer delivery note or instructions.",
+      },
+      {
+        name: "extraData",
+        type: "object",
+        required: false,
+        desc: "Optional custom key-value metadata.",
+      },
+    ],
+    defaultBody: {
+      customerId: "YOUR_CUSTOMER_UUID",
+      couponCode: "WELCOME10",
+      shippingAmount: 50,
+      note: "Please deliver between 10am and 4pm",
+      invoiceData: {
+        billItems: [
+          {
+            productId: "YOUR_PRODUCT_UUID",
+            netQuantity: 2,
+            stockUnit: "pcs",
+          },
+        ],
+      },
+    },
+  },
+  {
+    id: "update-order-status",
+    method: "PATCH",
+    path: "/api/v1/orders/:orderId/status",
+    name: "Update Order Status",
+    description:
+      "Transition order lifecycle status (PROCESSING, DISPATCHED, COMPLETED, or REJECTED). Completing an order automatically issues the invoice and decrements stock.",
+    collection: "orders",
+    scopes: ORDER_WRITE_SCOPES,
+    params: [
+      {
+        name: "orderId",
+        type: "string",
+        required: true,
+        desc: "The unique ID of the order.",
+        in: "path",
+      },
+    ],
+    bodyFields: [
+      {
+        name: "status",
+        type: "string",
+        required: true,
+        desc: "Target status: PROCESSING, DISPATCHED, COMPLETED, or REJECTED.",
+      },
+      {
+        name: "deliveryReference",
+        type: "string",
+        required: false,
+        desc: "Tracking / consignment number (required when status is DISPATCHED).",
+      },
+      {
+        name: "note",
+        type: "string",
+        required: false,
+        desc: "Delivery notes or customer instructions.",
+      },
+      {
+        name: "reason",
+        type: "string",
+        required: false,
+        desc: "Cancellation / rejection reason (when status is REJECTED).",
+      },
+    ],
+    defaultBody: {
+      status: "DISPATCHED",
+      deliveryReference: "TRK-987654321",
+      note: "Dispatched via Express Courier",
+    },
+  },
+  {
+    id: "delete-order",
+    method: "DELETE",
+    path: "/api/v1/orders/:orderId",
+    name: "Delete Order",
+    description:
+      "Permanently delete a pending or cancelled order and its linked draft invoice.",
+    collection: "orders",
+    scopes: ORDER_DELETE_SCOPES,
+    params: [
+      {
+        name: "orderId",
+        type: "string",
+        required: true,
+        desc: "The unique ID of the order.",
+        in: "path",
+      },
+    ],
+  },
 ];
 
 export const ENDPOINT_COLLECTIONS: {
@@ -692,4 +912,5 @@ export const ENDPOINT_COLLECTIONS: {
   { key: "categories", title: "Categories" },
   { key: "customers", title: "Customers" },
   { key: "invoices", title: "Invoices" },
+  { key: "orders", title: "Orders" },
 ];

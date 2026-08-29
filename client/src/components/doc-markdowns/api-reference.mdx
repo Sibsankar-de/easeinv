@@ -89,3 +89,53 @@ Manage customer profiles and view their transaction histories.
 `GET /v1/customers`
 
 Retrieve a list of customers associated with your store.
+
+---
+
+## Orders API
+
+Manage customer orders, track fulfillment states, and dispatch packages.
+
+### 1. List Orders
+`GET /v1/orders`
+
+Retrieve a paginated list of orders with status, customer, and search filters.
+
+### 2. Create Order
+`POST /v1/orders`
+
+Place a new order for a customer. Product prices are calculated server-side and an automatic draft invoice is created.
+
+**Request Body**
+```json
+{
+  "customerId": "cust_01J0EBF",
+  "couponCode": "SUMMER10",
+  "shippingAmount": 50,
+  "note": "Please leave at reception",
+  "invoiceData": {
+    "billItems": [
+      {
+        "productId": "prod_01J0EAW",
+        "netQuantity": 2,
+        "stockUnit": "pcs"
+      }
+    ]
+  }
+}
+```
+
+### 3. Update Order Status
+`PATCH /v1/orders/:orderId/status`
+
+Update the lifecycle state of an order (`PROCESSING`, `DISPATCHED`, `COMPLETED`, `REJECTED`). Completing an order automatically issues the linked invoice and decrements product inventory.
+
+**Request Body (Dispatched)**
+```json
+{
+  "status": "DISPATCHED",
+  "deliveryReference": "TRK-987654321",
+  "note": "Dispatched via Express Delivery"
+}
+```
+

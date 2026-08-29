@@ -12,6 +12,7 @@ import {
   Package,
   Receipt,
   Users,
+  ShoppingBag,
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
@@ -47,6 +48,12 @@ const docNavigationOrder: Record<string, DocPageInfo> = {
     icon: Users,
   },
   "/docs/customers": {
+    title: "Order Management",
+    description: "Learn how to track order fulfillment, dispatches, and invoices.",
+    href: "/docs/orders",
+    icon: ShoppingBag,
+  },
+  "/docs/orders": {
     title: "API Authentication",
     description: "Configure secret API Keys to integrate third-party tools.",
     href: "/docs/authentication",
