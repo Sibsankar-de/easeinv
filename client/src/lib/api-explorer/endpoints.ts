@@ -691,6 +691,45 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
 
   // Orders
   {
+    id: "calculate-order-shipping",
+    method: "POST",
+    path: "/api/v1/orders/calculate-shipping",
+    name: "Calculate Order Shipping",
+    description:
+      "Pre-calculate applicable shipping rates for an order based on customer delivery address, items, and active shipping profiles / delivery zones.",
+    collection: "orders",
+    scopes: ORDER_READ_SCOPES,
+    bodyFields: [
+      {
+        name: "shippingAddress",
+        type: "object",
+        required: true,
+        desc: "Destination shipping address containing addressLine, country, and optional city, state, pincode.",
+      },
+      {
+        name: "items",
+        type: "array",
+        required: true,
+        desc: "Array of order items with productId and positive netQuantity.",
+      },
+    ],
+    defaultBody: {
+      shippingAddress: {
+        addressLine: "123 Market St, Suite 400",
+        city: "San Francisco",
+        state: "California",
+        pincode: "94103",
+        country: "United States",
+      },
+      items: [
+        {
+          productId: "YOUR_PRODUCT_UUID",
+          netQuantity: 2,
+        },
+      ],
+    },
+  },
+  {
     id: "list-orders",
     method: "GET",
     path: "/api/v1/orders",
@@ -776,7 +815,7 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     path: "/api/v1/orders",
     name: "Create Order",
     description:
-      "Place a new order for an existing customer with product line items. Total prices are calculated server-side, and an automatic draft invoice is created.",
+      "Place a new order for an existing customer with product line items and delivery address. Shipping fees and line item totals are automatically calculated on the server using store shipping profiles.",
     collection: "orders",
     scopes: ORDER_CREATE_SCOPES,
     bodyFields: [
@@ -785,6 +824,12 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
         type: "string",
         required: true,
         desc: "Valid customer UUID registered in the store.",
+      },
+      {
+        name: "shippingAddress",
+        type: "object",
+        required: true,
+        desc: "Destination shipping address object containing addressLine, country, and optional city, state, pincode.",
       },
       {
         name: "invoiceData",
@@ -797,12 +842,6 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
         type: "string",
         required: false,
         desc: "Optional promotional coupon code to apply discount.",
-      },
-      {
-        name: "shippingAmount",
-        type: "number",
-        required: false,
-        desc: "Delivery or shipping charges.",
       },
       {
         name: "note",
@@ -819,8 +858,14 @@ export const API_ENDPOINTS: ApiEndpoint[] = [
     ],
     defaultBody: {
       customerId: "YOUR_CUSTOMER_UUID",
+      shippingAddress: {
+        addressLine: "123 Market St, Suite 400",
+        city: "San Francisco",
+        state: "California",
+        pincode: "94103",
+        country: "United States",
+      },
       couponCode: "WELCOME10",
-      shippingAmount: 50,
       note: "Please deliver between 10am and 4pm",
       invoiceData: {
         billItems: [

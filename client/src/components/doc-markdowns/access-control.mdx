@@ -1,0 +1,59 @@
+# Access Control & Permissions
+
+Manage team member permissions, invite collaborators, and configure role-based access for your store.
+
+---
+
+## Overview
+
+EaseInv provides granular **Role-Based Access Control (RBAC)** allowing store owners to invite teammates, assign specific responsibilities, and protect sensitive financial and store settings.
+
+Key capabilities include:
+* **Email Invitations**: Securely invite registered EaseInv users to collaborate on your store.
+* **Role Hierarchy**: Tiered roles tailored for store operations (`Owner`, `Manager`, `Employee`).
+* **Dynamic Role Updates**: Promote or modify permissions anytime without re-inviting users.
+* **Instant Revocation**: Remove store access with immediate session invalidation.
+
+---
+
+## Store Roles & Permission Hierarchy
+
+| Role | Description | Access & Permissions |
+|---|---|---|
+| **`OWNER`** | Store Creator / Primary Account | Full unrestricted access to store data, billing subscriptions, API integrations, and store deletion. Cannot be removed or modified. |
+| **`MANAGER`** | Store Manager / Supervisor | Access to all operational modules (Inventory, Billing, Orders, Customers, Shipping Profiles) and team invitation management. |
+| **`EMPLOYEE`** | Staff / Sales Associate | Operational access to create invoices, record customer payments, update order fulfillment states, and view product stock counts. |
+
+> [!NOTE]
+> **Owner Protection**: Store ownership is permanently bound to the creator. Owners cannot be demoted or removed by other team members.
+
+---
+
+## Managing Team Access in the Dashboard
+
+### 1. Navigating to Access Control
+1. Open your store dashboard.
+2. Go to **Settings → Security & Access** from the left navigation menu.
+3. Select the **Access Control** tab.
+
+### 2. Inviting a New Team Member
+1. Click the **Invite new user** button (or top navbar **New invite**).
+2. Enter the collaborator's registered **Email Address**.
+3. Select their initial **Role** (`Manager` or `Employee`).
+4. Click **Send invitation**. The user will receive access to collaborate on the store.
+
+> [!IMPORTANT]
+> The invited user must already have a registered EaseInv account with that email address.
+
+### 3. Searching & Filtering Accessors
+Use the real-time debounced search bar at the top of the team table to instantly filter members by name or email.
+
+### 4. Updating a Member's Role
+1. In the team table, locate the user you wish to modify.
+2. Click the **Edit** (pencil icon) button in the **Actions** column.
+3. Choose the updated role from the dropdown (`Manager` or `Employee`).
+4. Click **Update Role** to apply the change immediately.
+
+### 5. Revoking Store Access
+1. Click the **Delete** (trash icon) button next to the team member.
+2. Confirm the action in the prompt. The user's access to all store data will be revoked immediately.

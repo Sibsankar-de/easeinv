@@ -13,6 +13,8 @@ import {
   Receipt,
   Users,
   ShoppingBag,
+  Truck,
+  ShieldCheck,
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
@@ -54,6 +56,19 @@ const docNavigationOrder: Record<string, DocPageInfo> = {
     icon: ShoppingBag,
   },
   "/docs/orders": {
+    title: "Shipping & Delivery Rates",
+    description:
+      "Configure shipping profiles, delivery zones, and custom rate rules.",
+    href: "/docs/shipping",
+    icon: Truck,
+  },
+  "/docs/shipping": {
+    title: "Access Control & Permissions",
+    description: "Manage team member permissions, roles, and store access.",
+    href: "/docs/access-control",
+    icon: ShieldCheck,
+  },
+  "/docs/access-control": {
     title: "API Authentication",
     description: "Configure secret API Keys to integrate third-party tools.",
     href: "/docs/authentication",

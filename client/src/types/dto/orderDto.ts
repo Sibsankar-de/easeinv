@@ -23,10 +23,23 @@ export interface OrderCouponDto {
   discountValue: number;
 }
 
+export interface OrderAddressDto {
+  id?: string;
+  orderId?: string;
+  addressLine: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}
+
 export interface OrderExtraDataDto {
   delivery_reference?: string;
   note?: string;
   rejection_reason?: string;
+  shipping_address?: OrderAddressDto;
   [key: string]: unknown;
 }
 
@@ -48,6 +61,7 @@ export interface OrderDto {
   customer?: OrderCustomerDto | null;
   coupon?: OrderCouponDto | null;
   invoice?: InvoiceDto | null;
+  address?: OrderAddressDto | null;
   createdAt: string | Date;
   updatedAt: string | Date;
 }

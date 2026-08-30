@@ -37,6 +37,16 @@ export type BillItemDto = {
   totalProfit: number;
 };
 
+export enum InvoiceStatus {
+  ISSUED = "ISSUED",
+  DRAFTED = "DRAFTED",
+}
+
+export enum InvoicePurpose {
+  BILLING = "BILLING",
+  ORDER = "ORDER",
+}
+
 export interface CreateInvoiceDto {
   invoiceNumber: string;
   issueDate: string | Date;
@@ -67,11 +77,6 @@ export interface CreateInvoiceDto {
   };
 }
 
-export enum InvoiceStatus {
-  ISSUED = "ISSUED",
-  DRAFTED = "DRAFTED",
-}
-
 export interface InvoiceDto {
   id: string;
   storeId: string;
@@ -83,6 +88,7 @@ export interface InvoiceDto {
     address?: string;
     email?: string;
   };
+  purpose?: InvoicePurpose | string;
   invoiceNumber: string;
   issueDate: Date;
   billItems: BillItemDto[];
@@ -109,6 +115,7 @@ export interface InvoiceSummaryDto {
     id: string;
     name: string;
   };
+  purpose?: InvoicePurpose | string;
   issueDate: Date;
   subTotal: number;
   total: number;

@@ -13,6 +13,9 @@ import {
   Package,
   Receipt,
   Users,
+  ShoppingBag,
+  Truck,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
@@ -27,6 +30,9 @@ const mobileNavLinks: MobileNavLink[] = [
   { title: "Inventory Management", href: "/docs/inventory", icon: Package },
   { title: "Billing & Invoices", href: "/docs/billing", icon: Receipt },
   { title: "Customer Management", href: "/docs/customers", icon: Users },
+  { title: "Order Management", href: "/docs/orders", icon: ShoppingBag },
+  { title: "Shipping & Delivery", href: "/docs/shipping", icon: Truck },
+  { title: "Access Control", href: "/docs/access-control", icon: ShieldCheck },
   { title: "API Authentication", href: "/docs/authentication", icon: Key },
   { title: "API Explorer", href: "/docs/api", icon: Terminal },
 ];

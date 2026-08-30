@@ -18,6 +18,7 @@ import categoryAnalyticsReducer from "./features/categoryAnalyticsSlice";
 import notificationReducer from "./features/notificationSlice";
 import couponReducer from "./features/couponSlice";
 import orderReducer from "./features/orderSlice";
+import shippingProfileReducer from "./features/shippingProfileSlice";
 
 export function makeStore() {
   return configureStore({
@@ -31,6 +32,7 @@ export function makeStore() {
       customers: customerReducer,
       coupons: couponReducer,
       order: orderReducer,
+      shippingProfile: shippingProfileReducer,
       globalError: globalErrorReducer,
       gallery: galleryReducer,
       apiKey: apikeyReducer,

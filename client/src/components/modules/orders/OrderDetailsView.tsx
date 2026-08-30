@@ -110,6 +110,8 @@ export const OrderDetailsView: React.FC = () => {
   }
 
   const extraData = currentOrder.extraData || {};
+  const shippingAddress =
+    currentOrder.address || extraData.shipping_address || null;
   const isCompleted = currentOrder.status === OrderStatus.COMPLETED;
   const isRejected = currentOrder.status === OrderStatus.REJECTED;
 
@@ -256,6 +258,34 @@ export const OrderDetailsView: React.FC = () => {
                 <span className="text-gray-400 italic text-xs">Not dispatched yet</span>
               )}
             </div>
+
+            {shippingAddress && (
+              <div>
+                <span className="text-xs text-gray-500 block mb-1">
+                  Shipping Address
+                </span>
+                <div className="flex items-start gap-2 text-gray-700 bg-gray-50 p-2.5 rounded border border-gray-200 text-xs">
+                  <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="font-medium text-gray-900">
+                      {shippingAddress.addressLine}
+                    </p>
+                    <p className="text-gray-600">
+                      {[
+                        shippingAddress.city,
+                        shippingAddress.state,
+                        shippingAddress.pincode,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </p>
+                    {shippingAddress.country && (
+                      <p className="text-gray-500">{shippingAddress.country}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {extraData.note && (
               <div>

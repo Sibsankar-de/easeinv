@@ -9,8 +9,9 @@ The Orders module provides end-to-end fulfillment tracking for customer ordersâ€
 Every order moves through a clear, structured progression:
 
 1. **Pending**
-   * The order is placed by the customer (via API, store checkout, or mobile app).
-   * A draft invoice is created automatically in the background to reserve pricing and line items.
+   * The order is placed by the customer with their delivery address (via API, store checkout, or mobile app).
+   * Shipping charges are calculated automatically on the server based on active shipping profiles and delivery zones.
+   * A draft invoice is created automatically in the background to reserve pricing, discounts, and line items.
 
 2. **Processing**
    * Your team accepts and begins preparing the items for packaging.
