@@ -5,6 +5,7 @@ import {
   searchOrders,
   updateOrderStatus,
   deleteOrder,
+  calculateOrderShipping,
 } from "../../controllers/apiKey/order.controller";
 import { verifyApiKeyScope } from "../../middlewares/verifyApiKey.middleware";
 import {
@@ -15,6 +16,13 @@ import {
 } from "../../constants/apiKeyScopes.constant";
 
 const router = Router();
+
+// Calculate shipping
+router.post(
+  "/calculate-shipping",
+  verifyApiKeyScope(ORDER_READ_SCOPES),
+  calculateOrderShipping,
+);
 
 // Search / list orders
 router.get("/", verifyApiKeyScope(ORDER_READ_SCOPES), searchOrders);

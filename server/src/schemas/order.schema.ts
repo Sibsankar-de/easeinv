@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { pricePerQuantityItemSchema } from "./product.schema";
 import { orderStatusList, OrderStatus } from "../enums/order.enum";
+import { shippingAddressSchema } from "./shipping.schema";
 
 export const orderBillItemSchema = z.object({
   productId: z.string().uuid("Product ID must be a valid UUID"),
@@ -28,9 +29,9 @@ export const orderInvoiceDataSchema = z.object({
 
 export const orderCreateSchema = z.object({
   customerId: z.string().uuid("Valid customer ID is required"),
+  shippingAddress: shippingAddressSchema,
   invoiceData: orderInvoiceDataSchema,
   couponCode: z.string().trim().optional().nullable(),
-  shippingAmount: z.number().min(0).optional().default(0),
   note: z.string().trim().optional(),
   extraData: z.record(z.string(), z.unknown()).optional().default({}),
 });
@@ -65,8 +66,18 @@ export const orderQuerySchema = z.object({
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
 
+export const orderExtraDataSchema = z
+  .object({
+    delivery_reference: z.string().optional().default(""),
+    note: z.string().optional().default(""),
+    rejection_reason: z.string().optional().default(""),
+    shipping_calculation: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough();
+
 export type OrderBillItemDto = z.infer<typeof orderBillItemSchema>;
 export type OrderInvoiceDataDto = z.infer<typeof orderInvoiceDataSchema>;
 export type OrderCreateDto = z.infer<typeof orderCreateSchema>;
 export type UpdateOrderStatusDto = z.infer<typeof updateOrderStatusSchema>;
 export type OrderQueryDto = z.infer<typeof orderQuerySchema>;
+export type OrderExtraData = z.infer<typeof orderExtraDataSchema>;

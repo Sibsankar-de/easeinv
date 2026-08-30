@@ -19,6 +19,7 @@ import {
   Customer,
   InvoiceStatus,
   InvoicePaymentStatus,
+  InvoicePurpose,
   Prisma,
   Store,
   StoreSettings,
@@ -33,6 +34,7 @@ import {
   toInvoiceSummaryDto,
   toInvoiceCalculationSummaryDto,
 } from "../dto/invoice.dto";
+import { invoiceExtraDataConverter } from "../converters/invoice.converter";
 
 const buildInvoiceCreateData = (
   userId: string,
@@ -41,10 +43,12 @@ const buildInvoiceCreateData = (
   customer: Customer,
   calculations: CalculatedInvoice,
   status: InvoiceStatus,
+  purpose: InvoicePurpose = InvoicePurpose.BILLING,
 ) => ({
   userId,
   storeId,
   customerId: customer.id,
+  purpose,
   invoiceNumber: billData.invoiceNumber,
   issueDate: new Date(billData.issueDate),
   subTotal: calculations.subTotal,
@@ -63,14 +67,14 @@ const buildInvoiceCreateData = (
     calculations.dueAmount > 0
       ? InvoicePaymentStatus.DUE
       : InvoicePaymentStatus.PAID,
-  extraData: {
+  extraData: invoiceExtraDataConverter({
     customer: {
       name: billData.customer.name,
       phoneNumber: billData.customer.phoneNumber,
       email: billData.customer.email,
       address: billData.customer.address,
     },
-  },
+  }) as unknown as Prisma.InputJsonValue,
 });
 
 const buildInvoiceItemsData = (
@@ -154,6 +158,7 @@ export const createInvoice = async (
   storeId: string,
   billData: InvoiceCreateUpdateDto,
   txClient?: TransactionClient,
+  purpose: InvoicePurpose = InvoicePurpose.BILLING,
 ) => {
   const runner = async (tx: TransactionClient) => {
     // Update store lastInvoiceNumber and fetch settings
@@ -202,6 +207,7 @@ export const createInvoice = async (
         customer,
         calculations,
         status,
+        purpose,
       ),
     });
 

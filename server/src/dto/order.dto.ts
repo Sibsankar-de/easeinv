@@ -1,4 +1,4 @@
-import { Order, Customer, Invoice, Coupon } from "@prisma/client";
+import { Order, Customer, Invoice, Coupon, OrderAddress } from "@prisma/client";
 import {
   CustomerSummaryResponseDto,
   toCustomerSummaryDto,
@@ -21,6 +21,32 @@ export interface OrderCouponSummaryDto {
   discountValue: number;
 }
 
+export interface OrderAddressResponseDto {
+  id: string;
+  orderId: string;
+  addressLine: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const toOrderAddressDto = (
+  address: OrderAddress,
+): OrderAddressResponseDto => ({
+  id: address.id,
+  orderId: address.orderId,
+  addressLine: address.addressLine,
+  city: address.city,
+  state: address.state,
+  pincode: address.pincode,
+  country: address.country,
+  createdAt: address.createdAt,
+  updatedAt: address.updatedAt,
+});
+
 export interface OrderResponseDto {
   id: string;
   storeId: string;
@@ -30,6 +56,7 @@ export interface OrderResponseDto {
   invoice?: InvoiceResponseDto;
   couponId?: string | null;
   coupon?: OrderCouponSummaryDto | null;
+  address?: OrderAddressResponseDto | null;
   status: string;
   orderNumber: string;
   subtotal: number;
@@ -66,6 +93,7 @@ export type OrderWithAllRelations = Order & {
   customer?: Customer | null;
   invoice?: (Invoice & Partial<InvoiceWithRelations>) | null;
   coupon?: Coupon | null;
+  address?: OrderAddress | null;
 };
 
 export const toOrderDto = (order: OrderWithAllRelations): OrderResponseDto => {
@@ -88,6 +116,7 @@ export const toOrderDto = (order: OrderWithAllRelations): OrderResponseDto => {
           discountValue: order.coupon.discountValue,
         }
       : null,
+    address: order.address ? toOrderAddressDto(order.address) : null,
     status: order.status,
     orderNumber: order.orderNumber,
     subtotal: order.subtotal,

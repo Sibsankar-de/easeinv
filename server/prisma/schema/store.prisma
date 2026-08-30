@@ -34,8 +34,8 @@ model Store {
   website            String?
   logoUrl            String?
   lastInvoiceNumber  String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
   deletedAt          DateTime?
 
   // Relations
@@ -52,6 +52,7 @@ model Store {
   coupons            Coupon[]
   webhooks           Webhook[]
   orders             Order[]
+  shippingProfiles   ShippingProfile[]
   invoiceSummary     InvoiceSummary?
   invoiceDailyStats  InvoiceDailyStat[]
   productDailyStats  ProductDailyStat[]

@@ -17,11 +17,15 @@ import {
   toOrderSummaryDto,
   OrderWithAllRelations,
 } from "../dto/order.dto";
+import { orderExtraDataConverter } from "../converters/order.converter";
+import { invoiceExtraDataConverter } from "../converters/invoice.converter";
 import * as invoiceService from "./invoice.service";
+import * as shippingService from "./shipping.service";
 import * as transactionalEmail from "./transactionalEmail.service";
 import {
   DiscountType,
   InvoiceStatus,
+  InvoicePurpose,
   OrderStatus,
   Prisma,
   Coupon,
@@ -158,6 +162,7 @@ export const getPopulatedOrder = async (
       customer: true,
       coupon: true,
       store: true,
+      address: true,
       invoice: {
         include: {
           customer: true,
@@ -327,13 +332,22 @@ export const createOrder = async (
       discountPercent = couponResult.discountPercent;
     }
 
-    // 5. Generate invoice number if not provided
+    // 5. Calculate shipping rates from items
+    const shippingCalculation = await shippingService.calculateShippingCharge(
+      storeId,
+      orderData.shippingAddress,
+      calculatedBillItems,
+      tx,
+    );
+    const shippingAmount = shippingCalculation.shippingAmount;
+
+    // 6. Generate invoice number if not provided
     const invoiceNumber = generateInvoiceNumber(
       orderData.invoiceData.invoiceNumber,
       storeSettings?.invoiceNumberPrefix || "INV",
     );
 
-    // 6. Build invoice payload
+    // 7. Build invoice payload
     const invoicePayload: InvoiceCreateUpdateDto = {
       invoiceNumber,
       issueDate: orderData.invoiceData.issueDate || new Date(),
@@ -358,31 +372,31 @@ export const createOrder = async (
       storeId,
       invoicePayload,
       tx,
+      InvoicePurpose.ORDER,
     );
 
-    const shippingAmount = orderData.shippingAmount ?? 0;
     const totalAmount = Number(
       (createdInvoiceDto.total + shippingAmount).toFixed(2),
     );
 
-    // Update invoice purpose and extraData
+    // Update invoice extraData with shipping details
     await tx.invoice.update({
       where: { id: createdInvoiceDto.id },
       data: {
-        extraData: {
-          purpose: "ORDER",
+        extraData: invoiceExtraDataConverter({
           shippingAmount,
+          shippingCalculation,
           customer: {
             name: customer.name,
             phoneNumber: customer.phoneNumber,
             email: customer.email,
             address: customer.address,
           },
-        },
+        }) as unknown as Prisma.InputJsonValue,
       },
     });
 
-    // 6. Generate readable order number and persist order
+    // 8. Generate readable order number and persist order
     const orderNumber = generateOrderNumber(
       storeSettings?.invoiceNumberPrefix || "ORD",
     );
@@ -401,9 +415,19 @@ export const createOrder = async (
         shippingAmount,
         totalAmount,
         orderDate: new Date(),
-        extraData: {
+        extraData: orderExtraDataConverter({
           ...(orderData.extraData || {}),
           note: orderData.note || "",
+          shipping_calculation: shippingCalculation,
+        }) as unknown as Prisma.InputJsonValue,
+        address: {
+          create: {
+            addressLine: orderData.shippingAddress.addressLine,
+            city: orderData.shippingAddress.city || "",
+            state: orderData.shippingAddress.state || "",
+            pincode: orderData.shippingAddress.pincode || "",
+            country: orderData.shippingAddress.country,
+          },
         },
       },
     });
@@ -522,19 +546,18 @@ export const transitionToDispatch = async (
     );
   }
 
-  const currentExtraData =
-    (existingOrder.extraData as Record<string, unknown>) || {};
-  const updatedExtraData = {
+  const currentExtraData = orderExtraDataConverter(existingOrder.extraData);
+  const updatedExtraData = orderExtraDataConverter({
     ...currentExtraData,
     delivery_reference: dispatchData.deliveryReference,
     note: dispatchData.note ?? currentExtraData.note ?? "",
-  };
+  });
 
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: {
       status: OrderStatus.DISPATCHED,
-      extraData: updatedExtraData,
+      extraData: updatedExtraData as unknown as Prisma.InputJsonValue,
     },
     include: {
       customer: true,
@@ -669,18 +692,17 @@ export const transitionToReject = async (
     );
   }
 
-  const currentExtraData =
-    (existingOrder.extraData as Record<string, unknown>) || {};
-  const updatedExtraData = {
+  const currentExtraData = orderExtraDataConverter(existingOrder.extraData);
+  const updatedExtraData = orderExtraDataConverter({
     ...currentExtraData,
     rejection_reason: rejectData.reason || "Order cancelled by administrator",
-  };
+  });
 
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: {
       status: OrderStatus.REJECTED,
-      extraData: updatedExtraData,
+      extraData: updatedExtraData as unknown as Prisma.InputJsonValue,
     },
     include: {
       customer: true,
