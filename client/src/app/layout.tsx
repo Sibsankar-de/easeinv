@@ -4,9 +4,12 @@ import "./globals.css";
 import StoreProvider from "@/store/storeProvider";
 import { ToastProvider } from "./toastProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 import { NavContextProvider } from "@/contexts/NavContext";
 import { AppLoadingLayout } from "@/components/layout/AppLoadingLayout";
 import { ResizeProvider } from "@/contexts/ResizeContext";
+import { SidebarProvider } from "@/contexts/SidebarContext";
+import { NavigationProgressBar } from "@/components/ui/NavigationProgressBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -71,14 +74,19 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <NavigationProgressBar />
         <ResizeProvider>
           <ToastProvider>
             <NavContextProvider>
-              <StoreProvider>
-                <AuthProvider>
-                  <AppLoadingLayout>{children}</AppLoadingLayout>
-                </AuthProvider>
-              </StoreProvider>
+              <SidebarProvider>
+                <StoreProvider>
+                  <AuthProvider>
+                    <NotificationProvider>
+                      <AppLoadingLayout>{children}</AppLoadingLayout>
+                    </NotificationProvider>
+                  </AuthProvider>
+                </StoreProvider>
+              </SidebarProvider>
             </NavContextProvider>
           </ToastProvider>
         </ResizeProvider>

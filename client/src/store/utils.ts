@@ -5,7 +5,7 @@ import {
 } from "@/types/PageableType";
 import { PaginateResponseType } from "@/types/PaginatedResponseType";
 import { createAsyncThunk, WritableDraft } from "@reduxjs/toolkit";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 
 export const createApiThunk = (
   type: string,

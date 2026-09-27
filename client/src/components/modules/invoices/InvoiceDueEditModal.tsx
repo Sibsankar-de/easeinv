@@ -12,7 +12,7 @@ import { InvoiceSummaryDto } from "@/types/dto/invoiceDto";
 import { X } from "lucide-react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 
 export const InvoiceDueEditModal = ({
   openState,
@@ -66,7 +66,7 @@ export const InvoiceDueEditModal = ({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="space-y-6 w-100"
+      className="space-y-6 w-[90vw] sm:w-96"
       header={<ModalHeader title="Edit Due Amount" />}
     >
       <div>

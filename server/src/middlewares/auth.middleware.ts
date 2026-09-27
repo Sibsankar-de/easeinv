@@ -12,6 +12,7 @@ import { hashStringSha } from "../utils/hash-utils";
 import { generateSecureToken } from "../utils/token-generator";
 import { env } from "../configs/env";
 import { addDays } from "../utils/date-utils";
+import { User } from "@prisma/client";
 
 export const verifyAuth = async (
   req: Request,
@@ -19,52 +20,97 @@ export const verifyAuth = async (
   next: NextFunction,
 ) => {
   try {
-    const accessToken = req.cookies?.accessToken;
-    const refreshToken = req.cookies?.refreshToken;
+    const authHeader = req.headers.authorization;
 
-    if (!accessToken && !refreshToken) {
-      throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorised request");
+    if (authHeader) {
+      const token = authHeader.startsWith("Bearer ")
+        ? authHeader.slice(7).trim()
+        : authHeader.trim();
+      req.user = await verifyViaAuthToken(token);
+    } else {
+      req.user = await verifyViaCookie(req, res);
     }
 
-    let user = null;
-
-    try {
-      if (!accessToken) throw new Error("No access token.");
-      const verifiedToken = verifyAccessToken(accessToken);
-
-      if (!verifiedToken || typeof verifiedToken !== "object") {
-        throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid token");
-      }
-
-      user = await prisma.user.findUnique({
-        where: { id: (verifiedToken as JwtPayload).id },
-      });
-    } catch (_error) {
-      if (!refreshToken) {
-        throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid access token");
-      }
-      // Attempt silent refresh
-      const {
-        newAccessToken,
-        newRefreshToken,
-        user: _user,
-      } = await refreshAccessToken(refreshToken);
-
-      res.cookie("accessToken", newAccessToken, accessTokenCookieOptions);
-      res.cookie("refreshToken", newRefreshToken, refreshTokenCookieOptions);
-
-      user = _user;
-    }
-
-    if (!user) {
+    if (!req.user) {
       throw new ApiError(StatusCodes.UNAUTHORIZED, "User not found");
     }
 
-    req.user = user;
     next();
   } catch (error) {
     next(error);
   }
+};
+
+export const verifyViaAuthToken = async (token: string): Promise<User> => {
+  if (!token) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "Token is required");
+  }
+
+  const authToken = await prisma.authToken.findUnique({
+    where: { token },
+    include: { user: true },
+  });
+
+  if (!authToken || !authToken.active || authToken.expiresAt < new Date()) {
+    throw new ApiError(
+      StatusCodes.UNAUTHORIZED,
+      "Invalid or expired authorization token",
+    );
+  }
+
+  if (!authToken.user) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "User not found");
+  }
+
+  return authToken.user;
+};
+
+export const verifyViaCookie = async (
+  req: Request,
+  res: Response,
+): Promise<User> => {
+  const accessToken = req.cookies?.accessToken;
+  const refreshToken = req.cookies?.refreshToken;
+
+  if (!accessToken && !refreshToken) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorised request");
+  }
+
+  let user: User | null = null;
+
+  try {
+    if (!accessToken) throw new Error("No access token.");
+    const verifiedToken = verifyAccessToken(accessToken);
+
+    if (!verifiedToken || typeof verifiedToken !== "object") {
+      throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid token");
+    }
+
+    user = await prisma.user.findUnique({
+      where: { id: (verifiedToken as JwtPayload).id },
+    });
+  } catch {
+    if (!refreshToken) {
+      throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid access token");
+    }
+    // Attempt silent refresh
+    const {
+      newAccessToken,
+      newRefreshToken,
+      user: refreshedUser,
+    } = await refreshAccessToken(refreshToken);
+
+    res.cookie("accessToken", newAccessToken, accessTokenCookieOptions);
+    res.cookie("refreshToken", newRefreshToken, refreshTokenCookieOptions);
+
+    user = refreshedUser;
+  }
+
+  if (!user) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "User not found");
+  }
+
+  return user;
 };
 
 const refreshAccessToken = async (refreshToken: string) => {

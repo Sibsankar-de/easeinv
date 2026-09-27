@@ -40,13 +40,49 @@ To create a new API Key:
 
 ## API Key Scopes
 
-Each key can be restricted to specific access levels to limit exposure:
+Each key can be restricted to specific access levels to limit exposure.
+
+### Global Scopes
 
 | Scope | Description |
 |---|---|
-| `products:read` | Retrieve list of products and search inventory. |
-| `products:write` | Create, modify, and delete inventory products. |
-| `customers:read` | Retrieve customer lists and purchase history. |
-| `customers:write` | Create and edit customer profiles. |
-| `invoices:read` | View billing invoices, PDF files, and receipts. |
-| `invoices:write` | Generate new invoices, mark as paid, or cancel them. |
+| `admin` | Full access to all resources and operations. |
+| `read` | Read access across all resources. |
+| `write` | Write access across all resources. |
+| `delete` | Delete access across all resources. |
+
+### Product Scopes
+
+| Scope | Description |
+|---|---|
+| `product:all` | Full access to products and categories. |
+| `product:read` | List products, get product details, search inventory. |
+| `product:write` | Create and update products. |
+| `product:delete` | Delete products from inventory. |
+
+### Category Scopes
+
+| Scope | Description |
+|---|---|
+| `category:all` | Full access to product categories. |
+| `category:read` | List product categories. |
+| `category:write` | Create and rename product categories. |
+| `category:delete` | Delete product categories. |
+
+### Customer Scopes
+
+| Scope | Description |
+|---|---|
+| `customer:all` | Full access to customers. |
+| `customer:read` | List customers and retrieve customer profiles. |
+| `customer:write` | Create and update customer profiles. |
+| `customer:delete` | Delete customer profiles. |
+
+### Invoice Scopes
+
+| Scope | Description |
+|---|---|
+| `invoice:all` | Full access to invoices. |
+| `invoice:read` | Retrieve billing invoices. |
+| `invoice:write` | Create new invoices. |
+| `invoice:delete` | Delete invoices. |

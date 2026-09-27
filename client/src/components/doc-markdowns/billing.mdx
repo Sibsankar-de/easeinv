@@ -25,19 +25,36 @@ When typing in the **Bill To** input field:
 
 ---
 
-## Saving & Printing Bills
+## Keyboard Shortcuts for Fast Billing
 
-EaseInv provides two modes of storing and printing invoices:
+Speed up invoice creation with built-in keyboard shortcuts:
 
-### 1. Saving Bills
-* Click **Save** or use the shortcut `Ctrl + S`.
-* Invoices are stored in the database. You can save an invoice as a **Draft** or mark it as **Paid** (which updates cash flows).
-
-### 2. Printing Bills
-* Click **Save & Print** or use the shortcut `Ctrl + P`.
-* A responsive modal displays the print layout. You can select your system printer or save directly as a **PDF**.
+| Shortcut | Action | Description |
+| :--- | :--- | :--- |
+| <kbd>Ctrl</kbd> + <kbd>S</kbd> | **Save / Update Draft** | Saves a new invoice as a draft, or updates an existing draft without issuing. |
+| <kbd>Ctrl</kbd> + <kbd>P</kbd> | **Issue & Print / Print** | Opens the print modal to issue and print a draft, or re-print an already issued invoice. |
+| <kbd>Ctrl</kbd> + <kbd>I</kbd> | **Add Item Row** | Appends a new item row to the billing table. |
+| <kbd>Ctrl</kbd> + <kbd>R</kbd> | **Reset Form** | Clears the form, resets customer & items, and loads a fresh invoice number. |
 
 ---
+
+## Saving, Drafting & Issuing Bills
+
+EaseInv provides a distinct lifecycle for invoices:
+
+### 1. Saving as Draft
+* Click **Save as Draft** or press <kbd>Ctrl</kbd> + <kbd>S</kbd>.
+* Saves the invoice without updating inventory stock, customer balance, or store revenue aggregates.
+* Once saved as draft, further edits will update the existing draft (**Update Draft**).
+
+### 2. Issuing & Printing
+* Click **Issue & Print** or press <kbd>Ctrl</kbd> + <kbd>P</kbd>.
+* Transitions the invoice to **ISSUED** status, deducts inventory, updates customer dues, and recalculates store analytics.
+* Once issued, the invoice cannot be modified or re-drafted, and the button switches to **Print bill** for future reprints.
+
+### 3. Resetting the Form
+* Click **Reset** or press <kbd>Ctrl</kbd> + <kbd>R</kbd>.
+* Clears all fields and initializes a fresh invoice.
 
 ## Related Invoice Settings
 

@@ -1,5 +1,6 @@
 import cron from "node-cron";
 import { prisma } from "../lib/prisma";
+import { InvoiceStatus } from "@prisma/client";
 import { createModuleLogger } from "../utils/logger";
 
 const log = createModuleLogger(import.meta.url);
@@ -144,6 +145,7 @@ export const computeDailyStats = async (): Promise<void> => {
       FROM invoices
       WHERE "issueDate" >= ${today}
         AND "issueDate" <  ${tomorrow}
+        AND status = ${InvoiceStatus.ISSUED}
       GROUP BY "storeId"
     `,
 
@@ -161,6 +163,7 @@ export const computeDailyStats = async (): Promise<void> => {
       LEFT JOIN products p ON p.id = ii."productId"
       WHERE inv."issueDate" >= ${today}
         AND inv."issueDate" <  ${tomorrow}
+        AND inv.status = ${InvoiceStatus.ISSUED}
         AND ii."productId" IS NOT NULL
       GROUP BY inv."storeId", ii."productId"
     `,
@@ -178,6 +181,7 @@ export const computeDailyStats = async (): Promise<void> => {
       LEFT JOIN customers c ON c.id = inv."customerId"
       WHERE inv."issueDate" >= ${today}
         AND inv."issueDate" <  ${tomorrow}
+        AND inv.status = ${InvoiceStatus.ISSUED}
         AND inv."customerId" IS NOT NULL
       GROUP BY inv."storeId", inv."customerId", c.name
     `,

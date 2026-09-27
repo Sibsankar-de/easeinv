@@ -1,15 +1,23 @@
+import ExcelJS from "exceljs";
+import { Response } from "express";
 import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
 import { paginate } from "../utils/paginate";
 import {
   CreateCustomerDTO,
+  CustomerExportQueryDTO,
   UpdateCustomerDTO,
 } from "../schemas/customer.schema";
-import { TransactionClient } from "../utils/transactionHandler";
-import { Customer } from "@prisma/client";
+import {
+  prismaTransaction,
+  TransactionClient,
+} from "../utils/transactionHandler";
+import { Customer, Prisma } from "@prisma/client";
+
 import { InvoiceCustomerDto } from "../schemas/invoice.schema";
 import { toCustomerDto, toCustomerSummaryDto } from "../dto/customer.dto";
+import { publishElasticsearchJob } from "./elasticsearchPublisher.service";
 
 export const getCustomers = async (params: {
   storeId: string;
@@ -104,16 +112,31 @@ export const deleteCustomer = async (storeId: string, customerId: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Customer id is required");
   }
 
-  const customer = await prisma.customer.findFirst({
-    where: { id: customerId, storeId },
+  return prismaTransaction(async (tx) => {
+    const customer = await tx.customer.findFirst({
+      where: { id: customerId, storeId },
+    });
+
+    if (!customer) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Customer not found");
+    }
+
+    await tx.customer.delete({ where: { id: customerId } });
+
+    await tx.invoiceSummary.update({
+      where: { storeId },
+      data: { totalCustomers: { decrement: 1 } },
+    });
+
+    void publishElasticsearchJob({
+      action: "delete",
+      entity: "customer",
+      id: customerId,
+      storeId,
+    });
+
+    return null;
   });
-
-  if (!customer) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Customer not found");
-  }
-
-  await prisma.customer.delete({ where: { id: customerId } });
-  return null;
 };
 
 export const updateCustomer = async (
@@ -140,6 +163,14 @@ export const updateCustomer = async (
     include: { invoices: true },
   });
 
+  void publishElasticsearchJob({
+    action: "index",
+    entity: "customer",
+    id: customerId,
+    storeId,
+    data: buildCustomerIndexDocument(updatedCustomer),
+  });
+
   const invoices = updatedCustomer.invoices;
   const dueCount = invoices.filter((inv) => inv.dueAmount > 0).length;
   return toCustomerDto(customer, invoices.length, dueCount);
@@ -148,36 +179,46 @@ export const updateCustomer = async (
 export const createCustomer = async (
   storeId: string,
   customerData: CreateCustomerDTO,
-) => {
-  const { name, phoneNumber, email, address } = customerData;
+) =>
+  prismaTransaction(async (tx) => {
+    const { name, phoneNumber, email, address } = customerData;
+    const newCust = await tx.customer.create({
+      data: { name, phoneNumber, email, address, storeId },
+    });
 
-  if (!name || !phoneNumber) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "Name and phone number are required",
-    );
-  }
+    await tx.invoiceSummary.update({
+      where: { storeId },
+      data: { totalCustomers: { increment: 1 } },
+    });
 
-  const customer = await prisma.customer.create({
-    data: { name, phoneNumber, email, address, storeId },
+    void publishElasticsearchJob({
+      action: "index",
+      entity: "customer",
+      id: newCust.id,
+      storeId,
+      data: buildCustomerIndexDocument(newCust),
+    });
+
+    return toCustomerDto(newCust);
   });
-
-  return toCustomerDto(customer);
-};
 
 export const getOrCreateInvoiceCustomer = async (
   storeId: string,
   customer: InvoiceCustomerDto,
   tx: TransactionClient,
-) => {
+): Promise<{ customer: Customer; isNew: boolean }> => {
   const customerId = customer.id;
-  let newCustomer;
+  let resolvedCustomer: Customer | null = null;
+  let isNew = false;
+
   if (customerId) {
-    newCustomer = await tx.customer.findFirst({ where: { id: customerId } });
+    resolvedCustomer = await tx.customer.findFirst({
+      where: { id: customerId },
+    });
   }
 
-  if (!newCustomer) {
-    newCustomer = await tx.customer.create({
+  if (!resolvedCustomer) {
+    resolvedCustomer = await tx.customer.create({
       data: {
         storeId,
         name: customer.name,
@@ -186,16 +227,17 @@ export const getOrCreateInvoiceCustomer = async (
         email: customer.email,
       },
     });
+    isNew = true;
   }
 
-  if (!newCustomer) {
+  if (!resolvedCustomer) {
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,
       "Failed to create customer.",
     );
   }
 
-  return newCustomer;
+  return { customer: resolvedCustomer, isNew };
 };
 
 export const increamentCustomerDue = async (
@@ -210,3 +252,100 @@ export const increamentCustomerDue = async (
     data: { totalDue: { increment: dueAmount } },
   });
 };
+
+export const exportCustomersStream = async (
+  storeId: string,
+  params: CustomerExportQueryDTO,
+  res: Response,
+) => {
+  const { format, query, sortBy, sortOrder } = params;
+
+  const where: Prisma.CustomerWhereInput = { storeId };
+
+  if (query) {
+    const term = decodeURIComponent(query);
+    where.OR = [
+      { name: { contains: term, mode: "insensitive" } },
+      { phoneNumber: { contains: term, mode: "insensitive" } },
+      { email: { contains: term, mode: "insensitive" } },
+    ];
+  }
+
+  const customers = await prisma.customer.findMany({
+    where,
+    orderBy: { [sortBy]: sortOrder },
+    include: {
+      invoices: { select: { id: true, dueAmount: true } },
+    },
+  });
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Customers");
+
+  worksheet.columns = [
+    { header: "ID", key: "id", width: 36 },
+    { header: "Customer Name", key: "name", width: 25 },
+    { header: "Phone Number", key: "phoneNumber", width: 18 },
+    { header: "Email", key: "email", width: 25 },
+    { header: "Address", key: "address", width: 30 },
+    { header: "Total Due", key: "totalDue", width: 15 },
+    { header: "Advance Amount", key: "advance", width: 15 },
+    { header: "Payment Behaviour", key: "paymentBehaviour", width: 18 },
+    { header: "Customer Mark", key: "mark", width: 15 },
+    { header: "Total Invoices", key: "totalInvoices", width: 15 },
+    { header: "Due Invoices", key: "dueInvoices", width: 15 },
+    { header: "Created At", key: "createdAt", width: 22 },
+  ];
+
+  worksheet.getRow(1).font = { bold: true };
+
+  customers.forEach((c) => {
+    const invoices = c.invoices ?? [];
+    const dueCount = invoices.filter((inv) => inv.dueAmount > 0).length;
+
+    worksheet.addRow({
+      id: c.id,
+      name: c.name,
+      phoneNumber: c.phoneNumber || "",
+      email: c.email || "",
+      address: c.address || "",
+      totalDue: c.totalDue,
+      advance: c.advance,
+      paymentBehaviour: c.paymentBehaviour,
+      mark: c.mark,
+      totalInvoices: invoices.length,
+      dueInvoices: dueCount,
+      createdAt: c.createdAt.toISOString(),
+    });
+  });
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  if (format === "xlsx") {
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="customers_${storeId}_${timestamp}.xlsx"`,
+    );
+    await workbook.xlsx.write(res);
+  } else {
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="customers_${storeId}_${timestamp}.csv"`,
+    );
+    await workbook.csv.write(res);
+  }
+};
+
+export const buildCustomerIndexDocument = (
+  customer: Customer,
+): Record<string, unknown> => ({
+  id: customer.id,
+  name: customer.name,
+  phoneNumber: customer.phoneNumber,
+  email: customer.email,
+  address: customer.address,
+});

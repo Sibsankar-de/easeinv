@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { FormSkeleton } from "@/components/ui/Skeleton";
 import { useNavContext } from "@/contexts/NavContext";
 import { NavActionButton } from "@/components/modules/navbar/Navbar";

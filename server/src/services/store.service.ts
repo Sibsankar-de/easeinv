@@ -158,7 +158,7 @@ export const markStoreDeletedById = async (storeId: string) => {
   // mark store as deleted.
   await prisma.store.update({
     where: { id: storeId },
-    data: { status: StoreStatus.DELETED },
+    data: { status: StoreStatus.DELETED, deletedAt: new Date() },
   });
   return null;
 };

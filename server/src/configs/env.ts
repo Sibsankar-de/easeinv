@@ -54,7 +54,19 @@ export const env = {
 
   RABBITMQ_CONNECTION_URI: process.env.RABBITMQ_CONNECTION_URI,
   RABBITMQ_EMAIL_QUEUE: process.env.RABBITMQ_EMAIL_QUEUE || "email_queue",
+  RABBITMQ_NOTIFICATION_QUEUE:
+    process.env.RABBITMQ_NOTIFICATION_QUEUE || "notification_queue",
 
   EMAIL_VERIFICATION_TOKEN_EXPIRY: 10, // in hours
   PASSWORD_RESET_TOKEN_EXPIRY: 1, // in hours
+
+  CLOUDFLARE_TURNSTILE_SECRET: process.env.CLOUDFLARE_TURNSTILE_SECRET,
+
+  SUPPORT_EMAIL: "support@easeinv.app",
+
+  ELASTICSEARCH_URL: process.env.ELASTICSEARCH_URL || "http://localhost:9200",
+  ELASTICSEARCH_PRODUCTS_INDEX:
+    process.env.ELASTICSEARCH_PRODUCTS_INDEX || "products",
+  ELASTICSEARCH_CUSTOMERS_INDEX:
+    process.env.ELASTICSEARCH_CUSTOMERS_INDEX || "customers",
 } as const;

@@ -16,6 +16,7 @@ import {
   sendWelcomeEmail,
   sendPasswordResetEmail,
 } from "./transactionalEmail.service";
+import * as transactionalNotification from "./transactionalNotification.service";
 import { env } from "../configs/env";
 import {
   comparePassword,
@@ -125,6 +126,9 @@ export const verifyEmail = async (token: string) => {
   // send welcome email
   sendWelcomeEmail(user);
 
+  // notify user (fire-and-forget)
+  transactionalNotification.notifyEmailVerified(user);
+
   return null;
 };
 
@@ -219,6 +223,9 @@ export const validateAndResetPassword = async (
   await prisma.verificationToken.delete({
     where: { id: verificationToken.id },
   });
+
+  // notify user about the password change (fire-and-forget)
+  transactionalNotification.notifyPasswordChanged(user);
 };
 
 export const resendVerificationEmail = async (user: User) => {

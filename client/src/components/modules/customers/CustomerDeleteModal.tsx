@@ -14,7 +14,7 @@ import { CustomerDto } from "@/types/dto/customerDto";
 import { X } from "lucide-react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 
 export function CustomerDeleteModal({
   openState,
@@ -53,7 +53,7 @@ export function CustomerDeleteModal({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="p-4 space-y-4 w-[30vw]"
+      className="p-4 space-y-4 w-[90vw] sm:w-[26rem]"
       header={<ModalHeader title="Delete Customer" />}
     >
       <p>This action will delete the customer and its data permanently.</p>

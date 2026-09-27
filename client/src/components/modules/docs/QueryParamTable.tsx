@@ -1,25 +1,26 @@
 "use client";
 
 import React from "react";
-import { SpreadText } from "../../ui/SpreadText";
+import { ApiParam } from "@/lib/api-explorer/endpoints";
+import { Input } from "@/components/ui/Input";
+import { SpreadText } from "@/components/ui/SpreadText";
 
-interface Param {
-  name: string;
-  type: string;
-  required: boolean;
-  desc: string;
+interface QueryParamInputsProps {
+  params?: ApiParam[];
+  values: Record<string, string>;
+  onChange: (name: string, value: string) => void;
 }
 
-interface QueryParamTableProps {
-  params?: Param[];
-}
-
-export function QueryParamTable({ params }: QueryParamTableProps) {
+export function QueryParamInputs({
+  params,
+  values,
+  onChange,
+}: QueryParamInputsProps) {
   if (!params || params.length === 0) {
     return (
       <div className="p-4 bg-slate-50 border border-border rounded-xl text-center">
         <span className="text-xs text-muted-foreground font-medium">
-          No query parameters required for this endpoint.
+          No query parameters for this endpoint.
         </span>
       </div>
     );
@@ -34,8 +35,8 @@ export function QueryParamTable({ params }: QueryParamTableProps) {
       </div>
       <div className="p-3 divide-y divide-slate-100">
         {params.map((p) => (
-          <div key={p.name} className="py-2.5 flex items-start gap-4">
-            <div className="w-1/3 flex flex-col font-mono">
+          <div key={p.name} className="py-3 flex items-start gap-4">
+            <div className="w-2/5 flex flex-col font-mono shrink-0">
               <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 {p.name}
                 {p.required && (
@@ -48,10 +49,18 @@ export function QueryParamTable({ params }: QueryParamTableProps) {
               <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider mt-0.5">
                 {p.type}
               </span>
+              <span className="text-[10px] text-slate-500 leading-relaxed mt-1 font-sans font-normal">
+                {p.desc}
+              </span>
             </div>
-            <p className="w-2/3 text-xs text-slate-600 leading-relaxed">
-              {p.desc}
-            </p>
+            <div className="flex-1">
+              <Input
+                value={values[p.name] || ""}
+                onChange={(v) => onChange(p.name, v)}
+                placeholder={`Optional`}
+                className="font-mono text-xs h-8"
+              />
+            </div>
           </div>
         ))}
       </div>

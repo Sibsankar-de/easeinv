@@ -14,7 +14,7 @@ import {
   Settings,
   Store,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useAppRouter as useRouter } from "@/hooks/useAppRouter";
 import { PrimaryBox } from "@/components/ui/PrimaryBox";
 
 export const StoreCard = ({ store }: { store: StoreDto }) => {

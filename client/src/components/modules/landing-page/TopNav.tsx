@@ -20,6 +20,21 @@ export const TopNav = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  const [mounted, setMounted] = useState(false);
+  const [active, setActive] = useState(false);
+
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      setMounted(true);
+      const timer = setTimeout(() => setActive(true), 10);
+      return () => clearTimeout(timer);
+    } else {
+      setActive(false);
+      const timer = setTimeout(() => setMounted(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isMobileMenuOpen]);
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -114,8 +129,16 @@ export const TopNav = () => {
       </div>
 
       {/* Mobile Menu Dropdown */}
-      {isMobileMenuOpen && (
-        <div className="absolute top-full left-0 right-0 bg-background border-b border-border shadow-lg p-6 flex flex-col gap-6 md:hidden animate-in slide-in-from-top-2 duration-200">
+      {mounted && (
+        <div
+          className={clsx(
+            "absolute top-full left-0 right-0 bg-background border-b border-border shadow-lg p-6 flex flex-col gap-6 md:hidden overflow-hidden",
+            "transition-all duration-300 ease-in-out transform origin-top",
+            active
+              ? "opacity-100 translate-y-0 max-h-96"
+              : "opacity-0 -translate-y-2 max-h-0 py-0 border-transparent pointer-events-none",
+          )}
+        >
           <nav className="flex flex-col gap-4">
             {navLinks.map((link) => (
               <Link

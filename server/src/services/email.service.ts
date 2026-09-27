@@ -3,6 +3,7 @@ import { emailTemplates } from "../constants/emailTemplates";
 import { renderEmail } from "./emailRender.service";
 import { EmailJob } from "../types/email";
 import { clientPages } from "../constants/client.constant";
+import { env } from "../configs/env";
 
 export const getStoreUserInviteEmail = async (
   user: User,
@@ -102,6 +103,70 @@ export const getStoreCreatedEmail = async (
   return emailJob;
 };
 
+export interface BatchStockAlertProductItem {
+  productId: string;
+  productName: string;
+  productSku: string;
+  currentStock: number;
+  stockUnit: string;
+  threshold: number;
+  inventoryLink: string;
+}
+
+export const getBatchStockAlertEmail = async (
+  user: User,
+  store: Store,
+  products: BatchStockAlertProductItem[],
+): Promise<EmailJob> => {
+  const formattedProducts = products.map((p) => {
+    const isOutOfStock = p.currentStock <= 0;
+    return {
+      ...p,
+      isOutOfStock,
+      statusText: isOutOfStock ? "Out of Stock" : "Low Stock",
+      badgeClass: isOutOfStock ? "alert-badge" : "warning-badge",
+    };
+  });
+
+  const hasOutOfStock = formattedProducts.some((p) => p.isOutOfStock);
+  const allOutOfStock =
+    formattedProducts.length > 0 &&
+    formattedProducts.every((p) => p.isOutOfStock);
+  const totalAffectedCount = formattedProducts.length;
+  const itemLabel = totalAffectedCount === 1 ? "product" : "products";
+  const inventoryDashboardLink = clientPages.constructStorePageUrl(
+    store.id,
+    "/inventory",
+  );
+
+  const data = {
+    recipientName: user.userName,
+    storeName: store.name,
+    totalAffectedCount,
+    itemLabel,
+    hasOutOfStock,
+    products: formattedProducts,
+    inventoryDashboardLink,
+  };
+
+  const body = await renderEmail({
+    templateName: emailTemplates.STOCK_BATCH_ALERT_EMAIL_TEMPLATE,
+    data,
+  });
+
+  const subject = allOutOfStock
+    ? `🚨 Out of Stock Alert: ${totalAffectedCount} ${itemLabel} in ${store.name}`
+    : `⚠️ Stock Alert: ${totalAffectedCount} ${itemLabel} in ${store.name}`;
+
+  const emailJob: EmailJob = {
+    to: user.email,
+    subject,
+    html: body,
+  };
+
+  return emailJob;
+};
+
 export const getStockAlertEmail = async (
   user: User,
   store: Store,
@@ -158,6 +223,32 @@ export const getPasswordResetEmail = async (
   const emailJob: EmailJob = {
     to: user.email,
     subject: "Reset your password - EaseInv",
+    html: body,
+  };
+
+  return emailJob;
+};
+
+export const getCustomerQueryEmail = async (
+  name: string,
+  email: string,
+  message: string,
+): Promise<EmailJob> => {
+  const data = {
+    senderName: name,
+    senderEmail: email,
+    senderMessage: message,
+    submittedAt: new Date().toLocaleString(),
+  };
+
+  const body = await renderEmail({
+    templateName: emailTemplates.CUSTOMER_QUERY_EMAIL_TEMPLATE,
+    data,
+  });
+
+  const emailJob: EmailJob = {
+    to: env.SUPPORT_EMAIL,
+    subject: `[EaseInv Inquiry] New Message from ${name}`,
     html: body,
   };
 

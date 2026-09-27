@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { User, Lock, Mail, HelpCircle } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 
 import { PrimaryBox } from "@/components/ui/PrimaryBox";
 import { Input } from "@/components/ui/Input";

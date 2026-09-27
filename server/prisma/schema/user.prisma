@@ -21,14 +21,18 @@ model User {
   updatedAt       DateTime     @updatedAt
 
   // Relations
+  notifications      Notification[]
+  webhooks           Webhook[]
   ownedStores        Store[]             @relation("StoreOwner")
   storeUsers         StoreUser[]
   galleryImages      GalleryImage[]
   apiKeys            ApiKey[]
   invoices           Invoice[]
   createdProducts    Product[]
+  createdCoupons     Coupon[]            @relation("CreatedCoupons")
   verificationTokens VerificationToken[]
   refreshToken       RefreshToken[]
+  authTokens         AuthToken[]
 
   @@index([email])
   @@map("users")

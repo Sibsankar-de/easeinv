@@ -15,43 +15,64 @@ export function calculatePrice(
 
   const { baseUnit, selectedUnit, unitGroups } = unitOptions;
 
-  // Resolve multiplier for the selected unit (1 if same as base or not found)
-  let multiplier = 1;
-  if (selectedUnit !== baseUnit) {
-    const match = unitGroups.find((g) => g.unit === selectedUnit);
-    if (match) multiplier = match.multiplier;
-  }
-
   // Filter tiers that directly target the selected unit
   const unitTiers = tiers.filter((t) => t.unit === selectedUnit);
 
-  // Choose tier pool and effective quantity:
-  //    - unit tiers exist -> match within them using raw quantity
-  //    - no unit tiers   -> match across all tiers using quantity × multiplier
-  let tierPool = unitTiers;
-  let effectiveQuantity = quantity;
+  if (unitTiers.length > 0) {
+    const sorted = [...unitTiers].sort((a, b) => a.quantity - b.quantity);
+    let chosen = sorted[0];
 
-  // if no tires for selected unit use the tires with base unit
-  if (tierPool.length == 0) {
-    tierPool = tiers.filter((t) => t.unit === baseUnit);
-    effectiveQuantity = quantity * multiplier;
-  }
-
-  // sort tier pool by quantity ascending
-  const sorted = tierPool.sort((a, b) => a.quantity - b.quantity);
-
-  // find the tier with the largest quantity <= effectiveQuantity
-  let chosen = sorted[0];
-
-  for (const tier of sorted) {
-    if (tier.quantity <= effectiveQuantity) {
-      chosen = tier;
-    } else {
-      break;
+    for (const tier of sorted) {
+      if (tier.quantity <= quantity) {
+        chosen = tier;
+      } else {
+        break;
+      }
     }
+
+    const unitPrice = chosen.price / chosen.quantity;
+    const totalPrice = Number((quantity * unitPrice).toFixed(2));
+    const totalProfit = Number(
+      ((chosen.profitMargin / 100) * quantity).toFixed(2),
+    );
+    return { price: totalPrice, profit: totalProfit, chosenTier: chosen };
   }
 
-  const unitPrice = chosen.price / chosen.quantity;
+  // If no tiers for selected unit, calculate for base unit
+  let selectedMultiplier = 1;
+  if (selectedUnit !== baseUnit) {
+    const match = unitGroups.find((g) => g.unit === selectedUnit);
+    if (match) selectedMultiplier = match.multiplier;
+  }
+
+  const effectiveQuantity = quantity * selectedMultiplier;
+  const baseTiers = tiers.filter((t) => t.unit === baseUnit);
+
+  let chosen: PricePerQuantityType;
+  let unitPrice: number;
+
+  if (baseTiers.length > 0) {
+    // Case 1: Tier with base unit exists
+    const sorted = [...baseTiers].sort((a, b) => a.quantity - b.quantity);
+    chosen = sorted[0];
+
+    for (const tier of sorted) {
+      if (tier.quantity <= effectiveQuantity) {
+        chosen = tier;
+      } else {
+        break;
+      }
+    }
+
+    unitPrice = chosen.price / chosen.quantity;
+  } else {
+    // Case 2: Tier with base unit not found -> take first tier with different unit and use its multiplier
+    chosen = tiers[0];
+    const match = unitGroups.find((g) => g.unit === chosen.unit);
+    const tierMultiplier = match ? match.multiplier : 1;
+    unitPrice = chosen.price / (chosen.quantity * tierMultiplier);
+  }
+
   const totalPrice = Number((effectiveQuantity * unitPrice).toFixed(2));
   const totalProfit = Number(
     ((chosen.profitMargin / 100) * effectiveQuantity).toFixed(2),

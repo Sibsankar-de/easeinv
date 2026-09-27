@@ -25,6 +25,11 @@ export const productCreateUpdateSchema = z
     buyingPricePerQuantity: z
       .number()
       .min(0, "Buying price must be non-negative"),
+    mrp: z
+      .number()
+      .min(0, "MRP must be non-negative")
+      .optional()
+      .nullable(),
     trackInventory: z.boolean().optional().default(false),
     totalStock: z.number().optional().default(0),
     alertThreshold: z
@@ -72,3 +77,15 @@ export type ProductCreateUpdateDTO = z.infer<typeof productCreateUpdateSchema>;
 export type RearrangeImagesDTO = z.infer<typeof rearrangeImagesSchema>;
 
 export type ProductExtraData = z.infer<typeof productExtraDataSchema>;
+
+export const productExportQuerySchema = z.object({
+  format: z.enum(["csv", "xlsx"]).default("csv"),
+  query: z.string().optional().default(""),
+  categoryId: z.string().optional(),
+  stockStatus: z.enum(["AVAILABLE", "LOW_STOCK", "OUT_OF_STOCK"]).optional(),
+  sortBy: z.string().default("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("asc"),
+});
+
+export type ProductExportQueryDTO = z.infer<typeof productExportQuerySchema>;
+

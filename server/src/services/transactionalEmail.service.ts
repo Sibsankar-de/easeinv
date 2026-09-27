@@ -2,9 +2,12 @@ import { Product, Store, User } from "@prisma/client";
 import {
   getEmailVerificationEmail,
   getStockAlertEmail,
+  getBatchStockAlertEmail,
+  BatchStockAlertProductItem,
   getStoreCreatedEmail,
   getWelcomeEmail,
   getPasswordResetEmail,
+  getCustomerQueryEmail,
 } from "./email.service";
 import { publishEmailJob } from "./emailPublisher.service";
 import { sendMail } from "../lib/mailer";
@@ -63,6 +66,19 @@ export const sendStockAlertEmail = async (
   }
 };
 
+export const sendBatchStockAlertEmail = async (
+  user: User,
+  store: Store,
+  products: BatchStockAlertProductItem[],
+) => {
+  try {
+    const emailJob = await getBatchStockAlertEmail(user, store, products);
+    await publishEmailJob(emailJob);
+  } catch (error) {
+    log.error("Email publishing failed " + error);
+  }
+};
+
 export const sendPasswordResetEmail = async (user: User, resetLink: string) => {
   let emailJob;
   try {
@@ -72,4 +88,17 @@ export const sendPasswordResetEmail = async (user: User, resetLink: string) => {
     return;
   }
   await sendMail(emailJob);
+};
+
+export const sendCustomerQueryEmail = async (
+  name: string,
+  email: string,
+  message: string,
+) => {
+  try {
+    const emailJob = await getCustomerQueryEmail(name, email, message);
+    await publishEmailJob(emailJob);
+  } catch (error) {
+    log.error("Email publishing failed " + error);
+  }
 };

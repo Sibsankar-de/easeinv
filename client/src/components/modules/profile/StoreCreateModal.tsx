@@ -16,7 +16,7 @@ import { getNames as getCountryNames } from "country-list";
 import { Mail, Phone, Store } from "lucide-react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 
 export const StoreCreateModal = ({
   openState,
@@ -86,7 +86,7 @@ export const StoreCreateModal = ({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="px-4 py-3 space-y-6 w-5xl"
+      className="px-4 py-3 space-y-6 w-[90vw] md:w-[85vw] lg:w-5xl max-w-5xl"
       header={
         <ModalHeader
           title="Create New Store"

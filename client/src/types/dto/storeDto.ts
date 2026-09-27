@@ -38,6 +38,9 @@ export type StoreDto = {
   owner?: string;
   currencyCode: string;
   addressLine?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
   contactNo?: string;
   contactEmail?: string;
   type?: string;

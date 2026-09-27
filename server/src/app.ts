@@ -1,21 +1,11 @@
 import express from "express";
-import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import routes from "./routes";
-import { env } from "./configs/env";
 import { errorMiddleware } from "./middlewares/error.middleware";
 
 const app = express();
-
-const origins = env.CORS_ORIGIN.split(",");
-app.use(
-  cors({
-    origin: origins,
-    credentials: true,
-  }),
-);
 
 app.use(helmet());
 app.use(cookieParser());

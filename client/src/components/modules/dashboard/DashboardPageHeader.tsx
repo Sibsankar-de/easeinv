@@ -22,13 +22,13 @@ export const DashboardPageHeader = ({
   isLoading?: boolean;
   actions?: ReactNode;
 }) => (
-  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
     <div>
       <h1 className="mb-1.5 text-foreground text-2xl font-semibold">{title}</h1>
       <p className="text-muted-foreground text-sm">{description}</p>
     </div>
 
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto lg:ml-auto lg:flex-nowrap">
       {actions}
       {onRefresh && (
         <Button
@@ -44,7 +44,9 @@ export const DashboardPageHeader = ({
           />
         </Button>
       )}
-      <DateRangePicker value={filter} onChange={onFilterChange} />
+      <div className="flex-1 min-w-0 lg:flex-none">
+        <DateRangePicker value={filter} onChange={onFilterChange} />
+      </div>
     </div>
   </div>
 );

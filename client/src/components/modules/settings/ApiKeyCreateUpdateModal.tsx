@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { useStoreNavigation } from "@/hooks/store-navigation";
 import {
   createApiKeyThunk,
@@ -131,7 +131,7 @@ export const ApiKeyCreateUpdateModal = ({
     <Modal
       openState={isOpen}
       onClose={onClose}
-      className="w-3xl"
+      className="w-[90vw] md:w-[80vw] lg:w-3xl"
       header={
         <ModalHeader
           title={mode === "create" ? "Create API Key" : "Update API Key"}

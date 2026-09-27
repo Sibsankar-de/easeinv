@@ -3,7 +3,6 @@ import { CustomerDto } from "@/types/dto/customerDto";
 import { PaginatedPages } from "@/types/PageableType";
 import { createApiThunk, setState, transformPaginatedResponse } from "../utils";
 import { createSlice } from "@reduxjs/toolkit";
-import { createInvoiceThunk } from "./invoiceSlice";
 
 export const fetchCustomerListThunk: any = createApiThunk(
   "/customers/list",

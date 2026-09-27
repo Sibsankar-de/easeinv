@@ -12,7 +12,7 @@ import {
   uploadGalleryImageThunk,
 } from "@/store/features/gallerySlice";
 import { GalleryItem } from "./GalleryItem";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { pageLimits } from "@/constants/pageLimits";
 import { useStoreNavigation } from "@/hooks/store-navigation";
 import { cn } from "@/components/utils";
@@ -171,7 +171,7 @@ export const GalleryModal: React.FC<GalleryModalProps> = ({
     <Modal
       openState={open}
       onClose={onClose}
-      className="w-4xl h-[80vh] flex flex-col"
+      className="w-[90vw] md:w-[85vw] lg:w-4xl max-w-5xl h-[80vh] flex flex-col"
       header={<ModalHeader title="Image Gallery" />}
     >
       <div className="flex-1 overflow-hidden flex flex-col gap-4 p-2">

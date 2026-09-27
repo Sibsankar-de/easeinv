@@ -16,7 +16,7 @@ import { CustomerDto } from "@/types/dto/customerDto";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 
 export function CustomerCreateEditModal({
   openState,
@@ -114,7 +114,7 @@ export function CustomerCreateEditModal({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="p-4 space-y-4 w-[40vw]"
+      className="p-4 space-y-4 w-[90vw] sm:w-[28rem] md:w-[35rem]"
       header={
         <ModalHeader
           title={`${mode === "edit" ? "Edit" : "Create"} Customer`}

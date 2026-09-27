@@ -10,7 +10,7 @@ import {
 } from "@/store/features/currentStoreSlice";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { ProductUnitAddSection } from "./ProductUnitAddSection";
 import { FormSkeleton } from "@/components/ui/Skeleton";
 import { useNavContext } from "@/contexts/NavContext";

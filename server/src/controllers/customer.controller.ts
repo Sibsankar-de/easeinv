@@ -6,8 +6,11 @@ import * as customerService from "../services/customer.service";
 import { validateBody } from "../utils/validate.utils";
 import {
   createCustomerSchema,
+  customerExportQuerySchema,
   updateCustomerSchema,
 } from "../schemas/customer.schema";
+import { searchCustomersInElasticsearch } from "../services/elasticsearch.service";
+
 
 export const getCustomers = asyncHandler(
   async (req: Request, res: Response) => {
@@ -37,17 +40,13 @@ export const searchCustomers = asyncHandler(
     const query = (req.query.query as string) || "";
     const page = parseInt((req.query.page as string) || "1");
     const limit = parseInt((req.query.limit as string) || "10");
-    const sortBy = (req.query.sortBy as string) || "createdAt";
-    const sortOrder = req.query.sortOrder === "desc" ? "desc" : "asc";
 
-    const results = await customerService.searchCustomers({
+    const results = await searchCustomersInElasticsearch(
       storeId,
       query,
       page,
       limit,
-      sortBy,
-      sortOrder,
-    });
+    );
 
     return res
       .status(StatusCodes.OK)
@@ -145,3 +144,13 @@ export const createCustomer = asyncHandler(
       );
   },
 );
+
+export const exportCustomers = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { storeId } = req.params as { storeId: string };
+    const queryParams = customerExportQuerySchema.parse(req.query);
+
+    await customerService.exportCustomersStream(storeId, queryParams, res);
+  },
+);
+

@@ -9,5 +9,5 @@ export function StorePageContainer({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="mt-5 mb-10 mx-6">{children}</div>;
+  return <div className="mt-3 sm:mt-5 mb-6 sm:mb-10 mx-3 sm:mx-6">{children}</div>;
 }

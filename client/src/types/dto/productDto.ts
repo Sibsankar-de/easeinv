@@ -38,6 +38,7 @@ export type ProductDto = {
   description?: string;
   categories?: CategoryDto[];
   buyingPricePerQuantity: number;
+  mrp?: number | null;
   totalStock?: number;
   trackInventory?: boolean;
   alertThreshold?: number;

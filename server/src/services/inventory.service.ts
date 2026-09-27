@@ -1,3 +1,5 @@
+import ExcelJS from "exceljs";
+import { Response } from "express";
 import { prisma } from "../lib/prisma";
 import { ApiError } from "../utils/apiErrorHandler";
 import { StatusCodes } from "http-status-codes";
@@ -6,17 +8,32 @@ import { productLimits } from "../constants/limits.constants";
 import { paginate } from "../utils/paginate";
 import {
   ProductCreateUpdateDTO,
+  ProductExportQueryDTO,
   ProductExtraData,
 } from "../schemas/product.schema";
-import { toProductDto, toProductSummaryDto } from "../dto/product.dto";
+
+import {
+  toProductDto,
+  toProductSummaryDto,
+  ProductResponseDto,
+} from "../dto/product.dto";
 import {
   prismaTransaction,
   TransactionClient,
 } from "../utils/transactionHandler";
-import { Product, ProductStockStatus, Store, User } from "@prisma/client";
+import {
+  Product,
+  ProductStockStatus,
+  Store,
+  User,
+  Prisma,
+} from "@prisma/client";
+
 import * as transactionalEmailService from "./transactionalEmail.service";
+import * as transactionalNotification from "./transactionalNotification.service";
 import { clientPages } from "../constants/client.constant";
 import { productExtraDataConverter } from "../converters/product.converter";
+import { publishElasticsearchJob } from "./elasticsearchPublisher.service";
 
 export const getProducts = async (params: {
   storeId: string;
@@ -70,6 +87,7 @@ export const createProduct = async (
       sku,
       gtin,
       buyingPricePerQuantity,
+      mrp,
       trackInventory,
       totalStock,
       alertThreshold,
@@ -103,6 +121,7 @@ export const createProduct = async (
         gtin: gtin || generateGTIN(),
         description,
         buyingPricePerQuantity,
+        mrp,
         trackInventory: trackInventory ?? false,
         totalStock: totalStock ?? 0,
         alertThreshold: alertThreshold ?? 0,
@@ -127,7 +146,17 @@ export const createProduct = async (
       await addOrRemoveProductImages(product.id, imageIds, tx);
     }
 
-    return await getPopulatedProductById(product.id, tx);
+    const populated = await getPopulatedProductById(product.id, tx);
+
+    void publishElasticsearchJob({
+      action: "index",
+      entity: "product",
+      id: product.id,
+      storeId,
+      data: buildProductIndexDocument(populated),
+    });
+
+    return populated;
   });
 
 export const updateProduct = async (
@@ -140,6 +169,7 @@ export const updateProduct = async (
       sku,
       gtin,
       buyingPricePerQuantity,
+      mrp,
       trackInventory,
       totalStock,
       alertThreshold,
@@ -183,6 +213,7 @@ export const updateProduct = async (
         gtin,
         description,
         buyingPricePerQuantity,
+        mrp,
         trackInventory: trackInventory ?? false,
         totalStock: totalStock ?? 0,
         alertThreshold: alertThreshold ?? 0,
@@ -207,7 +238,17 @@ export const updateProduct = async (
       await addOrRemoveProductImages(productId, imageIds, tx);
     }
 
-    return await getPopulatedProductById(productId, tx);
+    const populated = await getPopulatedProductById(productId, tx);
+
+    void publishElasticsearchJob({
+      action: "index",
+      entity: "product",
+      id: productId,
+      storeId: populated.storeId,
+      data: buildProductIndexDocument(populated),
+    });
+
+    return populated;
   });
 
 export const getProductById = async (productId: string) => {
@@ -215,8 +256,20 @@ export const getProductById = async (productId: string) => {
 };
 
 export const deleteProduct = async (productId: string) => {
+  const product = await prisma.product.findFirst({ where: { id: productId } });
+
   // Related fields are cascade via relation
   await prisma.product.delete({ where: { id: productId } });
+
+  if (product) {
+    void publishElasticsearchJob({
+      action: "delete",
+      entity: "product",
+      id: productId,
+      storeId: product.storeId,
+    });
+  }
+
   return { productId };
 };
 
@@ -492,12 +545,28 @@ export const updateInventoryStock = async (
     });
   }
 
-  // send stock alert
+  // send in-app stock alert
   if (product.totalStock <= product.alertThreshold) {
-    sendInventoryStockAlert(product, store);
+    sendInventoryInAppStockAlert(product, store);
   }
 
   return product;
+};
+
+export const sendInventoryInAppStockAlert = (
+  product: Product & {
+    user: User;
+  },
+  store: Store,
+) => {
+  if (product.totalStock > product.alertThreshold) return;
+
+  // Send in-app notification (always, regardless of emailAlert setting)
+  if (product.totalStock <= 0) {
+    transactionalNotification.notifyStockOut(product.user, product, store);
+  } else {
+    transactionalNotification.notifyStockLow(product.user, product, store);
+  }
 };
 
 export const sendInventoryStockAlert = (
@@ -508,7 +577,10 @@ export const sendInventoryStockAlert = (
 ) => {
   if (product.totalStock > product.alertThreshold) return;
 
-  // send email
+  // Send in-app notification
+  sendInventoryInAppStockAlert(product, store);
+
+  // send email (only if emailAlert is enabled for this product)
   if (product.emailAlert) {
     const inventoryLink = clientPages.constructProductEditPageUrl(
       store.id,
@@ -522,3 +594,196 @@ export const sendInventoryStockAlert = (
     );
   }
 };
+
+export const sendBatchInventoryStockAlert = (
+  user: User,
+  store: Store,
+  products: Product[],
+) => {
+  const eligibleProducts = products.filter(
+    (p) => p.emailAlert && p.totalStock <= p.alertThreshold,
+  );
+
+  if (eligibleProducts.length === 0) return;
+
+  const items = eligibleProducts.map((product) => ({
+    productId: product.id,
+    productName: product.name,
+    productSku: product.sku,
+    currentStock: product.totalStock,
+    stockUnit: product.stockUnit,
+    threshold: product.alertThreshold,
+    inventoryLink: clientPages.constructProductEditPageUrl(
+      store.id,
+      product.id,
+    ),
+  }));
+
+  transactionalEmailService.sendBatchStockAlertEmail(user, store, items);
+};
+
+export const sendBatchStockAlertsForProducts = (
+  updatedProducts: Array<(Product & { user: User }) | null>,
+  store: Store,
+) => {
+  // Collect unique products eligible for stock email alert
+  const eligibleProductMap = new Map<string, Product & { user: User }>();
+
+  for (const product of updatedProducts) {
+    if (
+      product &&
+      product.emailAlert &&
+      product.totalStock <= product.alertThreshold
+    ) {
+      eligibleProductMap.set(product.id, product);
+    }
+  }
+
+  if (eligibleProductMap.size === 0) return;
+
+  // Group eligible products by recipient user
+  const userProductsMap = new Map<
+    string,
+    { user: User; products: Product[] }
+  >();
+
+  for (const product of eligibleProductMap.values()) {
+    const user = product.user;
+    if (!userProductsMap.has(user.id)) {
+      userProductsMap.set(user.id, { user, products: [] });
+    }
+    userProductsMap.get(user.id)!.products.push(product);
+  }
+
+  for (const { user, products } of userProductsMap.values()) {
+    sendBatchInventoryStockAlert(user, store, products);
+  }
+};
+
+export const processInvoiceStockUpdates = async (
+  billItems: Array<{ productId: string; netQuantity: number }>,
+  store: Store,
+  tx: TransactionClient,
+) => {
+  const updatedProducts = await Promise.all(
+    billItems.map((item) =>
+      updateInventoryStock(item.productId, item.netQuantity, store, tx),
+    ),
+  );
+
+  sendBatchStockAlertsForProducts(updatedProducts, store);
+
+  return updatedProducts;
+};
+
+export const exportProductsStream = async (
+  storeId: string,
+  params: ProductExportQueryDTO,
+  res: Response,
+) => {
+  const { format, query, categoryId, stockStatus, sortBy, sortOrder } = params;
+
+  const where: Prisma.ProductWhereInput = { storeId };
+
+  if (query) {
+    where.OR = [
+      { name: { contains: query, mode: "insensitive" } },
+      { sku: { contains: query, mode: "insensitive" } },
+      { gtin: { contains: query, mode: "insensitive" } },
+    ];
+  }
+
+  if (categoryId) {
+    where.categories = { some: { categoryId } };
+  }
+
+  if (stockStatus) {
+    where.stockStatus = stockStatus;
+  }
+
+  const products = await prisma.product.findMany({
+    where,
+    orderBy: { [sortBy]: sortOrder },
+    include: {
+      categories: {
+        include: { category: true },
+      },
+    },
+  });
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Products");
+
+  worksheet.columns = [
+    { header: "ID", key: "id", width: 36 },
+    { header: "Product Name", key: "name", width: 30 },
+    { header: "SKU", key: "sku", width: 18 },
+    { header: "GTIN / Barcode", key: "gtin", width: 18 },
+    { header: "Categories", key: "categories", width: 25 },
+    { header: "Stock Status", key: "stockStatus", width: 15 },
+    { header: "Total Stock", key: "totalStock", width: 12 },
+    { header: "Stock Unit", key: "stockUnit", width: 12 },
+    { header: "Buying Price", key: "buyingPrice", width: 15 },
+    { header: "MRP", key: "mrp", width: 15 },
+    { header: "Track Inventory", key: "trackInventory", width: 15 },
+    { header: "Alert Threshold", key: "alertThreshold", width: 15 },
+    { header: "Email Alert", key: "emailAlert", width: 12 },
+    { header: "Description", key: "description", width: 35 },
+    { header: "Created At", key: "createdAt", width: 22 },
+  ];
+
+  // Bold headers
+  worksheet.getRow(1).font = { bold: true };
+
+  products.forEach((p) => {
+    const categoryNames = p.categories.map((c) => c.category.name).join(", ");
+
+    worksheet.addRow({
+      id: p.id,
+      name: p.name,
+      sku: p.sku,
+      gtin: p.gtin || "",
+      categories: categoryNames,
+      stockStatus: p.stockStatus,
+      totalStock: p.totalStock,
+      stockUnit: p.stockUnit,
+      buyingPrice: p.buyingPricePerQuantity,
+      mrp: p.mrp ?? "",
+      trackInventory: p.trackInventory ? "Yes" : "No",
+      alertThreshold: p.alertThreshold,
+      emailAlert: p.emailAlert ? "Yes" : "No",
+      description: p.description || "",
+      createdAt: p.createdAt.toISOString(),
+    });
+  });
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  if (format === "xlsx") {
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="products_${storeId}_${timestamp}.xlsx"`,
+    );
+    await workbook.xlsx.write(res);
+  } else {
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="products_${storeId}_${timestamp}.csv"`,
+    );
+    await workbook.csv.write(res);
+  }
+};
+
+export const buildProductIndexDocument = (
+  product: ProductResponseDto,
+): Record<string, unknown> => ({
+  id: product.id,
+  name: product.name,
+  sku: product.sku,
+  gtin: product.gtin,
+  description: product.description,
+});

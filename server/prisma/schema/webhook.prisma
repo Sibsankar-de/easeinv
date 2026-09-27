@@ -1,0 +1,26 @@
+enum WebhookEvent {
+  NOTIFICATION_DELIVERED
+  INVOICE_CREATED
+  INVOICE_PAID
+  STOCK_ALERT
+  ALL
+}
+
+model Webhook {
+  id        String         @id @default(uuid()) @db.Uuid
+  storeId   String?        @db.Uuid
+  userId    String?        @db.Uuid
+  url       String
+  secret    String?
+  events    WebhookEvent[] @default([ALL])
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  store Store? @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user  User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@index([userId])
+  @@map("webhooks")
+}

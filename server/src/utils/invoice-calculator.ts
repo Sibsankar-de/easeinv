@@ -1,6 +1,6 @@
 import { Product, StoreSettings } from "@prisma/client";
 import { PricePerQuantityType } from "../types/productTypes";
-import { InvoiceCreateDto } from "../schemas/invoice.schema";
+import { InvoiceCreateUpdateDto } from "../schemas/invoice.schema";
 
 export interface CalculatedInvoiceItem {
   productId: string;
@@ -26,7 +26,7 @@ export interface CalculatedInvoice {
 }
 
 export function calculateInvoiceDetails(
-  input: InvoiceCreateDto,
+  input: InvoiceCreateUpdateDto,
   products: Product[],
   storeSettings: StoreSettings,
 ): CalculatedInvoice {

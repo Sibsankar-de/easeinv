@@ -1,5 +1,5 @@
 import axios from "axios";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 
 export const requestHandler = <T>(func: (payload?: any) => Promise<T>) => {
   return async (payload?: any): Promise<T | undefined> => {

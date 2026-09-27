@@ -20,9 +20,11 @@ import {
   refreshTokenCookieOptions,
 } from "../utils/cookie-utils";
 import { ApiError } from "../utils/apiErrorHandler";
+import { verifyTurnstileToken } from "../services/turnstile.service";
 
 export const createUser = asyncHandler(async (req: Request, res: Response) => {
   const validatedBody = validateBody(createUserSchema, req.body);
+  await verifyTurnstileToken(validatedBody.turnstileToken, req.ip);
   const result = await authService.registerUser(validatedBody);
   return res
     .status(StatusCodes.CREATED)
@@ -46,6 +48,7 @@ export const verifyUserEmail = asyncHandler(
 
 export const loginUser = asyncHandler(async (req: Request, res: Response) => {
   const validatedBody = validateBody(loginUserSchema, req.body);
+  await verifyTurnstileToken(validatedBody.turnstileToken, req.ip);
   const { accessToken, refreshToken } =
     await authService.loginUser(validatedBody);
 

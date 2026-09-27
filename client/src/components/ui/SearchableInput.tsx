@@ -1,7 +1,7 @@
 "use client";
 
 import { SelectableInputDropdown } from "@/components/ui/SelectableInputDropdown";
-import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { DebounceContext, getSearchDebounceTime } from "@/utils/get-debounce";
 import { InputType } from "./Input";
 
@@ -27,6 +27,7 @@ export function SearchableInput<T>({
   placeholder = "Type to search…",
   closeOnEmpty,
   inputProps,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getLabel,
   onSearch,
   onChange,
@@ -36,6 +37,7 @@ export function SearchableInput<T>({
   trimQuery = true,
   isLoading = false,
 }: SearchableInputProps<T>) {
+  const [prevValue, setPrevValue] = useState(value);
   const [input, setInput] = useState(value);
 
   const debounceCtxRef = useRef<DebounceContext>({});
@@ -43,7 +45,6 @@ export function SearchableInput<T>({
   const timeoutRef = useRef<number | null>(null);
 
   const lastEmittedQueryRef = useRef<string>("");
-  const lastInputValueRef = useRef<string>(value);
 
   const noResultPrefixRef = useRef<string>("");
   const latestSearchQueryRef = useRef<string>("");
@@ -53,12 +54,10 @@ export function SearchableInput<T>({
     return s;
   };
 
-  useEffect(() => {
-    if (value !== lastInputValueRef.current) {
-      lastInputValueRef.current = value;
-      setInput(value);
-    }
-  }, [value]);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setInput(value);
+  }
 
   useEffect(() => {
     const latestQuery = latestSearchQueryRef.current;
@@ -78,10 +77,16 @@ export function SearchableInput<T>({
     }
   };
 
-  const handleChange = (nextRawValue: string) => {
-    if (nextRawValue === lastInputValueRef.current) return;
+  const handleSelect = (item: T) => {
+    cancelPendingSearch();
+    noResultPrefixRef.current = "";
+    onSelect(item);
+    setInput(value);
+  };
 
-    lastInputValueRef.current = nextRawValue;
+  const handleChange = (nextRawValue: string) => {
+    if (nextRawValue === input) return;
+
     setInput(nextRawValue);
     onChange?.(nextRawValue);
 
@@ -122,8 +127,7 @@ export function SearchableInput<T>({
       inputProps={{ placeholder, ...inputProps }}
       closeOnEmpty={closeOnEmpty}
       isLoading={isLoading}
-      getLabel={getLabel}
-      onSelect={onSelect}
+      onSelect={handleSelect}
       onChange={handleChange}
     >
       {children}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { HeaderNavbar, Sidebar } from "@/components/modules/navbar/Navbar";
 import { StoreContentProvider } from "@/components/modules/store/StoreContentProvider";
 import { StoreContextProvider } from "@/components/modules/store/storeContext";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 import React from "react";
 
 export const metadata: Metadata = {
@@ -20,15 +21,17 @@ export default function StoreLayout({
 }) {
   return (
     <StoreContextProvider>
-      <div className="flex flex-col h-screen">
-        <HeaderNavbar />
-        <div className="flex-1 flex overflow-hidden h-screen">
+      <SidebarProvider>
+        <div className="flex h-screen overflow-hidden bg-gray-50">
           <Sidebar />
-          <main className="flex-1 overflow-y-auto">
-            <StoreContentProvider>{children}</StoreContentProvider>
-          </main>
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <HeaderNavbar showLogo={false} showMobileMenu={true} />
+            <main className="flex-1 overflow-y-auto">
+              <StoreContentProvider>{children}</StoreContentProvider>
+            </main>
+          </div>
         </div>
-      </div>
+      </SidebarProvider>
     </StoreContextProvider>
   );
 }

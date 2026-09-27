@@ -1,12 +1,12 @@
-import type { Store, SafeUser } from "./model";
-import type { StoreUserRole } from "@prisma/client";
+import type { ApiKey, Store, StoreUserRole, User } from "@prisma/client";
 
 declare global {
   namespace Express {
     interface Request {
-      user?: SafeUser;
+      user?: User;
       store?: Store;
       storeUserRole?: StoreUserRole;
+      apiKey?: ApiKey;
     }
   }
 }

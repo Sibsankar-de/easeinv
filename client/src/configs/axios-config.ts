@@ -1,9 +1,11 @@
 import { setGlobalError } from "@/store/features/globalErrorSlice";
-import store from "@/store/store";
 import axios from "axios";
 
+const rawBaseUrl = process.env.NEXT_PUBLIC_API_URI || "http://localhost:4000/backend";
+const baseURL = `${rawBaseUrl.replace(/\/+$/, "")}/api/v1`;
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URI,
+  baseURL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -12,16 +14,21 @@ const api = axios.create({
 
 api.interceptors.response.use(
   (res) => res,
-  (err) => {
+  async (err) => {
     if (axios.isAxiosError(err)) {
       const status = err.response?.status;
       const message = err.response?.data?.message;
-      store.dispatch(
-        setGlobalError({
-          status,
-          message: message,
-        }),
-      );
+      try {
+        const { default: store } = await import("@/store/store");
+        store.dispatch(
+          setGlobalError({
+            status,
+            message: message,
+          }),
+        );
+      } catch {
+        // Fallback if store cannot be imported
+      }
     }
 
     return Promise.reject(err);

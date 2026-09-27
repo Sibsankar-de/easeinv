@@ -12,7 +12,7 @@ import { useStoreNavigation } from "@/hooks/store-navigation";
 import { useNavContext } from "@/contexts/NavContext";
 import { NavActionButton } from "@/components/modules/navbar/Navbar";
 import { Mail, Trash2, Edit2, UserPlus, Users } from "lucide-react";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { useDispatch, useSelector } from "react-redux";
@@ -168,30 +168,38 @@ export const AccessControlSettingsComponent = () => {
         meta: { className: "text-center" },
       },
       {
+        id: "actions",
         header: "Actions",
         meta: { className: "text-right" },
         cell: ({ row }) => StoreUserActions({ row: row.original }),
       },
     ],
-    [accessorsList],
+    [],
   );
 
   const isLoading = accessorsStatus === "loading";
 
   return (
-    <TabContent tabId="access-control" className="space-y-6">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="flex-1">
+    <TabContent tabId="access-control" className="space-y-4">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        <div className="w-full lg:w-72 xl:w-80">
           <SearchInput
-            placeholder="Search by email or name"
+            placeholder="Search by email or name..."
             value={searchTerm}
             onChange={(val) => setSearchTerm(val)}
+            className="w-full"
           />
         </div>
-        <Button className="py-2" onClick={() => setIsAddModalOpen(true)}>
-          <UserPlus size={15} />
-          Invite new user
-        </Button>
+
+        <div className="flex items-center gap-2.5 justify-end">
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            className="gap-1.5 whitespace-nowrap"
+          >
+            <UserPlus size={16} />
+            Invite new user
+          </Button>
+        </div>
       </div>
 
       <DataTable
@@ -259,7 +267,7 @@ const UserInviteModal = ({
     <Modal
       openState={isOpen}
       onClose={onClose}
-      className="space-y-4 p-4 w-lg"
+      className="space-y-4 p-4 w-[90vw] sm:w-lg"
       header={<ModalHeader title="Invite New User" />}
     >
       <div className="space-y-2">
@@ -343,7 +351,7 @@ const UserRoleEditModal = ({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="space-y-4 p-4 min-w-lg"
+      className="space-y-4 p-4 w-[90vw] sm:w-lg"
     >
       <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
         <Avatar userName={userData.userName} className="w-10 h-10" />
@@ -411,11 +419,11 @@ const UserDeleteModal = ({
     <Modal
       openState={openState}
       onClose={onClose}
-      className="space-y-6 p-4 w-lg"
+      className="space-y-6 p-4 w-[90vw] sm:w-lg"
       header={<ModalHeader title="Remove User Access" />}
     >
       <p className="text-gray-600">
-        Are you sure you want to remove <strong>{userData.userName}</strong>'s
+        Are you sure you want to remove <strong>{userData.userName}</strong>&apos;s
         access to this store? They will no longer be able to view or manage any
         data in this store.
       </p>

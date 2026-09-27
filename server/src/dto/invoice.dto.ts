@@ -12,7 +12,10 @@ import {
 import { invoiceExtraDataConverter } from "../converters/invoice.converter";
 
 export type InvoiceItemWithProduct = InvoiceItem & {
-  product?: Pick<Product, "id" | "name" | "sku"> | null;
+  product?: Pick<
+    Product,
+    "id" | "name" | "sku" | "stockUnit" | "unitGroups" | "pricePerQuantity"
+  > | null;
 };
 
 export type InvoiceWithRelations = Invoice & {
@@ -26,6 +29,9 @@ export interface BillItemDto {
     id: string;
     name: string;
     sku: string;
+    stockUnit?: string;
+    unitGroups?: any;
+    pricePerQuantity?: any;
   };
   productName: string;
   pricePerQuantity?: any;
@@ -68,6 +74,9 @@ export const toBillItemDto = (item: InvoiceItemWithProduct): BillItemDto => {
           id: item.product.id,
           name: item.product.name,
           sku: item.product.sku,
+          stockUnit: item.product.stockUnit,
+          unitGroups: item.product.unitGroups as any,
+          pricePerQuantity: item.product.pricePerQuantity as any,
         }
       : undefined,
     productName: item.productName,

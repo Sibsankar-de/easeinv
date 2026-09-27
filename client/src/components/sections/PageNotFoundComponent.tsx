@@ -3,7 +3,7 @@
 import { Home, ArrowLeft } from "lucide-react";
 import { Button } from "../ui/Button";
 import { PrimaryBox } from "../ui/PrimaryBox";
-import { useRouter } from "next/navigation";
+import { useAppRouter as useRouter } from "@/hooks/useAppRouter";
 
 export function PageNotFoundComponent() {
   const router = useRouter();
@@ -20,7 +20,7 @@ export function PageNotFoundComponent() {
 
         {/* Description */}
         <p className="text-primary/70 mb-8 max-w-md mx-auto">
-          Oops! The page you're looking for seems to have wandered off. It might
+          Oops! The page you&apos;re looking for seems to have wandered off. It might
           have been moved, deleted, or never existed.
         </p>
 
@@ -46,7 +46,7 @@ export function PageNotFoundComponent() {
           </h3>
           <ul className="text-left text-primary/70 space-y-2 list-disc list-inside">
             <li>Check the URL for typos or errors</li>
-            <li>Use the search function to find what you're looking for</li>
+            <li>Use the search function to find what you&apos;re looking for</li>
             <li>Return to the homepage and navigate from there</li>
             <li>Contact support if you believe this is an error</li>
           </ul>

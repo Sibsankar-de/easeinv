@@ -6,7 +6,6 @@ import {
   Edit2,
   Trash2,
   PackageSearch,
-  Filter,
   ListFilterPlus,
 } from "lucide-react";
 import * as React from "react";
@@ -39,6 +38,8 @@ import {
   StockStatusBadgeVariantMap,
   StockStatusMap,
 } from "@/constants/productConstants";
+import { ExportButton } from "@/components/ui/ExportButton";
+import { downloadExportFile } from "@/utils/export-utils";
 
 const columnHelper = createColumnHelper<ProductDto>();
 
@@ -108,6 +109,27 @@ export const InventoryProductList = () => {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "createdAt", desc: true },
   ]);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async (format: "xlsx" | "csv") => {
+    setIsExporting(true);
+    const sortField = sorting[0]?.id || "createdAt";
+    const sortOrder = sorting[0]?.desc ? "desc" : "asc";
+
+    await downloadExportFile({
+      endpoint: `/products/${storeId}/export`,
+      params: {
+        format,
+        query: debouncedSearchTerm || undefined,
+        categoryId: selectedCategory !== "all" ? selectedCategory : undefined,
+        sortBy: sortField,
+        sortOrder,
+      },
+      defaultFilename: `inventory_${storeId}_${new Date().toISOString().slice(0, 10)}.${format}`,
+      format,
+    });
+    setIsExporting(false);
+  };
 
   const currentPage = pagination.pageIndex + 1;
 
@@ -270,39 +292,49 @@ export const InventoryProductList = () => {
         Add Product
       </NavActionButton>,
     );
-  }, []);
+  }, [setActionButtons, navigate]);
 
   return (
-    <div>
-      <div className="mb-4">
-        <div className="flex items-center gap-2 w-full mb-2">
+    <div className="space-y-4">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        <div className="w-full lg:w-72 xl:w-80">
           <SearchInput
             placeholder="Search products by name or SKU..."
             value={searchTerm}
             onChange={(val) => setSearchTerm(val)}
+            className="w-full"
           />
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 justify-end">
+          <div className="flex items-center gap-2.5 flex-1 sm:flex-initial">
+            <div className="flex-1 sm:w-44">
+              <Select
+                options={categoryOptions}
+                value={selectedCategory}
+                onChange={(val) => {
+                  setSelectedCategory(val);
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                  dispatch(invalidateProductPages());
+                }}
+                placeholder="Select category"
+                className="w-full"
+                dropdownClass="max-h-100"
+                icon={<ListFilterPlus size={18} />}
+              />
+            </div>
+
+            <ExportButton onExport={handleExport} loading={isExporting} />
+          </div>
+
           <Button
             variant="primary"
             onClick={() => navigate("/inventory/add-product")}
+            className="gap-1.5 whitespace-nowrap justify-center"
           >
-            <Plus size={17} />
+            <Plus size={16} />
             Add Product
           </Button>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select
-            options={categoryOptions}
-            value={selectedCategory}
-            onChange={(val) => {
-              setSelectedCategory(val);
-              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-              dispatch(invalidateProductPages());
-            }}
-            placeholder="Select category"
-            className="min-w-40"
-            dropdownClass="max-h-100"
-            icon={<ListFilterPlus size={18} />}
-          />
         </div>
       </div>
 
@@ -312,7 +344,16 @@ export const InventoryProductList = () => {
         isLoading={status === "loading"}
         pageCount={productList.totalPages}
         pagination={pagination}
-        onPaginationChange={setPagination}
+        onPaginationChange={(updater) => {
+          const next =
+            typeof updater === "function" ? updater(pagination) : updater;
+          if (next.pageSize !== pagination.pageSize) {
+            dispatch(invalidateProductPages());
+            setPagination({ ...next, pageIndex: 0 });
+          } else {
+            setPagination(next);
+          }
+        }}
         sorting={sorting}
         onSortingChange={(updater) => {
           const nextState =

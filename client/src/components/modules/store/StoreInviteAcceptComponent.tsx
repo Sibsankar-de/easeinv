@@ -4,8 +4,8 @@ import React, { useEffect, useState } from "react";
 import { PrimaryBox } from "@/components/ui/PrimaryBox";
 import { Button } from "@/components/ui/Button";
 import { Store, UserPlus, CheckCircle, ArrowRight } from "lucide-react";
-import { AppLogo } from "@/components/ui/AppLogo";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useAppRouter as useRouter } from "@/hooks/useAppRouter";
 import { useDispatch, useSelector } from "react-redux";
 import {
   acceptStoreUserInviteThunk,
@@ -39,8 +39,10 @@ export const StoreInviteAcceptComponent = () => {
     if (!token) return;
     dispatch(acceptStoreUserInviteThunk(token))
       .unwrap()
-      .then((res: any) => {
-        setStoreId(res?.storeId);
+      .then((res: { storeId?: string }) => {
+        if (res?.storeId) {
+          setStoreId(res.storeId);
+        }
         setStage(2);
       });
   };

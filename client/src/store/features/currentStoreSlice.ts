@@ -8,7 +8,7 @@ import { createApiThunk, setState } from "../utils";
 import api from "@/configs/axios-config";
 import { createSlice } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { createInvoiceThunk } from "./invoiceSlice";
+import { createInvoiceThunk, updateInvoiceThunk } from "./invoiceSlice";
 import getSymbolFromCurrency from "currency-symbol-map";
 
 export const fetchCurrentStore: any = createApiThunk(
@@ -133,6 +133,10 @@ const currentStoreSlice = createSlice({
         state.error = null;
       })
       .addCase(createInvoiceThunk.fulfilled, (state, action) => {
+        state.data.currentStore.lastInvoiceNumber =
+          action.payload.invoiceNumber;
+      })
+      .addCase(updateInvoiceThunk.fulfilled, (state, action) => {
         state.data.currentStore.lastInvoiceNumber =
           action.payload.invoiceNumber;
       })

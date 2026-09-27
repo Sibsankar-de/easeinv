@@ -8,7 +8,7 @@ import { CustomUnitType } from "@/types/dto/storeDto";
 import { Edit, Plus, Ruler, Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
+import { toast } from "@/utils/toast";
 
 export const ProductUnitAddSection = ({
   onChange,
@@ -171,7 +171,7 @@ function UnitItem({
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-          <Ruler className="w-5 h-5 text-blue-600" />
+          <Ruler className="w-5 h-5 text-primary" />
         </div>
         <div>
           <p>{unitData.value}</p>

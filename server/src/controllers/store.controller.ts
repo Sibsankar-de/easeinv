@@ -13,7 +13,7 @@ import { ApiError } from "../utils/apiErrorHandler";
 export const createStore = asyncHandler(async (req: Request, res: Response) => {
   const user = req.user;
 
-  if (!user.isEmailVerified) {
+  if (!user || !user.isEmailVerified) {
     throw new ApiError(
       StatusCodes.FORBIDDEN,
       "Email verification is required to create a store.",
@@ -33,7 +33,7 @@ export const createStore = asyncHandler(async (req: Request, res: Response) => {
 
 export const updateStore = asyncHandler(async (req: Request, res: Response) => {
   const { storeId } = req.params;
-  const userId = req.user?.id;
+  const userId = req.user!.id;
   const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
   const validatedBody = validateBody(storeCreateUpdateSchema, req.body);
@@ -143,7 +143,7 @@ export const getStoreDetails = asyncHandler(
 
     const storeDetails = await storeService.getStoreDetails(
       storeId as string,
-      userId,
+      userId!,
     );
 
     return res
