@@ -25,7 +25,7 @@ export default function ShippingSettingsPage() {
         </div>
       </div>
 
-      <ShippingProfileListTable />
+      <ShippingProfileListTable />~
     </StorePageContainer>
   );
 }
