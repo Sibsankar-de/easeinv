@@ -1,30 +1,9 @@
+import { ProductDto } from "./productDto";
+
 export type BillItemType = {
   id: string; // local row key
-  product: {
-    id: string;
-    name: string;
-    sku: string;
-  };
+  product?: ProductDto;
   productName?: string;
-  pricePerQuantity?: {
-    id: number;
-    price: number;
-    quantity: number;
-    profitMargin?: number;
-  };
-  netQuantity: number;
-  totalPrice: number;
-  stockUnit: string;
-  totalProfit: number;
-};
-
-export type BillItemDto = {
-  id: string;
-  product: {
-    id: string;
-    name: string;
-    sku: string;
-  };
   pricePerQuantity?: {
     id: number;
     price: number;
@@ -91,7 +70,7 @@ export interface InvoiceDto {
   purpose?: InvoicePurpose | string;
   invoiceNumber: string;
   issueDate: Date;
-  billItems: BillItemDto[];
+  billItems: BillItemType[];
   subTotal: number;
   total: number;
   totalProfit: number;

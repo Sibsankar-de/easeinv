@@ -16,9 +16,7 @@ import { getNextInvoiceNumber } from "@/utils/invoicenumber-generator";
 import { PrintModal } from "./PrintModal";
 import { useStoreNavigation } from "@/hooks/store-navigation";
 import { useSearchParams } from "next/navigation";
-import {
-  fetchInvoiceByIdThunk,
-} from "@/store/features/invoiceSlice";
+import { fetchInvoiceByIdThunk } from "@/store/features/invoiceSlice";
 import {
   InvoiceDto,
   InvoiceStatus,
@@ -43,10 +41,14 @@ export const CreateBillPage = () => {
 
   const { draftInvoice, issueInvoice, isSaving } = useInvoiceActions();
 
-  const invoiceNumber = getNextInvoiceNumber({
-    prefix: storeSettings.invoiceNumberPrefix || "",
-    lastInvoiceNumber: currentStore?.lastInvoiceNumber,
-  });
+  const invoiceNumber = useMemo(
+    () =>
+      getNextInvoiceNumber({
+        prefix: storeSettings.invoiceNumberPrefix || "",
+        lastInvoiceNumber: currentStore?.lastInvoiceNumber,
+      }),
+    [storeSettings.invoiceNumberPrefix, currentStore?.lastInvoiceNumber],
+  );
 
   const initialState: InvoiceFormState = useMemo(
     () => ({
@@ -117,6 +119,11 @@ export const CreateBillPage = () => {
     [isInvoiceIssued],
   );
 
+  useEffect(() => {
+    if (invoiceQueryId || invoiceId) return;
+    setFormData((prev) => ({ ...prev, invoiceNumber }));
+  }, [invoiceNumber, invoiceQueryId, invoiceId]);
+
   // handle print modal
   const [openPrintModal, setOpenPrintModal] = useState(false);
 
@@ -141,13 +148,8 @@ export const CreateBillPage = () => {
         const formattedItems: BillItemType[] = (invoice.billItems || []).map(
           (bi, idx) => ({
             id: bi.id || `item-${idx}`,
-            product: bi.product || {
-              id: "",
-              name: (bi as { productName?: string }).productName || "",
-              sku: "",
-            },
-            productName:
-              (bi as { productName?: string }).productName || bi.product?.name,
+            product: bi.product,
+            productName: bi.productName || bi.product?.name,
             pricePerQuantity: bi.pricePerQuantity,
             netQuantity: bi.netQuantity,
             totalPrice: bi.totalPrice,

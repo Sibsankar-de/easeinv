@@ -1,9 +1,9 @@
 import React from "react";
 import Link from "next/link";
-import { TopNav } from "@/components/modules/landing-page/TopNav";
+import { TopNav } from "@/components/modules/onboarding/landing-page/TopNav";
 import { Footer } from "@/components/layout/Footer";
-import PricingGrid from "@/components/modules/pricing/PricingGrid";
-import InteractiveAccordion from "@/components/modules/landing-page/InteractiveAccordion";
+import PricingGrid from "@/components/modules/onboarding/pricing/PricingGrid";
+import InteractiveAccordion from "@/components/modules/onboarding/landing-page/InteractiveAccordion";
 import PageHeader from "@/components/ui/PageHeader";
 import { ArrowRight, Gem } from "lucide-react";
 import type { Metadata } from "next";

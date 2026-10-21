@@ -50,7 +50,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
 
   const initialBillItem: BillItemType = {
     id: generateRandomId(),
-    product: { id: "", name: "", sku: "" },
+    product: undefined,
     netQuantity: 0,
     totalPrice: 0,
     totalProfit: 0,
@@ -113,11 +113,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
       ...items,
       {
         id: generateRandomId(),
-        product: {
-          id: "",
-          name: "",
-          sku: "",
-        },
+        product: undefined,
         netQuantity: 0,
         totalPrice: 0,
         totalProfit: 0,
@@ -145,7 +141,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
     setItems((prev) => {
       // Find if another row already exists with the same productId
       const existingIndex = prev.findIndex(
-        (item) => item.product.id === product.id && item.id !== rowId,
+        (item) => item.product?.id === product.id && item.id !== rowId,
       );
 
       if (existingIndex !== -1) {
@@ -177,11 +173,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
         if (currentIndex !== -1) {
           updatedList[currentIndex] = {
             id: rowId,
-            product: {
-              id: "",
-              name: "",
-              sku: "",
-            },
+            product: undefined,
             netQuantity: 0,
             totalPrice: 0,
             totalProfit: 0,
@@ -205,11 +197,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
 
       const newItem: BillItemType = {
         ...prev[currentIndex],
-        product: {
-          id: product.id,
-          name: product.name,
-          sku: product.sku,
-        },
+        product: product,
         pricePerQuantity: calc.chosenTier,
         netQuantity: quantity,
         totalPrice: calc.price,
@@ -236,7 +224,7 @@ export const BillingForm = ({ data, onBillChange }: BillingFormProps) => {
   });
 
   useEffect(() => {
-    const filteredItems = items.filter((e) => e.product.id !== "");
+    const filteredItems = items.filter((e) => e.product?.id !== "");
     onBillChange({
       items: filteredItems,
       calculations,
