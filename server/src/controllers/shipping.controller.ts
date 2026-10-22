@@ -298,7 +298,7 @@ export const calculateShippingCharge = asyncHandler(
     const calculation = await shippingService.calculateShippingCharge(
       storeId,
       validatedBody.shippingAddress,
-      validatedBody.items,
+      validatedBody.subtotal,
     );
 
     return res

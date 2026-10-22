@@ -332,11 +332,11 @@ export const createOrder = async (
       discountPercent = couponResult.discountPercent;
     }
 
-    // 5. Calculate shipping rates from items
+    // 5. Calculate shipping rates from subtotal
     const shippingCalculation = await shippingService.calculateShippingCharge(
       storeId,
       orderData.shippingAddress,
-      calculatedBillItems,
+      subTotal,
       tx,
     );
     const shippingAmount = shippingCalculation.shippingAmount;

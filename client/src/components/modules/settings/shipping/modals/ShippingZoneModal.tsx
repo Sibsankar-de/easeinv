@@ -28,11 +28,54 @@ interface ShippingZoneModalProps {
   onSuccess?: () => void;
 }
 
+interface ShippingZoneFormData {
+  name: string;
+  type: ShippingZoneType;
+  code: string;
+}
+
+const initialFormData: ShippingZoneFormData = {
+  name: "",
+  type: ShippingZoneType.PINCODE,
+  code: "",
+};
+
 const zoneTypeOptions = [
   { key: ShippingZoneType.PINCODE, value: "Pincode / Postal Code" },
+  { key: ShippingZoneType.CITY, value: "City" },
   { key: ShippingZoneType.STATE, value: "State / Province" },
   { key: ShippingZoneType.COUNTRY, value: "Country" },
 ];
+
+const getZoneCodeLabel = (type: ShippingZoneType): string => {
+  switch (type) {
+    case ShippingZoneType.PINCODE:
+      return "Postal Code / Pincode (or comma-separated)";
+    case ShippingZoneType.CITY:
+      return "City Name";
+    case ShippingZoneType.STATE:
+      return "State / Province Name or Code";
+    case ShippingZoneType.COUNTRY:
+      return "Country Name or ISO Code";
+    default:
+      return "Zone Code";
+  }
+};
+
+const getZoneCodePlaceholder = (type: ShippingZoneType): string => {
+  switch (type) {
+    case ShippingZoneType.PINCODE:
+      return "e.g. 700001, 700002 or 90210";
+    case ShippingZoneType.CITY:
+      return "e.g. Kolkata, Mumbai, New York";
+    case ShippingZoneType.STATE:
+      return "e.g. West Bengal or WB / California or CA";
+    case ShippingZoneType.COUNTRY:
+      return "e.g. India or IN / United States or US";
+    default:
+      return "Enter zone code";
+  }
+};
 
 export const ShippingZoneModal: React.FC<ShippingZoneModalProps> = ({
   openState,
@@ -48,28 +91,35 @@ export const ShippingZoneModal: React.FC<ShippingZoneModalProps> = ({
   const isEditing = !!zone;
   const isSaving = zoneActionStatus === "loading";
 
-  const [name, setName] = useState("");
-  const [type, setType] = useState<ShippingZoneType>(ShippingZoneType.PINCODE);
-  const [code, setCode] = useState("");
+  const [formData, setFormData] =
+    useState<ShippingZoneFormData>(initialFormData);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const handleInputChange = <K extends keyof ShippingZoneFormData>(
+    field: K,
+    value: ShippingZoneFormData[K],
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
 
   useEffect(() => {
     if (zone) {
-      setName(zone.name);
-      setType(zone.type);
-      setCode(zone.code);
+      setFormData({
+        name: zone.name,
+        type: zone.type,
+        code: zone.code,
+      });
     } else {
-      setName("");
-      setType(ShippingZoneType.PINCODE);
-      setCode("");
+      setFormData(initialFormData);
     }
     setErrors({});
   }, [zone, openState]);
 
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
-    if (!name.trim()) newErrors.name = "Zone name is required";
-    if (!code.trim()) newErrors.code = "Zone code is required";
+    if (!formData.name.trim()) newErrors.name = "Zone name is required";
+    if (!formData.code.trim()) newErrors.code = "Zone code is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -77,16 +127,18 @@ export const ShippingZoneModal: React.FC<ShippingZoneModalProps> = ({
   const handleSave = () => {
     if (!validate()) return;
 
+    const payload = {
+      name: formData.name.trim(),
+      type: formData.type,
+      code: formData.code.trim(),
+    };
+
     if (isEditing && zone) {
       dispatch(
         updateShippingZoneThunk({
           storeId,
           zoneId: zone.id,
-          data: {
-            name: name.trim(),
-            type,
-            code: code.trim(),
-          },
+          data: payload,
         }),
       )
         .unwrap()
@@ -103,11 +155,7 @@ export const ShippingZoneModal: React.FC<ShippingZoneModalProps> = ({
         createShippingZoneThunk({
           storeId,
           profileId,
-          data: {
-            name: name.trim(),
-            type,
-            code: code.trim(),
-          },
+          data: payload,
         }),
       )
         .unwrap()
@@ -138,11 +186,8 @@ export const ShippingZoneModal: React.FC<ShippingZoneModalProps> = ({
           <Label required>Zone Name</Label>
           <Input
             placeholder="e.g. Local Metro, California, West Bengal, India"
-            value={name}
-            onChange={(val) => {
-              setName(val);
-              if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
-            }}
+            value={formData.name}
+            onChange={(val) => handleInputChange("name", val)}
             isInvalid={!!errors.name}
             errorMessage={errors.name}
             disabled={isSaving}
@@ -152,34 +197,21 @@ export const ShippingZoneModal: React.FC<ShippingZoneModalProps> = ({
         <div className="space-y-1.5">
           <Label required>Zone Type</Label>
           <Select
-            value={type}
+            value={formData.type}
             options={zoneTypeOptions}
-            onChange={(val) => setType(val as ShippingZoneType)}
+            onChange={(val) =>
+              handleInputChange("type", val as ShippingZoneType)
+            }
             disabled={isSaving}
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label required>
-            {type === ShippingZoneType.PINCODE &&
-              "Postal Code / Pincode (or comma-separated)"}
-            {type === ShippingZoneType.STATE &&
-              "State / Province Name or Code"}
-            {type === ShippingZoneType.COUNTRY && "Country Name or ISO Code"}
-          </Label>
+          <Label required>{getZoneCodeLabel(formData.type)}</Label>
           <Input
-            placeholder={
-              type === ShippingZoneType.PINCODE
-                ? "e.g. 700001, 700002 or 90210"
-                : type === ShippingZoneType.STATE
-                  ? "e.g. West Bengal or WB / California or CA"
-                  : "e.g. India or IN / United States or US"
-            }
-            value={code}
-            onChange={(val) => {
-              setCode(val);
-              if (errors.code) setErrors((prev) => ({ ...prev, code: "" }));
-            }}
+            placeholder={getZoneCodePlaceholder(formData.type)}
+            value={formData.code}
+            onChange={(val) => handleInputChange("code", val)}
             isInvalid={!!errors.code}
             errorMessage={errors.code}
             disabled={isSaving}

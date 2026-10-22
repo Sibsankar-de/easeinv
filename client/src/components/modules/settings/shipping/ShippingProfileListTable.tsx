@@ -43,6 +43,12 @@ const activeFilterOptions: SelectOptionType[] = [
   { key: "false", value: "Inactive Only" },
 ];
 
+const getStatusBadge = (isActive: boolean) => (
+  <Badge variant={isActive ? "success" : "outline"}>
+    {isActive ? "Active" : "Inactive"}
+  </Badge>
+);
+
 const columnHelper = createColumnHelper<ShippingProfileSummaryDto>();
 
 const ProfileActions = ({
@@ -178,6 +184,7 @@ export const ShippingProfileListTable = () => {
                 className="font-semibold text-gray-900 hover:text-primary transition-colors flex items-center gap-1.5"
               >
                 <span>{profile.name}</span>
+                {profile.isDefault && <Badge variant="primary">Default</Badge>}
               </Link>
               {profile.description && (
                 <p className="text-xs text-gray-500 max-w-sm truncate">
@@ -206,16 +213,17 @@ export const ShippingProfileListTable = () => {
           </div>
         ),
       }),
+      columnHelper.accessor("fallbackRate", {
+        header: "Fallback Rate",
+        cell: (info) => (
+          <span className="text-sm font-medium text-gray-800">
+            ₹{info.getValue()?.toFixed(2) ?? "0.00"}
+          </span>
+        ),
+      }),
       columnHelper.accessor("isActive", {
         header: "Status",
-        cell: (info) => {
-          const isActive = info.getValue();
-          return (
-            <Badge variant={isActive ? "success" : "outline"}>
-              {isActive ? "Active" : "Inactive"}
-            </Badge>
-          );
-        },
+        cell: (info) => getStatusBadge(info.getValue()),
       }),
       columnHelper.accessor("createdAt", {
         header: "Created Date",

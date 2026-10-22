@@ -20,6 +20,15 @@ interface ShippingRuleDeleteModalProps {
   onSuccess?: () => void;
 }
 
+const getRuleSummaryText = (rule: ShippingRuleDto): string => {
+  if (rule.type === "FLAT") {
+    return `Flat ➔ ₹${rule.rate}`;
+  }
+  const min = rule.minValue ?? 0;
+  const max = rule.maxValue ?? "∞";
+  return `${min} - ${max} ➔ ₹${rule.rate}`;
+};
+
 export const ShippingRuleDeleteModal: React.FC<
   ShippingRuleDeleteModalProps
 > = ({ openState, onClose, rule, onSuccess }) => {
@@ -52,8 +61,8 @@ export const ShippingRuleDeleteModal: React.FC<
       header={<ModalHeader title="Delete Rate Rule" />}
     >
       <p className="text-gray-600 text-sm">
-        Are you sure you want to delete this {rule.type.toLowerCase()} rule (
-        {rule.minValue} - {rule.maxValue ?? "∞"} ➔ ₹{rule.amount})?
+        Are you sure you want to delete rate rule &quot;{rule.name}&quot; (
+        {getRuleSummaryText(rule)})?
       </p>
 
       <div className="flex items-center justify-end gap-3 pt-2">

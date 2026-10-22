@@ -1,29 +1,32 @@
 export enum ShippingZoneType {
   COUNTRY = "COUNTRY",
   STATE = "STATE",
+  CITY = "CITY",
   PINCODE = "PINCODE",
 }
 
 export enum ShippingRuleType {
-  PRICE = "PRICE",
-  WEIGHT = "WEIGHT",
+  FLAT = "FLAT",
+  WEIGHT_BASED = "WEIGHT_BASED",
+  PRICE_BASED = "PRICE_BASED",
 }
 
 export interface ShippingRuleDto {
   id: string;
-  shippingProfileId: string | null;
-  shippingZoneId: string | null;
+  profileId: string | null;
+  zoneId: string | null;
+  name: string;
   type: ShippingRuleType;
-  minValue: number;
+  rate: number;
+  minValue: number | null;
   maxValue: number | null;
-  amount: number;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ShippingZoneDto {
   id: string;
-  shippingProfileId: string;
+  profileId: string;
   name: string;
   type: ShippingZoneType;
   code: string;
@@ -37,7 +40,9 @@ export interface ShippingProfileDto {
   storeId: string;
   name: string;
   description: string | null;
+  isDefault: boolean;
   isActive: boolean;
+  fallbackRate: number;
   zones: ShippingZoneDto[];
   rules: ShippingRuleDto[];
   createdAt: string;
@@ -49,51 +54,37 @@ export interface ShippingProfileSummaryDto {
   storeId: string;
   name: string;
   description: string | null;
+  isDefault: boolean;
   isActive: boolean;
+  fallbackRate: number;
   zoneCount: number;
   ruleCount: number;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface ShippingProfileCreateDto {
+export interface ShippingProfileCreateUpdateDto {
   name: string;
   description?: string | null;
+  isDefault?: boolean;
   isActive?: boolean;
+  fallbackRate?: number;
 }
 
-export interface ShippingProfileUpdateDto {
-  name?: string;
-  description?: string | null;
-  isActive?: boolean;
-}
-
-export interface ShippingZoneCreateDto {
+export interface ShippingZoneCreateUpdateDto {
   name: string;
   type: ShippingZoneType;
   code: string;
 }
 
-export interface ShippingZoneUpdateDto {
-  name?: string;
-  type?: ShippingZoneType;
-  code?: string;
-}
-
-export interface ShippingRuleCreateDto {
-  shippingProfileId?: string | null;
-  shippingZoneId?: string | null;
+export interface ShippingRuleCreateUpdateDto {
+  profileId?: string | null;
+  zoneId?: string | null;
+  name: string;
   type: ShippingRuleType;
-  minValue?: number;
+  rate: number;
+  minValue?: number | null;
   maxValue?: number | null;
-  amount: number;
-}
-
-export interface ShippingRuleUpdateDto {
-  type?: ShippingRuleType;
-  minValue?: number;
-  maxValue?: number | null;
-  amount?: number;
 }
 
 export interface ShippingAddressDto {

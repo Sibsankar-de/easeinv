@@ -1,25 +1,44 @@
 import { ShippingRuleType, ShippingZoneType } from "@prisma/client";
 import { z } from "zod";
 
+export const shippingProfileCreateUpdateSchema = z.object({
+  name: z.string().trim().min(1, "Profile name is required"),
+  description: z.string().trim().optional().nullable(),
+  isDefault: z.boolean().optional().default(false),
+  isActive: z.boolean().optional().default(true),
+  fallbackRate: z.number().nonnegative("Fallback rate must be non-negative").optional().default(0),
+});
+
+export const shippingZoneCreateUpdateSchema = z.object({
+  name: z.string().trim().min(1, "Zone name is required"),
+  type: z.enum(ShippingZoneType),
+  code: z.string().trim().min(1, "Zone code is required"),
+});
+
 export const shippingRuleCreateUpdateSchema = z
   .object({
-    shippingProfileId: z.string().uuid("Invalid shipping profile ID").optional().nullable(),
-    shippingZoneId: z.string().uuid("Invalid shipping zone ID").optional().nullable(),
-    type: z.enum(ShippingRuleType),
-    minValue: z.number().nonnegative("Minimum value must be non-negative").default(0),
+    profileId: z.string().uuid("Invalid shipping profile ID").optional().nullable(),
+    zoneId: z.string().uuid("Invalid shipping zone ID").optional().nullable(),
+    name: z.string().trim().min(1, "Rule name is required"),
+    type: z.enum(ShippingRuleType).default("FLAT"),
+    rate: z.number().nonnegative("Rate must be non-negative"),
+    minValue: z.number().nonnegative("Minimum value must be non-negative").optional().nullable(),
     maxValue: z.number().positive("Maximum value must be positive").optional().nullable(),
-    amount: z.number().nonnegative("Amount must be non-negative"),
   })
   .refine(
-    (data) => !(data.shippingProfileId && data.shippingZoneId),
+    (data) => !(data.profileId && data.zoneId),
     {
       message: "Rule cannot belong to both a profile and a zone simultaneously",
-      path: ["shippingProfileId"],
+      path: ["profileId"],
     },
   )
   .refine(
     (data) => {
-      if (data.maxValue !== null && data.maxValue !== undefined && data.maxValue < data.minValue) {
+      if (
+        data.maxValue != null &&
+        data.minValue != null &&
+        data.maxValue < data.minValue
+      ) {
         return false;
       }
       return true;
@@ -29,18 +48,6 @@ export const shippingRuleCreateUpdateSchema = z
       path: ["maxValue"],
     },
   );
-
-export const shippingZoneCreateUpdateSchema = z.object({
-  name: z.string().trim().min(1, "Zone name is required"),
-  type: z.enum(ShippingZoneType),
-  code: z.string().trim().min(1, "Zone code is required"),
-});
-
-export const shippingProfileCreateUpdateSchema = z.object({
-  name: z.string().trim().min(1, "Profile name is required"),
-  description: z.string().trim().optional().nullable(),
-  isActive: z.boolean().optional().default(true),
-});
 
 export const shippingProfileQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -65,22 +72,12 @@ export const shippingAddressSchema = z.object({
 
 export const calculateShippingSchema = z.object({
   shippingAddress: shippingAddressSchema,
-  items: z
-    .array(
-      z.object({
-        productId: z.string().uuid("Product ID must be a valid UUID"),
-        netQuantity: z
-          .number()
-          .positive("Net quantity must be greater than zero"),
-      }),
-    )
-    .min(1, "At least one item is required to calculate shipping"),
+  subtotal: z.number().nonnegative("Subtotal must be non-negative"),
 });
 
-export type ShippingRuleCreateUpdateDto = z.infer<typeof shippingRuleCreateUpdateSchema>;
-export type ShippingZoneCreateUpdateDto = z.infer<typeof shippingZoneCreateUpdateSchema>;
 export type ShippingProfileCreateUpdateDto = z.infer<typeof shippingProfileCreateUpdateSchema>;
+export type ShippingZoneCreateUpdateDto = z.infer<typeof shippingZoneCreateUpdateSchema>;
+export type ShippingRuleCreateUpdateDto = z.infer<typeof shippingRuleCreateUpdateSchema>;
 export type ShippingProfileQueryDto = z.infer<typeof shippingProfileQuerySchema>;
 export type ShippingAddressDto = z.infer<typeof shippingAddressSchema>;
 export type CalculateShippingDto = z.infer<typeof calculateShippingSchema>;
-

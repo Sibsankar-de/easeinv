@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import {
   ShippingRuleDto,
+  ShippingRuleType,
   ShippingZoneDto,
   ShippingZoneType,
 } from "@/types/dto/shippingProfileDto";
@@ -41,6 +42,68 @@ import { FormSkeleton } from "@/components/ui/Skeleton";
 interface ShippingProfileDetailsViewProps {
   profileId?: string;
 }
+
+const getZoneTypeBadge = (type: ShippingZoneType) => {
+  switch (type) {
+    case ShippingZoneType.PINCODE:
+      return (
+        <Badge variant="info" className="flex items-center gap-1">
+          <MapPin className="w-3 h-3" />
+          <span>Pincode</span>
+        </Badge>
+      );
+    case ShippingZoneType.CITY:
+      return (
+        <Badge variant="info" className="flex items-center gap-1">
+          <MapPin className="w-3 h-3" />
+          <span>City</span>
+        </Badge>
+      );
+    case ShippingZoneType.STATE:
+      return (
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <Map className="w-3 h-3" />
+          <span>State</span>
+        </Badge>
+      );
+    case ShippingZoneType.COUNTRY:
+      return (
+        <Badge variant="outline" className="flex items-center gap-1">
+          <Globe className="w-3 h-3" />
+          <span>Country</span>
+        </Badge>
+      );
+  }
+};
+
+const getRuleTypeBadge = (type: ShippingRuleType) => {
+  switch (type) {
+    case ShippingRuleType.FLAT:
+      return <Badge variant="secondary">Flat Rate</Badge>;
+    case ShippingRuleType.PRICE_BASED:
+      return <Badge variant="primary">Order Subtotal</Badge>;
+    case ShippingRuleType.WEIGHT_BASED:
+      return <Badge variant="info">Weight Based</Badge>;
+  }
+};
+
+const getRuleRangeText = (rule: ShippingRuleDto): string => {
+  if (rule.type === ShippingRuleType.FLAT) {
+    return "All orders";
+  }
+  const min = rule.minValue ?? 0;
+  if (rule.type === ShippingRuleType.PRICE_BASED) {
+    return rule.maxValue !== null
+      ? `₹${min} – ₹${rule.maxValue}`
+      : `₹${min} and above (∞)`;
+  }
+  if (rule.type === ShippingRuleType.WEIGHT_BASED) {
+    return rule.maxValue !== null
+      ? `${min} – ${rule.maxValue}`
+      : `${min} and above (∞)`;
+  }
+  return "All orders";
+};
 
 export const ShippingProfileDetailsView: React.FC<
   ShippingProfileDetailsViewProps
@@ -121,32 +184,6 @@ export const ShippingProfileDetailsView: React.FC<
     0,
   );
 
-  const getZoneTypeBadge = (type: ShippingZoneType) => {
-    switch (type) {
-      case ShippingZoneType.PINCODE:
-        return (
-          <Badge variant="info" className="flex items-center gap-1">
-            <MapPin className="w-3 h-3" />
-            <span>Pincode</span>
-          </Badge>
-        );
-      case ShippingZoneType.STATE:
-        return (
-          <Badge variant="secondary" className="flex items-center gap-1">
-            <Map className="w-3 h-3" />
-            <span>State</span>
-          </Badge>
-        );
-      case ShippingZoneType.COUNTRY:
-        return (
-          <Badge variant="outline" className="flex items-center gap-1">
-            <Globe className="w-3 h-3" />
-            <span>Country</span>
-          </Badge>
-        );
-    }
-  };
-
   const renderRulesTable = (
     rules: ShippingRuleDto[],
     targetZone?: ShippingZoneDto,
@@ -164,6 +201,7 @@ export const ShippingProfileDetailsView: React.FC<
         <table className="w-full text-left text-sm">
           <thead className="bg-gray-50 text-gray-600 text-xs font-semibold uppercase tracking-wider border-b border-gray-200">
             <tr>
+              <th className="py-2.5 px-3">Rule Name</th>
               <th className="py-2.5 px-3">Condition Type</th>
               <th className="py-2.5 px-3">Range / Bracket</th>
               <th className="py-2.5 px-3">Shipping Fee</th>
@@ -171,62 +209,59 @@ export const ShippingProfileDetailsView: React.FC<
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 bg-white">
-            {rules.map((rule) => {
-              const isPrice = rule.type === "PRICE";
-              const rangeText = `${isPrice ? "₹" : ""}${rule.minValue} ${
-                rule.maxValue !== null
-                  ? `– ${isPrice ? "₹" : ""}${rule.maxValue}`
-                  : "and above (∞)"
-              }`;
-
-              return (
-                <tr key={rule.id} className="hover:bg-gray-50/70 transition-colors">
-                  <td className="py-2.5 px-3 font-medium text-gray-900">
-                    <Badge variant={isPrice ? "primary" : "secondary"}>
-                      {isPrice ? "Order Subtotal" : "Weight Based"}
-                    </Badge>
-                  </td>
-                  <td className="py-2.5 px-3 text-gray-700">{rangeText}</td>
-                  <td className="py-2.5 px-3 font-semibold text-gray-900">
-                    {rule.amount === 0 ? (
-                      <span className="text-emerald-600">FREE</span>
-                    ) : (
-                      `₹${rule.amount.toFixed(2)}`
-                    )}
-                  </td>
-                  <td className="py-2.5 px-3 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Button
-                        variant="outline"
-                        className="p-1.5 text-gray-600 hover:text-gray-900"
-                        tooltip="Edit Rule"
-                        onClick={() =>
-                          setRuleModalState({
-                            open: true,
-                            profileId: targetZone ? null : profile.id,
-                            zoneId: targetZone ? targetZone.id : null,
-                            targetName: targetZone ? targetZone.name : profile.name,
-                            rule,
-                          })
-                        }
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        variant="danger"
-                        className="p-1.5"
-                        tooltip="Delete Rule"
-                        onClick={() =>
-                          setDeleteRuleState({ open: true, rule })
-                        }
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+            {rules.map((rule) => (
+              <tr
+                key={rule.id}
+                className="hover:bg-gray-50/70 transition-colors"
+              >
+                <td className="py-2.5 px-3 font-medium text-gray-900">
+                  {rule.name}
+                </td>
+                <td className="py-2.5 px-3 font-medium text-gray-900">
+                  {getRuleTypeBadge(rule.type)}
+                </td>
+                <td className="py-2.5 px-3 text-gray-700">
+                  {getRuleRangeText(rule)}
+                </td>
+                <td className="py-2.5 px-3 font-semibold text-gray-900">
+                  {rule.rate === 0 ? (
+                    <span className="text-emerald-600">FREE</span>
+                  ) : (
+                    `₹${rule.rate.toFixed(2)}`
+                  )}
+                </td>
+                <td className="py-2.5 px-3 text-right">
+                  <div className="flex items-center justify-end gap-1.5">
+                    <Button
+                      variant="outline"
+                      className="p-1.5 text-gray-600 hover:text-gray-900"
+                      tooltip="Edit Rule"
+                      onClick={() =>
+                        setRuleModalState({
+                          open: true,
+                          profileId: targetZone ? null : profile.id,
+                          zoneId: targetZone ? targetZone.id : null,
+                          targetName: targetZone
+                            ? targetZone.name
+                            : profile.name,
+                          rule,
+                        })
+                      }
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button
+                      variant="danger"
+                      className="p-1.5"
+                      tooltip="Delete Rule"
+                      onClick={() => setDeleteRuleState({ open: true, rule })}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -258,6 +293,7 @@ export const ShippingProfileDetailsView: React.FC<
                 <h1 className="text-xl font-bold text-gray-900">
                   {profile.name}
                 </h1>
+                {profile.isDefault && <Badge variant="primary">Default</Badge>}
                 <Badge variant={profile.isActive ? "success" : "outline"}>
                   {profile.isActive ? "Active" : "Inactive"}
                 </Badge>
@@ -273,9 +309,7 @@ export const ShippingProfileDetailsView: React.FC<
           <div className="flex items-center gap-2 shrink-0">
             <Button
               variant="outline"
-              onClick={() =>
-                navigate(`/settings/shipping/${profile.id}/edit`)
-              }
+              onClick={() => navigate(`/settings/shipping/${profile.id}/edit`)}
               className="flex items-center gap-1.5"
             >
               <Edit2 className="w-4 h-4" />
@@ -293,13 +327,15 @@ export const ShippingProfileDetailsView: React.FC<
         </div>
 
         {/* Quick Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-100">
           <div className="p-3.5 bg-gray-50 rounded-xl flex items-center gap-3">
             <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
               <Globe className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-medium">Delivery Zones</p>
+              <p className="text-xs text-gray-500 font-medium">
+                Delivery Zones
+              </p>
               <p className="text-lg font-bold text-gray-900">
                 {profile.zones.length}
               </p>
@@ -314,7 +350,9 @@ export const ShippingProfileDetailsView: React.FC<
               <p className="text-xs text-gray-500 font-medium">
                 Zone Specific Rules
               </p>
-              <p className="text-lg font-bold text-gray-900">{totalZoneRules}</p>
+              <p className="text-lg font-bold text-gray-900">
+                {totalZoneRules}
+              </p>
             </div>
           </div>
 
@@ -331,6 +369,18 @@ export const ShippingProfileDetailsView: React.FC<
               </p>
             </div>
           </div>
+
+          <div className="p-3.5 bg-gray-50 rounded-xl flex items-center gap-3">
+            <div className="p-2 bg-amber-100 text-amber-700 rounded-lg">
+              <Truck className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 font-medium">Fallback Rate</p>
+              <p className="text-lg font-bold text-gray-900">
+                ₹{profile.fallbackRate.toFixed(2)}
+              </p>
+            </div>
+          </div>
         </div>
       </Card>
 
@@ -340,9 +390,12 @@ export const ShippingProfileDetailsView: React.FC<
           <div className="flex items-center gap-2 text-gray-900 font-semibold">
             <DollarSign className="w-5 h-5 text-primary" />
             <div>
-              <h2 className="text-base font-semibold">General Shipping Rates</h2>
+              <h2 className="text-base font-semibold">
+                General Shipping Rates
+              </h2>
               <p className="text-xs text-gray-500 font-normal mt-0.5">
-                Standard rates applied when an order destination does not match a specific zone or zone rate bracket
+                Standard rates applied when an order destination does not match
+                a specific zone or zone rate bracket
               </p>
             </div>
           </div>
@@ -364,9 +417,7 @@ export const ShippingProfileDetailsView: React.FC<
           </Button>
         </div>
 
-        <div className="pt-2">
-          {renderRulesTable(profile.rules)}
-        </div>
+        <div className="pt-2">{renderRulesTable(profile.rules)}</div>
       </Card>
 
       {/* Section 2: Delivery Zones */}
@@ -375,17 +426,18 @@ export const ShippingProfileDetailsView: React.FC<
           <div className="flex items-center gap-2 text-gray-900 font-semibold">
             <Globe className="w-5 h-5 text-primary" />
             <div>
-              <h2 className="text-base font-semibold">Delivery Zones & Zone Rates</h2>
+              <h2 className="text-base font-semibold">
+                Delivery Zones & Zone Rates
+              </h2>
               <p className="text-xs text-gray-500 font-normal mt-0.5">
-                Configure geographic zones by postal codes, state, or country with customized rate brackets
+                Configure geographic zones by postal codes, state, or country
+                with customized rate brackets
               </p>
             </div>
           </div>
 
           <Button
-            onClick={() =>
-              setZoneModalState({ open: true, zone: null })
-            }
+            onClick={() => setZoneModalState({ open: true, zone: null })}
             className="flex items-center gap-1.5 shrink-0"
           >
             <Plus className="w-4 h-4" />
@@ -446,9 +498,7 @@ export const ShippingProfileDetailsView: React.FC<
                       </Button>
                       <Button
                         variant="outline"
-                        onClick={() =>
-                          setZoneModalState({ open: true, zone })
-                        }
+                        onClick={() => setZoneModalState({ open: true, zone })}
                         className="p-2"
                         tooltip="Edit Zone"
                       >
@@ -456,9 +506,7 @@ export const ShippingProfileDetailsView: React.FC<
                       </Button>
                       <Button
                         variant="danger"
-                        onClick={() =>
-                          setDeleteZoneState({ open: true, zone })
-                        }
+                        onClick={() => setDeleteZoneState({ open: true, zone })}
                         className="p-2"
                         tooltip="Delete Zone"
                       >

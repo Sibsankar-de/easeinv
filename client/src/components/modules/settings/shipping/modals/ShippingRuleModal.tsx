@@ -30,10 +30,42 @@ interface ShippingRuleModalProps {
   onSuccess?: () => void;
 }
 
+interface ShippingRuleFormData {
+  name: string;
+  type: ShippingRuleType;
+  minValue: number | string;
+  maxValue: number | string;
+  rate: number | string;
+}
+
+const initialFormData: ShippingRuleFormData = {
+  name: "",
+  type: ShippingRuleType.FLAT,
+  minValue: "",
+  maxValue: "",
+  rate: "",
+};
+
 const ruleTypeOptions = [
-  { key: ShippingRuleType.PRICE, value: "Order Value (Price Based)" },
-  { key: ShippingRuleType.WEIGHT, value: "Item Weight (Weight Based)" },
+  { key: ShippingRuleType.FLAT, value: "Flat Rate" },
+  { key: ShippingRuleType.PRICE_BASED, value: "Order Value (Price Based)" },
+  { key: ShippingRuleType.WEIGHT_BASED, value: "Item Weight (Weight Based)" },
 ];
+
+const getRuleModalSubtitle = (
+  targetName?: string,
+  zoneId?: string | null,
+): string => {
+  if (targetName) return `For ${targetName}`;
+  if (zoneId) return "Zone specific rule";
+  return "General rate rule";
+};
+
+const getRuleThresholdLabel = (
+  prefix: "Min" | "Max",
+  type: ShippingRuleType,
+): string =>
+  `${prefix} ${type === ShippingRuleType.PRICE_BASED ? "Subtotal (₹)" : "Weight"}`;
 
 export const ShippingRuleModal: React.FC<ShippingRuleModalProps> = ({
   openState,
@@ -51,47 +83,60 @@ export const ShippingRuleModal: React.FC<ShippingRuleModalProps> = ({
   const isEditing = !!rule;
   const isSaving = ruleActionStatus === "loading";
 
-  const [type, setType] = useState<ShippingRuleType>(ShippingRuleType.PRICE);
-  const [minValue, setMinValue] = useState<number | string>(0);
-  const [maxValue, setMaxValue] = useState<number | string>("");
-  const [amount, setAmount] = useState<number | string>("");
+  const [formData, setFormData] =
+    useState<ShippingRuleFormData>(initialFormData);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const handleInputChange = <K extends keyof ShippingRuleFormData>(
+    field: K,
+    value: ShippingRuleFormData[K],
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
 
   useEffect(() => {
     if (rule) {
-      setType(rule.type);
-      setMinValue(rule.minValue);
-      setMaxValue(rule.maxValue !== null ? rule.maxValue : "");
-      setAmount(rule.amount);
+      setFormData({
+        name: rule.name || "",
+        type: rule.type,
+        minValue: rule.minValue !== null ? rule.minValue : "",
+        maxValue: rule.maxValue !== null ? rule.maxValue : "",
+        rate: rule.rate,
+      });
     } else {
-      setType(ShippingRuleType.PRICE);
-      setMinValue(0);
-      setMaxValue("");
-      setAmount("");
+      setFormData(initialFormData);
     }
     setErrors({});
   }, [rule, openState]);
 
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
-    const parsedMin = Number(minValue);
-    const parsedMax = maxValue !== "" ? Number(maxValue) : null;
-    const parsedAmount = Number(amount);
 
-    if (isNaN(parsedMin) || parsedMin < 0) {
+    if (!formData.name.trim()) {
+      newErrors.name = "Rule name is required";
+    }
+
+    const parsedRate = Number(formData.rate);
+    if (formData.rate === "" || isNaN(parsedRate) || parsedRate < 0) {
+      newErrors.rate = "Shipping rate must be non-negative";
+    }
+
+    const parsedMin =
+      formData.minValue !== "" ? Number(formData.minValue) : null;
+    const parsedMax =
+      formData.maxValue !== "" ? Number(formData.maxValue) : null;
+
+    if (parsedMin !== null && (isNaN(parsedMin) || parsedMin < 0)) {
       newErrors.minValue = "Minimum value must be non-negative";
     }
 
     if (parsedMax !== null) {
       if (isNaN(parsedMax) || parsedMax <= 0) {
         newErrors.maxValue = "Maximum value must be positive";
-      } else if (parsedMax < parsedMin) {
+      } else if (parsedMin !== null && parsedMax < parsedMin) {
         newErrors.maxValue = "Maximum value must be greater than minimum value";
       }
-    }
-
-    if (amount === "" || isNaN(parsedAmount) || parsedAmount < 0) {
-      newErrors.amount = "Shipping charge must be non-negative";
     }
 
     setErrors(newErrors);
@@ -101,21 +146,26 @@ export const ShippingRuleModal: React.FC<ShippingRuleModalProps> = ({
   const handleSave = () => {
     if (!validate()) return;
 
-    const parsedMin = Number(minValue);
-    const parsedMax = maxValue !== "" ? Number(maxValue) : null;
-    const parsedAmount = Number(amount);
+    const parsedMin =
+      formData.minValue !== "" ? Number(formData.minValue) : null;
+    const parsedMax =
+      formData.maxValue !== "" ? Number(formData.maxValue) : null;
+    const parsedRate = Number(formData.rate);
+
+    const payload = {
+      name: formData.name.trim(),
+      type: formData.type,
+      rate: parsedRate,
+      minValue: parsedMin,
+      maxValue: parsedMax,
+    };
 
     if (isEditing && rule) {
       dispatch(
         updateShippingRuleThunk({
           storeId,
           ruleId: rule.id,
-          data: {
-            type,
-            minValue: parsedMin,
-            maxValue: parsedMax,
-            amount: parsedAmount,
-          },
+          data: payload,
         }),
       )
         .unwrap()
@@ -132,12 +182,9 @@ export const ShippingRuleModal: React.FC<ShippingRuleModalProps> = ({
         createShippingRuleThunk({
           storeId,
           data: {
-            shippingProfileId: profileId || null,
-            shippingZoneId: zoneId || null,
-            type,
-            minValue: parsedMin,
-            maxValue: parsedMax,
-            amount: parsedAmount,
+            profileId: profileId || null,
+            zoneId: zoneId || null,
+            ...payload,
           },
         }),
       )
@@ -161,80 +208,78 @@ export const ShippingRuleModal: React.FC<ShippingRuleModalProps> = ({
       header={
         <ModalHeader
           title={isEditing ? "Edit Rate Rule" : "Add Rate Rule"}
-          subtitle={
-            targetName
-              ? `For ${targetName}`
-              : zoneId
-                ? "Zone specific rule"
-                : "General rate rule"
-          }
+          subtitle={getRuleModalSubtitle(targetName, zoneId)}
         />
       }
     >
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <Label required>Rule Condition Type</Label>
-          <Select
-            value={type}
-            options={ruleTypeOptions}
-            onChange={(val) => setType(val as ShippingRuleType)}
+          <Label required>Rule Name</Label>
+          <Input
+            placeholder="e.g. Standard Delivery, Free Shipping Over ₹500"
+            value={formData.name}
+            onChange={(val) => handleInputChange("name", val)}
+            isInvalid={!!errors.name}
+            errorMessage={errors.name}
             disabled={isSaving}
           />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label required>Min {type === ShippingRuleType.PRICE ? "Subtotal" : "Weight"}</Label>
-            <Input
-              type="number"
-              placeholder="0"
-              value={minValue}
-              onChange={(val) => {
-                setMinValue(val);
-                if (errors.minValue)
-                  setErrors((prev) => ({ ...prev, minValue: "" }));
-              }}
-              isInvalid={!!errors.minValue}
-              errorMessage={errors.minValue}
-              disabled={isSaving}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Max {type === ShippingRuleType.PRICE ? "Subtotal" : "Weight"} (Optional)</Label>
-            <Input
-              type="number"
-              placeholder="No limit (∞)"
-              value={maxValue}
-              onChange={(val) => {
-                setMaxValue(val);
-                if (errors.maxValue)
-                  setErrors((prev) => ({ ...prev, maxValue: "" }));
-              }}
-              isInvalid={!!errors.maxValue}
-              errorMessage={errors.maxValue}
-              disabled={isSaving}
-            />
-          </div>
         </div>
 
         <div className="space-y-1.5">
-          <Label required>Shipping Fee (Amount)</Label>
+          <Label required>Rule Condition Type</Label>
+          <Select
+            value={formData.type}
+            options={ruleTypeOptions}
+            onChange={(val) =>
+              handleInputChange("type", val as ShippingRuleType)
+            }
+            disabled={isSaving}
+          />
+        </div>
+
+        {formData.type !== ShippingRuleType.FLAT && (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>{getRuleThresholdLabel("Min", formData.type)}</Label>
+              <Input
+                type="number"
+                placeholder="0"
+                value={formData.minValue}
+                onChange={(val) => handleInputChange("minValue", val)}
+                isInvalid={!!errors.minValue}
+                errorMessage={errors.minValue}
+                disabled={isSaving}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>{getRuleThresholdLabel("Max", formData.type)}</Label>
+              <Input
+                type="number"
+                placeholder="No limit (∞)"
+                value={formData.maxValue}
+                onChange={(val) => handleInputChange("maxValue", val)}
+                isInvalid={!!errors.maxValue}
+                errorMessage={errors.maxValue}
+                disabled={isSaving}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-1.5">
+          <Label required>Shipping Fee / Rate (₹)</Label>
           <Input
             type="number"
             placeholder="0.00 (Enter 0 for Free Shipping)"
-            value={amount}
-            onChange={(val) => {
-              setAmount(val);
-              if (errors.amount)
-                setErrors((prev) => ({ ...prev, amount: "" }));
-            }}
-            isInvalid={!!errors.amount}
-            errorMessage={errors.amount}
+            value={formData.rate}
+            onChange={(val) => handleInputChange("rate", val)}
+            isInvalid={!!errors.rate}
+            errorMessage={errors.rate}
             disabled={isSaving}
           />
           <p className="text-xs text-gray-500">
-            Enter 0 to offer free shipping for this bracket.
+            Enter 0 to offer free shipping for this rule.
           </p>
         </div>
       </div>

@@ -1,13 +1,10 @@
 import api from "@/configs/axios-config";
 import {
-  ShippingProfileCreateDto,
+  ShippingProfileCreateUpdateDto,
   ShippingProfileDto,
   ShippingProfileSummaryDto,
-  ShippingProfileUpdateDto,
-  ShippingRuleCreateDto,
-  ShippingRuleUpdateDto,
-  ShippingZoneCreateDto,
-  ShippingZoneUpdateDto,
+  ShippingRuleCreateUpdateDto,
+  ShippingZoneCreateUpdateDto,
 } from "@/types/dto/shippingProfileDto";
 import { PaginatedPages } from "@/types/PageableType";
 import { createApiThunk, setPagedDataToState, setState } from "../utils";
@@ -42,7 +39,7 @@ export const fetchShippingProfileByIdThunk = createApiThunk(
 
 export const createShippingProfileThunk = createApiThunk(
   "/shipping-profiles/create",
-  async (payload: { storeId: string; data: ShippingProfileCreateDto }) =>
+  async (payload: { storeId: string; data: ShippingProfileCreateUpdateDto }) =>
     await api.post(`/shipping-profiles/${payload.storeId}`, payload.data),
 );
 
@@ -51,7 +48,7 @@ export const updateShippingProfileThunk = createApiThunk(
   async (payload: {
     storeId: string;
     profileId: string;
-    data: ShippingProfileUpdateDto;
+    data: ShippingProfileCreateUpdateDto;
   }) =>
     await api.patch(
       `/shipping-profiles/${payload.storeId}/${payload.profileId}`,
@@ -72,7 +69,7 @@ export const createShippingZoneThunk = createApiThunk(
   async (payload: {
     storeId: string;
     profileId: string;
-    data: ShippingZoneCreateDto;
+    data: ShippingZoneCreateUpdateDto;
   }) =>
     await api.post(
       `/shipping-profiles/${payload.storeId}/${payload.profileId}/zones`,
@@ -85,7 +82,7 @@ export const updateShippingZoneThunk = createApiThunk(
   async (payload: {
     storeId: string;
     zoneId: string;
-    data: ShippingZoneUpdateDto;
+    data: ShippingZoneCreateUpdateDto;
   }) =>
     await api.patch(
       `/shipping-profiles/${payload.storeId}/zones/${payload.zoneId}`,
@@ -103,7 +100,7 @@ export const deleteShippingZoneThunk = createApiThunk(
 
 export const createShippingRuleThunk = createApiThunk(
   "/shipping-profiles/rules/create",
-  async (payload: { storeId: string; data: ShippingRuleCreateDto }) =>
+  async (payload: { storeId: string; data: ShippingRuleCreateUpdateDto }) =>
     await api.post(`/shipping-profiles/${payload.storeId}/rules`, payload.data),
 );
 
@@ -112,7 +109,7 @@ export const updateShippingRuleThunk = createApiThunk(
   async (payload: {
     storeId: string;
     ruleId: string;
-    data: ShippingRuleUpdateDto;
+    data: ShippingRuleCreateUpdateDto;
   }) =>
     await api.patch(
       `/shipping-profiles/${payload.storeId}/rules/${payload.ruleId}`,

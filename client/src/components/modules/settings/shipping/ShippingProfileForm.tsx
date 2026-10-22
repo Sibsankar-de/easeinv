@@ -11,8 +11,7 @@ import { Label } from "@/components/ui/Label";
 import { LineToggle } from "@/components/ui/LineToggle";
 import {
   ShippingProfileDto,
-  ShippingProfileCreateDto,
-  ShippingProfileUpdateDto,
+  ShippingProfileCreateUpdateDto,
 } from "@/types/dto/shippingProfileDto";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "@/store/store";
@@ -33,6 +32,36 @@ interface ShippingProfileFormProps {
   isEditing?: boolean;
 }
 
+interface ShippingProfileFormData {
+  name: string;
+  description: string;
+  isDefault: boolean;
+  isActive: boolean;
+  fallbackRate: number | string;
+}
+
+const initialFormData: ShippingProfileFormData = {
+  name: "",
+  description: "",
+  isDefault: false,
+  isActive: true,
+  fallbackRate: 0,
+};
+
+const getFormTitle = (isEditing: boolean) =>
+  isEditing ? "Edit Shipping Profile" : "Create Shipping Profile";
+
+const getFormDescription = (isEditing: boolean) =>
+  isEditing
+    ? "Update your shipping profile details, description, and status."
+    : "Define a new shipping profile to configure delivery zones and custom rate rules.";
+
+const getCardTitle = (isEditing: boolean) =>
+  isEditing ? "Profile Details" : "General Information";
+
+const getSubmitButtonLabel = (isEditing: boolean) =>
+  isEditing ? "Save Changes" : "Create Profile";
+
 export const ShippingProfileForm: React.FC<ShippingProfileFormProps> = ({
   initialData: propInitialData,
   isEditing = false,
@@ -51,15 +80,24 @@ export const ShippingProfileForm: React.FC<ShippingProfileFormProps> = ({
   const profile = propInitialData || (isEditing ? currentProfile : null);
   const activeProfileId = profile?.id || routeProfileId;
 
-  const isSaving =
-    createStatus === "loading" || updateStatus === "loading";
+  const isSaving = createStatus === "loading" || updateStatus === "loading";
 
-  const [name, setName] = useState(profile?.name || "");
-  const [description, setDescription] = useState(
-    profile?.description || "",
-  );
-  const [isActive, setIsActive] = useState(profile?.isActive ?? true);
+  const [formData, setFormData] = useState<ShippingProfileFormData>(() => ({
+    name: profile?.name || "",
+    description: profile?.description || "",
+    isDefault: profile?.isDefault ?? false,
+    isActive: profile?.isActive ?? true,
+    fallbackRate: profile?.fallbackRate ?? 0,
+  }));
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  const handleInputChange = <K extends keyof ShippingProfileFormData>(
+    field: K,
+    value: ShippingProfileFormData[K],
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
 
   useEffect(() => {
     if (isEditing && !propInitialData && routeProfileId && storeId) {
@@ -71,16 +109,27 @@ export const ShippingProfileForm: React.FC<ShippingProfileFormProps> = ({
 
   useEffect(() => {
     if (profile) {
-      setName(profile.name);
-      setDescription(profile.description || "");
-      setIsActive(profile.isActive);
+      setFormData({
+        name: profile.name,
+        description: profile.description || "",
+        isDefault: profile.isDefault,
+        isActive: profile.isActive,
+        fallbackRate: profile.fallbackRate ?? 0,
+      });
     }
   }, [profile]);
 
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
-    if (!name.trim()) {
+    if (!formData.name.trim()) {
       newErrors.name = "Profile name is required";
+    }
+    if (
+      formData.fallbackRate !== "" &&
+      (isNaN(Number(formData.fallbackRate)) ||
+        Number(formData.fallbackRate) < 0)
+    ) {
+      newErrors.fallbackRate = "Fallback rate must be non-negative";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -90,13 +139,15 @@ export const ShippingProfileForm: React.FC<ShippingProfileFormProps> = ({
     e.preventDefault();
     if (!validate()) return;
 
-    if (isEditing && activeProfileId) {
-      const payload: ShippingProfileUpdateDto = {
-        name: name.trim(),
-        description: description.trim() || null,
-        isActive,
-      };
+    const payload: ShippingProfileCreateUpdateDto = {
+      name: formData.name.trim(),
+      description: formData.description.trim() || null,
+      isDefault: formData.isDefault,
+      isActive: formData.isActive,
+      fallbackRate: Number(formData.fallbackRate) || 0,
+    };
 
+    if (isEditing && activeProfileId) {
       dispatch(
         updateShippingProfileThunk({
           storeId,
@@ -116,12 +167,6 @@ export const ShippingProfileForm: React.FC<ShippingProfileFormProps> = ({
           );
         });
     } else {
-      const payload: ShippingProfileCreateDto = {
-        name: name.trim(),
-        description: description.trim() || null,
-        isActive,
-      };
-
       dispatch(
         createShippingProfileThunk({
           storeId,
@@ -191,19 +236,15 @@ export const ShippingProfileForm: React.FC<ShippingProfileFormProps> = ({
       {/* Page Title & Description */}
       <div>
         <h1 className="text-xl font-bold text-gray-900 mb-1">
-          {isEditing ? "Edit Shipping Profile" : "Create Shipping Profile"}
+          {getFormTitle(isEditing)}
         </h1>
-        <p className="text-sm text-gray-600">
-          {isEditing
-            ? "Update your shipping profile details, description, and status."
-            : "Define a new shipping profile to configure delivery zones and custom rate rules."}
-        </p>
+        <p className="text-sm text-gray-600">{getFormDescription(isEditing)}</p>
       </div>
 
       <Card>
         <CardHeader
           icon={<Truck className="w-5 h-5 text-primary" />}
-          title={isEditing ? "Profile Details" : "General Information"}
+          title={getCardTitle(isEditing)}
         />
 
         <form onSubmit={handleSubmit} className="space-y-5 pt-2">
@@ -212,11 +253,8 @@ export const ShippingProfileForm: React.FC<ShippingProfileFormProps> = ({
               <Label required>Profile Name</Label>
               <Input
                 placeholder="e.g. Standard Delivery, Express Shipping, Heavy Freight"
-                value={name}
-                onChange={(val) => {
-                  setName(val);
-                  if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
-                }}
+                value={formData.name}
+                onChange={(val) => handleInputChange("name", val)}
                 isInvalid={!!errors.name}
                 errorMessage={errors.name}
                 disabled={isSaving}
@@ -227,21 +265,48 @@ export const ShippingProfileForm: React.FC<ShippingProfileFormProps> = ({
               <Label>Description</Label>
               <Textarea
                 placeholder="Provide notes or explain which orders/products this shipping profile covers..."
-                value={description}
-                onChange={(val) => setDescription(val)}
+                value={formData.description}
+                onChange={(val) => handleInputChange("description", val)}
                 disabled={isSaving}
                 rows={3}
               />
             </div>
 
-            <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <div className="space-y-1.5">
+              <Label>Fallback Rate (₹)</Label>
+              <Input
+                type="number"
+                placeholder="0.00"
+                value={formData.fallbackRate}
+                onChange={(val) => handleInputChange("fallbackRate", val)}
+                isInvalid={!!errors.fallbackRate}
+                errorMessage={errors.fallbackRate}
+                disabled={isSaving}
+              />
+              <p className="text-xs text-gray-500">
+                Default rate used when no specific shipping zone or rule
+                matches.
+              </p>
+            </div>
+
+            <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-200">
+              <LineToggle
+                id="shipping-profile-default-toggle"
+                title="Default Profile"
+                subTitle="Set as the default shipping profile for your store"
+                toggleProps={{
+                  isActive: formData.isDefault,
+                  onChange: (val) => handleInputChange("isDefault", val),
+                  disabled: isSaving,
+                }}
+              />
               <LineToggle
                 id="shipping-profile-active-toggle"
                 title="Enable Profile"
                 subTitle="When enabled, orders can calculate delivery fees using this shipping profile"
                 toggleProps={{
-                  isActive,
-                  onChange: setIsActive,
+                  isActive: formData.isActive,
+                  onChange: (val) => handleInputChange("isActive", val),
                   disabled: isSaving,
                 }}
               />
@@ -264,7 +329,7 @@ export const ShippingProfileForm: React.FC<ShippingProfileFormProps> = ({
               Cancel
             </Button>
             <Button type="submit" disabled={isSaving} loading={isSaving}>
-              {isEditing ? "Save Changes" : "Create Profile"}
+              {getSubmitButtonLabel(isEditing)}
             </Button>
           </div>
         </form>

@@ -8,19 +8,20 @@ import {
 
 export interface ShippingRuleResponseDto {
   id: string;
-  shippingProfileId: string | null;
-  shippingZoneId: string | null;
+  profileId: string | null;
+  zoneId: string | null;
+  name: string;
   type: ShippingRuleType;
-  minValue: number;
+  rate: number;
+  minValue: number | null;
   maxValue: number | null;
-  amount: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface ShippingZoneResponseDto {
   id: string;
-  shippingProfileId: string;
+  profileId: string;
   name: string;
   type: ShippingZoneType;
   code: string;
@@ -34,7 +35,9 @@ export interface ShippingProfileResponseDto {
   storeId: string;
   name: string;
   description: string | null;
+  isDefault: boolean;
   isActive: boolean;
+  fallbackRate: number;
   zones: ShippingZoneResponseDto[];
   rules: ShippingRuleResponseDto[];
   createdAt: Date;
@@ -46,7 +49,9 @@ export interface ShippingProfileSummaryResponseDto {
   storeId: string;
   name: string;
   description: string | null;
+  isDefault: boolean;
   isActive: boolean;
+  fallbackRate: number;
   zoneCount: number;
   ruleCount: number;
   createdAt: Date;
@@ -85,25 +90,22 @@ export type ShippingProfileWithCounts = ShippingProfile & {
   rules?: ShippingRule[];
 };
 
-export const toShippingRuleDto = (
-  rule: ShippingRule,
-): ShippingRuleResponseDto => ({
+export const toShippingRuleDto = (rule: ShippingRule): ShippingRuleResponseDto => ({
   id: rule.id,
-  shippingProfileId: rule.shippingProfileId,
-  shippingZoneId: rule.shippingZoneId,
+  profileId: rule.profileId,
+  zoneId: rule.zoneId,
+  name: rule.name,
   type: rule.type,
+  rate: rule.rate,
   minValue: rule.minValue,
   maxValue: rule.maxValue,
-  amount: rule.amount,
   createdAt: rule.createdAt,
   updatedAt: rule.updatedAt,
 });
 
-export const toShippingZoneDto = (
-  zone: ShippingZoneWithRules,
-): ShippingZoneResponseDto => ({
+export const toShippingZoneDto = (zone: ShippingZoneWithRules): ShippingZoneResponseDto => ({
   id: zone.id,
-  shippingProfileId: zone.shippingProfileId,
+  profileId: zone.profileId,
   name: zone.name,
   type: zone.type,
   code: zone.code,
@@ -119,7 +121,9 @@ export const toShippingProfileDto = (
   storeId: profile.storeId,
   name: profile.name,
   description: profile.description,
+  isDefault: profile.isDefault,
   isActive: profile.isActive,
+  fallbackRate: profile.fallbackRate,
   zones: (profile.zones || []).map(toShippingZoneDto),
   rules: (profile.rules || []).map(toShippingRuleDto),
   createdAt: profile.createdAt,
@@ -129,17 +133,17 @@ export const toShippingProfileDto = (
 export const toShippingProfileSummaryDto = (
   profile: ShippingProfileWithCounts,
 ): ShippingProfileSummaryResponseDto => {
-  const zoneCount =
-    profile._count?.zones ?? (profile.zones ? profile.zones.length : 0);
-  const ruleCount =
-    profile._count?.rules ?? (profile.rules ? profile.rules.length : 0);
+  const zoneCount = profile._count?.zones ?? (profile.zones ? profile.zones.length : 0);
+  const ruleCount = profile._count?.rules ?? (profile.rules ? profile.rules.length : 0);
 
   return {
     id: profile.id,
     storeId: profile.storeId,
     name: profile.name,
     description: profile.description,
+    isDefault: profile.isDefault,
     isActive: profile.isActive,
+    fallbackRate: profile.fallbackRate,
     zoneCount,
     ruleCount,
     createdAt: profile.createdAt,
@@ -152,13 +156,13 @@ export interface ShippingCalculationParams {
   shippingAmount?: number;
   profile?: { id: string; name: string } | null;
   zone?: { id: string; name: string; type: ShippingZoneType } | null;
-  rule?: { id: string; type: ShippingRuleType; amount: number } | null;
+  rule?: { id: string; type: ShippingRuleType; rate: number } | null;
 }
 
 export const toShippingCalculationResponseDto = (
   params: ShippingCalculationParams,
 ): ShippingCalculationResponseDto => ({
-  shippingAmount: params.rule?.amount ?? params.shippingAmount ?? 0,
+  shippingAmount: params.rule?.rate ?? params.shippingAmount ?? 0,
   subtotal: params.subtotal,
   matchedProfileId: params.profile?.id ?? null,
   matchedProfileName: params.profile?.name ?? null,
