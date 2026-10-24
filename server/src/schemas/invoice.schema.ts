@@ -13,6 +13,8 @@ const billItemSchema = z.object({
   totalPrice: z.number().min(0, "Total price must be non-negative"),
   stockUnit: z.string(),
   pricePerQuantity: pricePerQuantityItemSchema.optional(),
+  couponCode: z.string().optional(),
+  couponDiscount: z.number().optional(),
 });
 
 const customerDetailsSchema = z.object({

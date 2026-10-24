@@ -63,7 +63,7 @@ export const OrderStatusBadge: React.FC<OrderStatusBadgeProps> = ({
     <Badge
       variant={config.variant}
       className={cn(
-        "inline-flex items-center gap-1.5 font-medium normal-case tracking-normal px-2.5 py-1 text-xs",
+        "inline-flex items-center gap-1.5",
         className,
       )}
     >

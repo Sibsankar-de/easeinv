@@ -92,6 +92,8 @@ const buildInvoiceItemsData = (
     totalPrice: item.totalPrice,
     stockUnit: item.stockUnit,
     totalProfit: item.totalProfit,
+    couponCode: item.couponCode ?? null,
+    couponDiscount: item.couponDiscount ?? null,
   }));
 
 const updateInvoiceSummaryOnCreate = (
@@ -157,11 +159,56 @@ export const createInvoice = async (
   userId: string,
   storeId: string,
   billData: InvoiceCreateUpdateDto,
-  txClient?: TransactionClient,
-  purpose: InvoicePurpose = InvoicePurpose.BILLING,
+  customer: Customer,
+  calculations: CalculatedInvoice,
+  products: Array<{ id: string; name: string }>,
+  status: InvoiceStatus,
+  purpose: InvoicePurpose,
+  tx: TransactionClient,
+  isNewCustomer: boolean = false,
 ) => {
-  const runner = async (tx: TransactionClient) => {
-    // Update store lastInvoiceNumber and fetch settings
+  const invoice = await tx.invoice.create({
+    data: buildInvoiceCreateData(
+      userId,
+      storeId,
+      billData,
+      customer,
+      calculations,
+      status,
+      purpose,
+    ),
+  });
+
+  await tx.invoiceItem.createMany({
+    data: buildInvoiceItemsData(invoice.id, calculations, products),
+  });
+
+  if (status === InvoiceStatus.ISSUED) {
+    const store = await tx.store.findUniqueOrThrow({
+      where: { id: storeId },
+      include: { settings: true },
+    });
+    await applyIssueSideEffects(
+      storeId,
+      store,
+      customer,
+      isNewCustomer,
+      billData,
+      calculations,
+      tx,
+    );
+  }
+
+  const populated = await getPopulatedInvoice(invoice.id, tx);
+  return toInvoiceDto(populated);
+};
+
+export const createGeneralInvoice = async (
+  userId: string,
+  storeId: string,
+  billData: InvoiceCreateUpdateDto,
+) =>
+  prismaTransaction(async (tx) => {
     const store = await tx.store.update({
       where: { id: storeId },
       data: { lastInvoiceNumber: billData.invoiceNumber },
@@ -170,7 +217,6 @@ export const createInvoice = async (
 
     const storeSettings = store.settings!;
 
-    // Fetch and validate products
     const productIds = billData.billItems.map((item) => item.productId);
     const products = await tx.product.findMany({
       where: { id: { in: productIds } },
@@ -198,43 +244,19 @@ export const createInvoice = async (
 
     const status = billData.status ?? InvoiceStatus.DRAFTED;
 
-    // Persist invoice row with all calculated fields
-    const invoice = await tx.invoice.create({
-      data: buildInvoiceCreateData(
-        userId,
-        storeId,
-        billData,
-        customer,
-        calculations,
-        status,
-        purpose,
-      ),
-    });
-
-    // Persist bill items
-    await tx.invoiceItem.createMany({
-      data: buildInvoiceItemsData(invoice.id, calculations, products),
-    });
-
-    // Apply external side effects ONLY when the invoice is being ISSUED
-    if (status === InvoiceStatus.ISSUED) {
-      await applyIssueSideEffects(
-        storeId,
-        store,
-        customer,
-        isNew,
-        billData,
-        calculations,
-        tx,
-      );
-    }
-
-    const createdInvoice = await getPopulatedInvoice(invoice.id, tx);
-    return toInvoiceDto(createdInvoice);
-  };
-
-  return txClient ? runner(txClient) : prismaTransaction(runner);
-};
+    return createInvoice(
+      userId,
+      storeId,
+      billData,
+      customer,
+      calculations,
+      products,
+      status,
+      InvoicePurpose.BILLING,
+      tx,
+      isNew,
+    );
+  });
 
 export const issueInvoice = async (
   storeId: string,

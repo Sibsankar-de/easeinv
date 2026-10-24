@@ -39,6 +39,8 @@ export interface BillItemDto {
   totalPrice: number;
   stockUnit: string;
   totalProfit: number;
+  couponCode?: string | null;
+  couponDiscount?: number | null;
 }
 
 export interface InvoiceResponseDto {

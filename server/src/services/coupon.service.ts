@@ -76,21 +76,6 @@ export const addOrRemoveCouponCategory = async (
   }
 };
 
-export const resolveCategoryIds = async (
-  storeId: string,
-  categoryIds: string[] | undefined,
-  useAllCategories: boolean | undefined,
-  tx: TransactionClient = prisma,
-): Promise<string[]> => {
-  if (useAllCategories) {
-    const storeCategories = await tx.category.findMany({
-      where: { storeId },
-      select: { id: true },
-    });
-    return storeCategories.map((c) => c.id);
-  }
-  return categoryIds ?? [];
-};
 
 export const getPopulatedCouponById = async (
   couponId: string,
@@ -143,13 +128,6 @@ export const createCoupon = async (
 
     await ensureUniqueCouponCode(storeId, code, undefined, tx);
 
-    const targetCategoryIds = await resolveCategoryIds(
-      storeId,
-      categoryIds,
-      useAllCategories,
-      tx,
-    );
-
     const coupon = await tx.coupon.create({
       data: {
         storeId,
@@ -164,13 +142,14 @@ export const createCoupon = async (
         usageLimit: usageLimit ?? null,
         perCustomerLimit: perCustomerLimit ?? null,
         isActive: isActive ?? true,
+        useAllCategories: useAllCategories ?? false,
         startsAt: startsAt ?? null,
         endsAt: endsAt ?? null,
       },
     });
 
-    if (targetCategoryIds.length > 0) {
-      await addOrRemoveCouponCategory(coupon.id, targetCategoryIds, tx);
+    if (!useAllCategories && categoryIds && categoryIds.length > 0) {
+      await addOrRemoveCouponCategory(coupon.id, categoryIds, tx);
     }
 
     const populated = await getPopulatedCouponById(coupon.id, storeId, tx);
@@ -210,13 +189,6 @@ export const updateCoupon = async (
 
     await ensureUniqueCouponCode(storeId, code, couponId, tx);
 
-    const targetCategoryIds = await resolveCategoryIds(
-      storeId,
-      categoryIds,
-      useAllCategories,
-      tx,
-    );
-
     await tx.coupon.update({
       where: { id: couponId },
       data: {
@@ -230,12 +202,18 @@ export const updateCoupon = async (
         usageLimit: usageLimit ?? null,
         perCustomerLimit: perCustomerLimit ?? null,
         isActive: isActive ?? true,
+        useAllCategories: useAllCategories ?? false,
         startsAt: startsAt ?? null,
         endsAt: endsAt ?? null,
       },
     });
 
-    await addOrRemoveCouponCategory(couponId, targetCategoryIds, tx);
+    if (useAllCategories) {
+      // Clear all specific category mappings - flag covers everything
+      await tx.couponCategory.deleteMany({ where: { couponId } });
+    } else {
+      await addOrRemoveCouponCategory(couponId, categoryIds ?? [], tx);
+    }
 
     const populated = await getPopulatedCouponById(couponId, storeId, tx);
     return toCouponDto(populated);

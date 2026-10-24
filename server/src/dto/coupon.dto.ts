@@ -16,6 +16,7 @@ export interface CouponResponseDto {
   usageCount: number;
   perCustomerLimit: number | null;
   isActive: boolean;
+  useAllCategories: boolean;
   startsAt: Date | null;
   endsAt: Date | null;
   categories: CategoryDto[];
@@ -37,6 +38,7 @@ export interface CouponSummaryResponseDto {
   usageCount: number;
   perCustomerLimit: number | null;
   isActive: boolean;
+  useAllCategories: boolean;
   startsAt: Date | null;
   endsAt: Date | null;
   categoryCount: number;
@@ -75,6 +77,7 @@ export const toCouponDto = (coupon: CouponWithCategories): CouponResponseDto => 
     usageCount: coupon.usageCount,
     perCustomerLimit: coupon.perCustomerLimit,
     isActive: coupon.isActive,
+    useAllCategories: coupon.useAllCategories,
     startsAt: coupon.startsAt,
     endsAt: coupon.endsAt,
     categories: coupon.categories.map((c) => toCategoryDto(c.category)),
@@ -104,6 +107,7 @@ export const toCouponSummaryDto = (
     usageCount: coupon.usageCount,
     perCustomerLimit: coupon.perCustomerLimit,
     isActive: coupon.isActive,
+    useAllCategories: coupon.useAllCategories,
     startsAt: coupon.startsAt,
     endsAt: coupon.endsAt,
     categoryCount,

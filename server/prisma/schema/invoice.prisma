@@ -65,7 +65,9 @@ model InvoiceItem {
   netQuantity Float
   totalPrice  Float
   stockUnit   String
-  totalProfit Float   @default(0)
+  totalProfit    Float   @default(0)
+  couponCode     String?
+  couponDiscount Float?
 
   // Relations
   invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)

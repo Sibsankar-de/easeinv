@@ -18,6 +18,7 @@ model Coupon {
   usageCount       Int          @default(0)
   perCustomerLimit Int?
   isActive         Boolean      @default(true)
+  useAllCategories Boolean      @default(false)
   startsAt         DateTime?
   endsAt           DateTime?
   createdAt        DateTime     @default(now())

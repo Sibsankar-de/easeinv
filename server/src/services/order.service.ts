@@ -9,6 +9,7 @@ import {
 import {
   OrderCreateDto,
   OrderBillItemDto,
+  OrderInvoiceDataDto,
   UpdateOrderStatusDto,
   OrderQueryDto,
 } from "../schemas/order.schema";
@@ -30,9 +31,14 @@ import {
   Prisma,
   Coupon,
   Product,
+  StoreSettings,
 } from "@prisma/client";
 import { InvoiceCreateUpdateDto } from "../schemas/invoice.schema";
 import { PricePerQuantityType } from "../types/productTypes";
+import {
+  CalculatedInvoice,
+  CalculatedInvoiceItem,
+} from "../utils/invoice-calculator";
 
 const generateOrderNumber = (prefix: string = "ORD"): string => {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -54,15 +60,15 @@ const generateInvoiceNumber = (
 
 interface CouponValidationResult {
   coupon: Coupon;
-  discountAmount: number;
-  discountPercent: number;
+  applicableProductIds: string[];
 }
 
-const validateAndApplyCoupon = async (
+const validateCoupon = async (
   storeId: string,
   couponCode: string,
-  subTotal: number,
   customerId: string,
+  productIds: string[],
+  initialTotal?: number,
   tx: TransactionClient = prisma,
 ): Promise<CouponValidationResult> => {
   const coupon = await tx.coupon.findFirst({
@@ -70,9 +76,6 @@ const validateAndApplyCoupon = async (
       storeId,
       code: { equals: couponCode.trim(), mode: "insensitive" },
       isActive: true,
-    },
-    include: {
-      categories: true,
     },
   });
 
@@ -98,7 +101,11 @@ const validateAndApplyCoupon = async (
     );
   }
 
-  if (coupon.minOrderValue && subTotal < coupon.minOrderValue) {
+  if (
+    coupon.minOrderValue &&
+    initialTotal !== undefined &&
+    initialTotal < coupon.minOrderValue
+  ) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       `Minimum order value of ${coupon.minOrderValue} is required to apply coupon "${coupon.code}".`,
@@ -130,26 +137,30 @@ const validateAndApplyCoupon = async (
     }
   }
 
-  let discountAmount = 0;
-  let discountPercent = 0;
-
-  if (coupon.discountType === DiscountType.PERCENT) {
-    discountPercent = coupon.discountValue;
-    discountAmount = Number(((subTotal * discountPercent) / 100).toFixed(2));
-    if (coupon.maxDiscount !== null && discountAmount > coupon.maxDiscount) {
-      discountAmount = coupon.maxDiscount;
-      discountPercent = Number(((discountAmount / subTotal) * 100).toFixed(2));
-    }
-  } else {
-    // FIXED discount
-    discountAmount = Number(
-      Math.min(coupon.discountValue, subTotal).toFixed(2),
-    );
-    discountPercent =
-      subTotal > 0 ? Number(((discountAmount / subTotal) * 100).toFixed(2)) : 0;
+  if (coupon.useAllCategories) {
+    return { coupon, applicableProductIds: productIds };
   }
 
-  return { coupon, discountAmount, discountPercent };
+  const couponCategories = await tx.couponCategory.findMany({
+    where: { couponId: coupon.id },
+    select: { categoryId: true },
+  });
+
+  if (couponCategories.length === 0) {
+    return { coupon, applicableProductIds: productIds };
+  }
+
+  const categoryIds = couponCategories.map((c) => c.categoryId);
+  const applicableProducts = await tx.product.findMany({
+    where: {
+      storeId,
+      id: { in: productIds },
+      categories: { some: { categoryId: { in: categoryIds } } },
+    },
+    select: { id: true },
+  });
+
+  return { coupon, applicableProductIds: applicableProducts.map((p) => p.id) };
 };
 
 export const getPopulatedOrder = async (
@@ -198,6 +209,8 @@ export interface ResolvedOrderBillItem {
   totalPrice: number;
   stockUnit: string;
   pricePerQuantity?: PricePerQuantityType;
+  couponCode?: string;
+  couponDiscount?: number;
 }
 
 export const calculateOrderBillItem = (
@@ -264,6 +277,236 @@ export const calculateOrderBillItems = (
   });
 };
 
+const applyPercentCoupon = (
+  billItems: ResolvedOrderBillItem[],
+  applicableProductIds: string[],
+  coupon: Coupon,
+): ResolvedOrderBillItem[] => {
+  const applicableSubTotal = billItems
+    .filter((item) => applicableProductIds.includes(item.productId))
+    .reduce((sum, item) => sum + item.totalPrice, 0);
+
+  const rawTotalDiscount = Number(
+    ((applicableSubTotal * coupon.discountValue) / 100).toFixed(2),
+  );
+  const totalDiscount =
+    coupon.maxDiscount !== null
+      ? Math.min(rawTotalDiscount, coupon.maxDiscount)
+      : rawTotalDiscount;
+
+  return billItems.map((item) => {
+    if (!applicableProductIds.includes(item.productId)) return item;
+
+    const itemDiscount = Number(
+      ((item.totalPrice / applicableSubTotal) * totalDiscount).toFixed(2),
+    );
+    return {
+      ...item,
+      totalPrice: Number((item.totalPrice - itemDiscount).toFixed(2)),
+      couponCode: coupon.code,
+      couponDiscount: itemDiscount,
+    };
+  });
+};
+
+const applyFixedCoupon = (
+  billItems: ResolvedOrderBillItem[],
+  applicableProductIds: string[],
+  coupon: Coupon,
+): ResolvedOrderBillItem[] =>
+  billItems.map((item) => {
+    if (!applicableProductIds.includes(item.productId)) return item;
+    return { ...item, couponCode: coupon.code };
+  });
+
+export interface CalculateOrderParams {
+  orderBillItems: OrderBillItemDto[];
+  products: Product[];
+  invoiceData: OrderInvoiceDataDto;
+  storeSettings?: StoreSettings | null;
+  coupon?: Coupon | null;
+  applicableProductIds?: string[];
+}
+
+export interface CalculateOrderResult {
+  calculations: CalculatedInvoice;
+  billItems: CalculatedInvoiceItem[];
+}
+
+export const calculateOrder = (
+  params: CalculateOrderParams,
+): CalculateOrderResult => {
+  const {
+    orderBillItems,
+    products,
+    invoiceData,
+    storeSettings,
+    coupon,
+    applicableProductIds = [],
+  } = params;
+
+  const initialBillItems = calculateOrderBillItems(orderBillItems, products);
+  const initialSubTotal = initialBillItems.reduce(
+    (sum, item) => sum + item.totalPrice,
+    0,
+  );
+
+  let finalBillItems = initialBillItems;
+  let invoiceDiscountPercent = invoiceData.discountPercent ?? 0;
+  let invoiceDiscountAmount = 0;
+  let taxableBase = initialSubTotal;
+
+  if (coupon && applicableProductIds.length > 0) {
+    if (coupon.discountType === DiscountType.PERCENT) {
+      finalBillItems = applyPercentCoupon(
+        initialBillItems,
+        applicableProductIds,
+        coupon,
+      );
+      const finalSubTotal = finalBillItems.reduce(
+        (sum, item) => sum + item.totalPrice,
+        0,
+      );
+      invoiceDiscountAmount = Number(
+        (initialSubTotal - finalSubTotal).toFixed(2),
+      );
+      invoiceDiscountPercent =
+        initialSubTotal > 0
+          ? Number(((invoiceDiscountAmount / initialSubTotal) * 100).toFixed(2))
+          : 0;
+      // For PERCENT: item prices are already reduced - tax base is the post-discount subtotal
+      taxableBase = finalSubTotal;
+    } else {
+      finalBillItems = applyFixedCoupon(
+        initialBillItems,
+        applicableProductIds,
+        coupon,
+      );
+      invoiceDiscountAmount = Math.min(coupon.discountValue, initialSubTotal);
+      invoiceDiscountPercent =
+        initialSubTotal > 0
+          ? Number(((invoiceDiscountAmount / initialSubTotal) * 100).toFixed(2))
+          : 0;
+      // For FIXED: item prices unchanged - tax base is subtotal minus the fixed deduction
+      taxableBase = initialSubTotal - invoiceDiscountAmount;
+    }
+  } else if (invoiceDiscountPercent > 0) {
+    invoiceDiscountAmount = Number(
+      ((invoiceDiscountPercent * initialSubTotal) / 100).toFixed(2),
+    );
+    taxableBase = initialSubTotal - invoiceDiscountAmount;
+  }
+
+  const billItems: CalculatedInvoiceItem[] = finalBillItems.map((item) => {
+    const product = products.find((p) => p.id === item.productId)!;
+    const totalProfit = Number(
+      (
+        item.totalPrice -
+        product.buyingPricePerQuantity * item.netQuantity
+      ).toFixed(2),
+    );
+
+    return {
+      productId: item.productId,
+      netQuantity: item.netQuantity,
+      pricePerQuantity: item.pricePerQuantity,
+      totalPrice: item.totalPrice,
+      totalProfit,
+      stockUnit: item.stockUnit,
+      couponCode: item.couponCode,
+      couponDiscount: item.couponDiscount,
+    };
+  });
+
+  const subTotal = Number(
+    billItems.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2),
+  );
+  const subTotalProfit = Number(
+    billItems.reduce((sum, item) => sum + item.totalProfit, 0).toFixed(2),
+  );
+
+  const taxRate =
+    invoiceData.taxRate !== undefined
+      ? invoiceData.taxRate
+      : (storeSettings?.defaultTaxRate ?? 0);
+
+  const taxAmount = Number(((taxRate * taxableBase) / 100).toFixed(2));
+
+  let total = Number((taxableBase + taxAmount).toFixed(2));
+
+  const roundupTotal =
+    invoiceData.roundupTotal !== undefined
+      ? invoiceData.roundupTotal
+      : (storeSettings?.roundupInvoiceTotal ?? false);
+
+  if (roundupTotal) {
+    total = Math.round(total);
+  }
+
+  const paidAmount =
+    invoiceData.paidAmount !== undefined ? invoiceData.paidAmount : total;
+  const dueAmount = Number(Math.max(0, total - paidAmount).toFixed(2));
+  const totalProfit = Number(
+    (subTotalProfit - invoiceDiscountAmount).toFixed(2),
+  );
+
+  const calculations: CalculatedInvoice = {
+    subTotal,
+    discountAmount: invoiceDiscountAmount,
+    discountPercent: invoiceDiscountPercent,
+    taxAmount,
+    taxRate,
+    total,
+    paidAmount,
+    dueAmount,
+    totalProfit,
+    roundupTotal,
+    billItems,
+  };
+
+  return {
+    calculations,
+    billItems,
+  };
+};
+
+export const calculateOrderTotal = (
+  orderBillItems: OrderBillItemDto[],
+  products: Product[],
+  invoiceData: OrderInvoiceDataDto,
+  storeSettings?: StoreSettings | null,
+): number => {
+  const billItems = calculateOrderBillItems(orderBillItems, products);
+  const subTotal = Number(
+    billItems.reduce((sum, item) => sum + item.totalPrice, 0).toFixed(2),
+  );
+
+  const discountPercent = invoiceData.discountPercent ?? 0;
+  const discountAmount = Number(
+    ((discountPercent * subTotal) / 100).toFixed(2),
+  );
+  const taxableBase = subTotal - discountAmount;
+
+  const taxRate =
+    invoiceData.taxRate !== undefined
+      ? invoiceData.taxRate
+      : (storeSettings?.defaultTaxRate ?? 0);
+
+  const taxAmount = Number(((taxRate * taxableBase) / 100).toFixed(2));
+  let total = Number((taxableBase + taxAmount).toFixed(2));
+
+  const roundupTotal =
+    invoiceData.roundupTotal !== undefined
+      ? invoiceData.roundupTotal
+      : (storeSettings?.roundupInvoiceTotal ?? false);
+
+  if (roundupTotal) {
+    total = Math.round(total);
+  }
+
+  return total;
+};
+
 export const createOrder = async (
   userId: string,
   storeId: string,
@@ -291,7 +534,7 @@ export const createOrder = async (
 
     const storeSettings = store.settings;
 
-    // 3. Fetch products and calculate totalPrice for each bill item
+    // 3. Fetch products
     const productIds = orderData.invoiceData.billItems.map(
       (item) => item.productId,
     );
@@ -306,58 +549,69 @@ export const createOrder = async (
       );
     }
 
-    const calculatedBillItems = calculateOrderBillItems(
-      orderData.invoiceData.billItems,
-      products,
-    );
-
     // 4. Handle coupon validation if provided
     let appliedCoupon: Coupon | null = null;
-    let discountPercent = orderData.invoiceData.discountPercent ?? 0;
-
-    const subTotal = calculatedBillItems.reduce(
-      (sum, item) => sum + item.totalPrice,
-      0,
-    );
+    let applicableProductIds: string[] = [];
 
     if (orderData.couponCode) {
-      const couponResult = await validateAndApplyCoupon(
+      const initialTotal = calculateOrderTotal(
+        orderData.invoiceData.billItems,
+        products,
+        orderData.invoiceData,
+        storeSettings,
+      );
+
+      const couponResult = await validateCoupon(
         storeId,
         orderData.couponCode,
-        subTotal,
         customer.id,
+        productIds,
+        initialTotal,
         tx,
       );
-      appliedCoupon = couponResult.coupon;
-      discountPercent = couponResult.discountPercent;
+
+      if (couponResult.applicableProductIds.length > 0) {
+        appliedCoupon = couponResult.coupon;
+        applicableProductIds = couponResult.applicableProductIds;
+      }
     }
 
-    // 5. Calculate shipping rates from subtotal
+    // 5. Calculate order details
+    const { calculations, billItems } = calculateOrder({
+      orderBillItems: orderData.invoiceData.billItems,
+      products,
+      invoiceData: orderData.invoiceData,
+      storeSettings,
+      coupon: appliedCoupon,
+      applicableProductIds,
+    });
+
+    // 6. Calculate shipping rates from subtotal
     const shippingCalculation = await shippingService.calculateShippingCharge(
       storeId,
       orderData.shippingAddress,
-      subTotal,
+      calculations.subTotal,
       tx,
     );
     const shippingAmount = shippingCalculation.shippingAmount;
 
-    // 6. Generate invoice number if not provided
+    // 7. Generate invoice number if not provided
     const invoiceNumber = generateInvoiceNumber(
       orderData.invoiceData.invoiceNumber,
       storeSettings?.invoiceNumberPrefix || "INV",
     );
 
-    // 7. Build invoice payload
+    // 8. Build invoice payload and persist invoice
     const invoicePayload: InvoiceCreateUpdateDto = {
       invoiceNumber,
       issueDate: orderData.invoiceData.issueDate || new Date(),
-      paidAmount: orderData.invoiceData.paidAmount ?? 0,
-      discountPercent,
-      taxRate: orderData.invoiceData.taxRate ?? 0,
-      roundupTotal: orderData.invoiceData.roundupTotal ?? false,
+      paidAmount: calculations.paidAmount,
+      discountPercent: calculations.discountPercent,
+      taxRate: calculations.taxRate,
+      roundupTotal: calculations.roundupTotal,
       note: orderData.invoiceData.note || orderData.note,
       status: InvoiceStatus.DRAFTED,
-      billItems: calculatedBillItems as any,
+      billItems: billItems as any,
       customer: {
         id: customer.id,
         name: customer.name,
@@ -371,8 +625,12 @@ export const createOrder = async (
       userId,
       storeId,
       invoicePayload,
-      tx,
+      customer,
+      calculations,
+      products,
+      InvoiceStatus.DRAFTED,
       InvoicePurpose.ORDER,
+      tx,
     );
 
     const totalAmount = Number(
@@ -431,6 +689,15 @@ export const createOrder = async (
         },
       },
     });
+
+    if (appliedCoupon) {
+      await tx.coupon.update({
+        where: { id: appliedCoupon.id },
+        data: {
+          usageCount: { increment: 1 },
+        },
+      });
+    }
 
     const populatedOrder = await getPopulatedOrder(order.id, tx);
     return toOrderDto(populatedOrder);
@@ -627,16 +894,6 @@ export const transitionToComplete = async (storeId: string, orderId: string) =>
       tx,
     );
 
-    // Increment coupon usage if applied
-    if (existingOrder.couponId) {
-      await tx.coupon.update({
-        where: { id: existingOrder.couponId },
-        data: {
-          usageCount: { increment: 1 },
-        },
-      });
-    }
-
     // Update order status to COMPLETED
     const updatedOrder = await tx.order.update({
       where: { id: orderId },
@@ -718,6 +975,15 @@ export const transitionToReject = async (
       },
     },
   });
+
+  if (existingOrder.couponId) {
+    await prisma.coupon.update({
+      where: { id: existingOrder.couponId },
+      data: {
+        usageCount: { decrement: 1 },
+      },
+    });
+  }
 
   // Send Rejection Email to Customer
   if (updatedOrder.customer && updatedOrder.store) {
@@ -809,6 +1075,15 @@ export const deleteOrder = async (storeId: string, orderId: string) =>
     // Delete draft invoice if drafted
     if (order.invoice && order.invoice.status === InvoiceStatus.DRAFTED) {
       await tx.invoice.delete({ where: { id: order.invoiceId } });
+    }
+
+    if (order.couponId && order.status !== OrderStatus.REJECTED) {
+      await tx.coupon.update({
+        where: { id: order.couponId },
+        data: {
+          usageCount: { decrement: 1 },
+        },
+      });
     }
 
     await tx.order.delete({ where: { id: orderId } });
