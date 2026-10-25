@@ -17,8 +17,8 @@ export const shippingZoneCreateUpdateSchema = z.object({
 
 export const shippingRuleCreateUpdateSchema = z
   .object({
-    profileId: z.string().uuid("Invalid shipping profile ID").optional().nullable(),
-    zoneId: z.string().uuid("Invalid shipping zone ID").optional().nullable(),
+    profileId: z.uuid("Invalid shipping profile ID").optional().nullable(),
+    zoneId: z.uuid("Invalid shipping zone ID").optional().nullable(),
     name: z.string().trim().min(1, "Rule name is required"),
     type: z.enum(ShippingRuleType).default("FLAT"),
     rate: z.number().nonnegative("Rate must be non-negative"),

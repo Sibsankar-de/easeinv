@@ -1,4 +1,11 @@
-import { Order, Customer, Invoice, Coupon, OrderAddress } from "@prisma/client";
+import {
+  Order,
+  Customer,
+  Invoice,
+  Coupon,
+  OrderAddress,
+  Store,
+} from "@prisma/client";
 import {
   CustomerSummaryResponseDto,
   toCustomerSummaryDto,
@@ -11,6 +18,8 @@ import {
 import {
   orderExtraDataConverter,
   ParsedOrderExtraData,
+  orderEventLogsConverter,
+  ParsedOrderEventLog,
 } from "../converters/order.converter";
 
 export interface OrderCouponSummaryDto {
@@ -66,6 +75,7 @@ export interface OrderResponseDto {
   totalAmount: number;
   orderDate: Date;
   extraData: ParsedOrderExtraData;
+  eventLogs: ParsedOrderEventLog[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -85,15 +95,18 @@ export interface OrderSummaryResponseDto {
   totalAmount: number;
   orderDate: Date;
   extraData: ParsedOrderExtraData;
+  eventLogs: ParsedOrderEventLog[];
   createdAt: Date;
   updatedAt: Date;
 }
 
 export type OrderWithAllRelations = Order & {
+  eventLogs?: unknown;
   customer?: Customer | null;
   invoice?: (Invoice & Partial<InvoiceWithRelations>) | null;
   coupon?: Coupon | null;
   address?: OrderAddress | null;
+  store?: Store | null;
 };
 
 export const toOrderDto = (order: OrderWithAllRelations): OrderResponseDto => {
@@ -126,13 +139,14 @@ export const toOrderDto = (order: OrderWithAllRelations): OrderResponseDto => {
     totalAmount: order.totalAmount,
     orderDate: order.orderDate,
     extraData: orderExtraDataConverter(order.extraData),
+    eventLogs: orderEventLogsConverter(order.eventLogs),
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
   };
 };
 
 export const toOrderSummaryDto = (
-  order: Order & { customer?: Customer | null },
+  order: Order & { customer?: Customer | null; eventLogs?: unknown },
 ): OrderSummaryResponseDto => {
   return {
     id: order.id,
@@ -149,6 +163,7 @@ export const toOrderSummaryDto = (
     totalAmount: order.totalAmount,
     orderDate: order.orderDate,
     extraData: orderExtraDataConverter(order.extraData),
+    eventLogs: orderEventLogsConverter(order.eventLogs),
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
   };

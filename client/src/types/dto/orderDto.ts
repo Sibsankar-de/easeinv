@@ -43,6 +43,12 @@ export interface OrderExtraDataDto {
   [key: string]: unknown;
 }
 
+export interface OrderEventLogDto {
+  status: OrderStatus;
+  timestamp: string | Date;
+  note?: string;
+}
+
 export interface OrderDto {
   id: string;
   storeId: string;
@@ -58,6 +64,7 @@ export interface OrderDto {
   totalAmount: number;
   orderDate: string | Date;
   extraData?: OrderExtraDataDto;
+  eventLogs?: OrderEventLogDto[];
   customer?: OrderCustomerDto | null;
   coupon?: OrderCouponDto | null;
   invoice?: InvoiceDto | null;
@@ -83,6 +90,7 @@ export interface OrderSummaryDto {
   shippingAmount: number;
   totalAmount: number;
   orderDate: string | Date;
+  eventLogs?: OrderEventLogDto[];
   createdAt: string | Date;
 }
 

@@ -16,3 +16,24 @@ export function parseJson<T>(schema: z.ZodType<T>, raw: unknown): T {
 
   throw result.error;
 }
+
+export function parseJsonArray<T>(schema: z.ZodType<T>, raw: unknown): T {
+  let input = raw;
+  if (typeof raw === "string") {
+    try {
+      input = JSON.parse(raw);
+    } catch {
+      input = [];
+    }
+  }
+
+  const arrayInput = Array.isArray(input) ? input : [];
+
+  const result = schema.safeParse(arrayInput);
+  if (result.success) return result.data;
+
+  const fallback = schema.safeParse([]);
+  if (fallback.success) return fallback.data;
+
+  throw result.error;
+}

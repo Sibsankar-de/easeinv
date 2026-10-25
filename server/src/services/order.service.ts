@@ -18,7 +18,10 @@ import {
   toOrderSummaryDto,
   OrderWithAllRelations,
 } from "../dto/order.dto";
-import { orderExtraDataConverter } from "../converters/order.converter";
+import {
+  orderExtraDataConverter,
+  orderEventLogsConverter,
+} from "../converters/order.converter";
 import { invoiceExtraDataConverter } from "../converters/invoice.converter";
 import * as invoiceService from "./invoice.service";
 import * as shippingService from "./shipping.service";
@@ -678,6 +681,13 @@ export const createOrder = async (
           note: orderData.note || "",
           shipping_calculation: shippingCalculation,
         }) as unknown as Prisma.InputJsonValue,
+        eventLogs: [
+          {
+            status: OrderStatus.PENDING,
+            timestamp: new Date(),
+            ...(orderData.note ? { note: orderData.note } : {}),
+          },
+        ] as unknown as Prisma.InputJsonValue,
         address: {
           create: {
             addressLine: orderData.shippingAddress.addressLine,
@@ -687,7 +697,7 @@ export const createOrder = async (
             country: orderData.shippingAddress.country,
           },
         },
-      },
+      } as unknown as Prisma.OrderCreateInput,
     });
 
     if (appliedCoupon) {
@@ -757,11 +767,21 @@ export const transitionToProcessing = async (
     );
   }
 
+  const currentEventLogs = orderEventLogsConverter(existingOrder.eventLogs);
+  const updatedEventLogs = [
+    ...currentEventLogs,
+    {
+      status: OrderStatus.PROCESSING,
+      timestamp: new Date(),
+    },
+  ];
+
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: {
       status: OrderStatus.PROCESSING,
-    },
+      eventLogs: updatedEventLogs as unknown as Prisma.InputJsonValue,
+    } as unknown as Prisma.OrderUpdateInput,
     include: {
       customer: true,
       coupon: true,
@@ -820,12 +840,23 @@ export const transitionToDispatch = async (
     note: dispatchData.note ?? currentExtraData.note ?? "",
   });
 
+  const currentEventLogs = orderEventLogsConverter(existingOrder.eventLogs);
+  const updatedEventLogs = [
+    ...currentEventLogs,
+    {
+      status: OrderStatus.DISPATCHED,
+      timestamp: new Date(),
+      ...(dispatchData.note ? { note: dispatchData.note } : {}),
+    },
+  ];
+
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: {
       status: OrderStatus.DISPATCHED,
       extraData: updatedExtraData as unknown as Prisma.InputJsonValue,
-    },
+      eventLogs: updatedEventLogs as unknown as Prisma.InputJsonValue,
+    } as unknown as Prisma.OrderUpdateInput,
     include: {
       customer: true,
       coupon: true,
@@ -860,14 +891,14 @@ export const transitionToDispatch = async (
 
 export const transitionToComplete = async (storeId: string, orderId: string) =>
   prismaTransaction(async (tx) => {
-    const existingOrder = await tx.order.findUnique({
+    const existingOrder = (await tx.order.findUnique({
       where: { id: orderId },
       include: {
         customer: true,
         coupon: true,
         store: true,
       },
-    });
+    })) as OrderWithAllRelations | null;
 
     if (!existingOrder || existingOrder.storeId !== storeId) {
       throw new ApiError(
@@ -894,12 +925,22 @@ export const transitionToComplete = async (storeId: string, orderId: string) =>
       tx,
     );
 
+    const currentEventLogs = orderEventLogsConverter(existingOrder.eventLogs);
+    const updatedEventLogs = [
+      ...currentEventLogs,
+      {
+        status: OrderStatus.COMPLETED,
+        timestamp: new Date(),
+      },
+    ];
+
     // Update order status to COMPLETED
     const updatedOrder = await tx.order.update({
       where: { id: orderId },
       data: {
         status: OrderStatus.COMPLETED,
-      },
+        eventLogs: updatedEventLogs as unknown as Prisma.InputJsonValue,
+      } as unknown as Prisma.OrderUpdateInput,
       include: {
         customer: true,
         coupon: true,
@@ -955,12 +996,23 @@ export const transitionToReject = async (
     rejection_reason: rejectData.reason || "Order cancelled by administrator",
   });
 
+  const currentEventLogs = orderEventLogsConverter(existingOrder.eventLogs);
+  const updatedEventLogs = [
+    ...currentEventLogs,
+    {
+      status: OrderStatus.REJECTED,
+      timestamp: new Date(),
+      ...(rejectData.reason ? { note: rejectData.reason } : {}),
+    },
+  ];
+
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: {
       status: OrderStatus.REJECTED,
       extraData: updatedExtraData as unknown as Prisma.InputJsonValue,
-    },
+      eventLogs: updatedEventLogs as unknown as Prisma.InputJsonValue,
+    } as unknown as Prisma.OrderUpdateInput,
     include: {
       customer: true,
       coupon: true,

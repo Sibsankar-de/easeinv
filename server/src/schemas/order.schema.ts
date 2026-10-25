@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { pricePerQuantityItemSchema } from "./product.schema";
-import { orderStatusList, OrderStatus } from "../enums/order.enum";
+import { OrderStatus } from "../enums/order.enum";
 import { shippingAddressSchema } from "./shipping.schema";
 
 export const orderBillItemSchema = z.object({
-  productId: z.string().uuid("Product ID must be a valid UUID"),
+  productId: z.uuid("Product ID must be a valid UUID"),
   netQuantity: z.number().positive("Net quantity must be greater than zero"),
   stockUnit: z.string().min(1, "Stock unit is required").optional(),
   pricePerQuantity: pricePerQuantityItemSchema.optional(),
@@ -28,7 +28,7 @@ export const orderInvoiceDataSchema = z.object({
 });
 
 export const orderCreateSchema = z.object({
-  customerId: z.string().uuid("Valid customer ID is required"),
+  customerId: z.uuid("Valid customer ID is required"),
   shippingAddress: shippingAddressSchema,
   invoiceData: orderInvoiceDataSchema,
   couponCode: z.string().trim().optional().nullable(),
@@ -38,7 +38,7 @@ export const orderCreateSchema = z.object({
 
 export const updateOrderStatusSchema = z
   .object({
-    status: z.enum(orderStatusList as [string, ...string[]]),
+    status: z.enum(OrderStatus),
     deliveryReference: z.string().trim().optional(),
     note: z.string().trim().optional(),
     reason: z.string().trim().optional(),
@@ -59,8 +59,8 @@ export const updateOrderStatusSchema = z
 export const orderQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(10),
-  status: z.enum(orderStatusList as [string, ...string[]]).optional(),
-  customerId: z.string().uuid().optional(),
+  status: z.enum(OrderStatus).optional(),
+  customerId: z.uuid().optional(),
   query: z.string().optional().default(""),
   sortBy: z.string().default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
@@ -73,7 +73,17 @@ export const orderExtraDataSchema = z
     rejection_reason: z.string().optional().default(""),
     shipping_calculation: z.record(z.string(), z.unknown()).optional(),
   })
-  .passthrough();
+  .loose();
+
+export const orderEventLogSchema = z
+  .object({
+    status: z.enum(OrderStatus),
+    timestamp: z.coerce.date(),
+    note: z.string().optional(),
+  })
+  .loose();
+
+export const orderEventLogsSchema = z.array(orderEventLogSchema).default([]);
 
 export type OrderBillItemDto = z.infer<typeof orderBillItemSchema>;
 export type OrderInvoiceDataDto = z.infer<typeof orderInvoiceDataSchema>;
@@ -81,3 +91,6 @@ export type OrderCreateDto = z.infer<typeof orderCreateSchema>;
 export type UpdateOrderStatusDto = z.infer<typeof updateOrderStatusSchema>;
 export type OrderQueryDto = z.infer<typeof orderQuerySchema>;
 export type OrderExtraData = z.infer<typeof orderExtraDataSchema>;
+export type OrderEventLog = z.infer<typeof orderEventLogSchema>;
+export type OrderEventLogDto = OrderEventLog;
+export type OrderEventLogs = z.infer<typeof orderEventLogsSchema>;
