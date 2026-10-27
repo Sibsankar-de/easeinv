@@ -1,4 +1,4 @@
-import { Product, Store, User } from "@prisma/client";
+import { Order, Product, Store, User } from "@prisma/client";
 import {
   getEmailVerificationEmail,
   getStockAlertEmail,
@@ -8,6 +8,11 @@ import {
   getWelcomeEmail,
   getPasswordResetEmail,
   getCustomerQueryEmail,
+  getOrderProcessingEmail,
+  getOrderDispatchedEmail,
+  getOrderCompletedEmail,
+  getOrderRejectedEmail,
+  OrderCustomerInfo,
 } from "./email.service";
 import { publishEmailJob } from "./emailPublisher.service";
 import { sendMail } from "../lib/mailer";
@@ -102,3 +107,75 @@ export const sendCustomerQueryEmail = async (
     log.error("Email publishing failed " + error);
   }
 };
+
+export const sendOrderProcessingEmail = async (
+  customer: OrderCustomerInfo,
+  store: Store,
+  order: Order,
+) => {
+  if (!customer.email) return;
+  try {
+    const emailJob = await getOrderProcessingEmail(customer, store, order);
+    await publishEmailJob(emailJob);
+  } catch (error) {
+    log.error("Failed to send order processing email " + error);
+  }
+};
+
+export const sendOrderDispatchedEmail = async (
+  customer: OrderCustomerInfo,
+  store: Store,
+  order: Order,
+  deliveryReference: string,
+  note?: string,
+) => {
+  if (!customer.email) return;
+  try {
+    const emailJob = await getOrderDispatchedEmail(
+      customer,
+      store,
+      order,
+      deliveryReference,
+      note,
+    );
+    await publishEmailJob(emailJob);
+  } catch (error) {
+    log.error("Failed to send order dispatched email " + error);
+  }
+};
+
+export const sendOrderCompletedEmail = async (
+  customer: OrderCustomerInfo,
+  store: Store,
+  order: Order,
+  invoiceNumber: string,
+) => {
+  if (!customer.email) return;
+  try {
+    const emailJob = await getOrderCompletedEmail(
+      customer,
+      store,
+      order,
+      invoiceNumber,
+    );
+    await publishEmailJob(emailJob);
+  } catch (error) {
+    log.error("Failed to send order completed email " + error);
+  }
+};
+
+export const sendOrderRejectedEmail = async (
+  customer: OrderCustomerInfo,
+  store: Store,
+  order: Order,
+  reason?: string,
+) => {
+  if (!customer.email) return;
+  try {
+    const emailJob = await getOrderRejectedEmail(customer, store, order, reason);
+    await publishEmailJob(emailJob);
+  } catch (error) {
+    log.error("Failed to send order rejected email " + error);
+  }
+};
+

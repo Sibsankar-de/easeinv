@@ -18,6 +18,7 @@ model Coupon {
   usageCount       Int          @default(0)
   perCustomerLimit Int?
   isActive         Boolean      @default(true)
+  useAllCategories Boolean      @default(false)
   startsAt         DateTime?
   endsAt           DateTime?
   createdAt        DateTime     @default(now())
@@ -27,6 +28,7 @@ model Coupon {
   store      Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
   creator    User             @relation("CreatedCoupons", fields: [creatorId], references: [id])
   categories CouponCategory[]
+  orders     Order[]
 
   @@unique([storeId, code])
   @@index([storeId])

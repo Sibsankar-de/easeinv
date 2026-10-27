@@ -31,7 +31,7 @@ export const createInvoice = asyncHandler(
 
     const validatedBody = validateBody(invoiceCreateUpdateSchema, req.body);
 
-    const newInvoice = await invoiceService.createInvoice(
+    const newInvoice = await invoiceService.createGeneralInvoice(
       userId,
       storeId,
       validatedBody,

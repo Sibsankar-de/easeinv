@@ -1,11 +1,11 @@
 import React from "react";
-import { TopNav } from "@/components/modules/landing-page/TopNav";
+import { TopNav } from "@/components/modules/onboarding/landing-page/TopNav";
 import { Footer } from "@/components/layout/Footer";
 import PageHeader from "@/components/ui/PageHeader";
-import CompanyStory from "@/components/modules/about/CompanyStory";
-import StatsSection from "@/components/modules/about/StatsSection";
-import ValuesSection from "@/components/modules/about/ValuesSection";
-import CtaBanner from "@/components/modules/landing-page/CtaBanner";
+import CompanyStory from "@/components/modules/onboarding/about/CompanyStory";
+import StatsSection from "@/components/modules/onboarding/about/StatsSection";
+import ValuesSection from "@/components/modules/onboarding/about/ValuesSection";
+import CtaBanner from "@/components/modules/onboarding/landing-page/CtaBanner";
 import { Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 

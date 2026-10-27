@@ -133,4 +133,20 @@ export const searchIndex: SearchIndexItem[] = [
     keywords: ["settings", "inventory", "stock", "tracking", "units"],
     isStorePage: true,
   },
+  {
+    id: "shipping-settings",
+    title: "Shipping Settings",
+    description: "Manage shipping profiles, delivery zones, and rate rules.",
+    path: "settings/shipping",
+    keywords: [
+      "settings",
+      "shipping",
+      "profiles",
+      "zones",
+      "rates",
+      "delivery",
+      "rules",
+    ],
+    isStorePage: true,
+  },
 ];

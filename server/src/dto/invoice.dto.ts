@@ -39,6 +39,8 @@ export interface BillItemDto {
   totalPrice: number;
   stockUnit: string;
   totalProfit: number;
+  couponCode?: string | null;
+  couponDiscount?: number | null;
 }
 
 export interface InvoiceResponseDto {
@@ -46,6 +48,7 @@ export interface InvoiceResponseDto {
   storeId: string;
   customerId?: string;
   customer?: CustomerSummaryResponseDto;
+  purpose: string;
   invoiceNumber: string;
   issueDate: Date;
   billItems: BillItemDto[];
@@ -121,6 +124,7 @@ export const toInvoiceDto = (
     storeId: invoice.storeId,
     customerId: invoice.customerId || undefined,
     customer: getInvoiceCustomer(invoice.customer, invoice.extraData),
+    purpose: invoice.purpose,
     invoiceNumber: invoice.invoiceNumber,
     issueDate: invoice.issueDate,
     billItems: (invoice.billItems || []).map(toBillItemDto),
@@ -146,6 +150,7 @@ export interface InvoiceSummaryResponseDto {
   id: string;
   invoiceNumber: string;
   customer?: CustomerSummaryResponseDto;
+  purpose: string;
   issueDate: Date;
   subTotal: number;
   total: number;
@@ -162,6 +167,7 @@ export const toInvoiceSummaryDto = (
     id: invoice.id,
     invoiceNumber: invoice.invoiceNumber,
     customer: getInvoiceCustomer(invoice.customer, invoice.extraData),
+    purpose: invoice.purpose,
     issueDate: invoice.issueDate,
     subTotal: invoice.subTotal,
     total: invoice.total,

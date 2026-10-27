@@ -1,7 +1,7 @@
 import React from "react";
-import { TopNav } from "@/components/modules/landing-page/TopNav";
+import { TopNav } from "@/components/modules/onboarding/landing-page/TopNav";
 import { Footer } from "@/components/layout/Footer";
-import FAQContent from "@/components/modules/faq/FAQContent";
+import FAQContent from "@/components/modules/onboarding/faq/FAQContent";
 import PageHeader from "@/components/ui/PageHeader";
 import { HelpCircle } from "lucide-react";
 import type { Metadata } from "next";

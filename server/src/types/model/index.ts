@@ -25,6 +25,8 @@ export type {
   InvoiceDailyStat,
   ProductDailyStat,
   CustomerDailyStat,
+  Order,
+  OrderStatus,
 } from "@prisma/client";
 
 export * from "./user.model";
@@ -33,3 +35,4 @@ export * from "./invoice.model";
 export * from "./product.model";
 export * from "./customer.model";
 export * from "./stats.model";
+export * from "./order.model";

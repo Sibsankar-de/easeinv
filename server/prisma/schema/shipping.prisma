@@ -1,0 +1,71 @@
+enum ShippingZoneType {
+    COUNTRY
+    STATE
+    CITY
+    PINCODE
+}
+
+enum ShippingRuleType {
+    FLAT
+    WEIGHT_BASED
+    PRICE_BASED
+}
+
+model ShippingProfile {
+    id           String   @id @default(uuid()) @db.Uuid
+    storeId      String   @db.Uuid
+    name         String
+    description  String?
+    isDefault    Boolean  @default(false)
+    isActive     Boolean  @default(true)
+    fallbackRate Float    @default(0)
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+
+    // Relations
+    store Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+    zones ShippingZone[]
+    rules ShippingRule[]
+
+    @@index([storeId])
+    @@index([storeId, isDefault])
+    @@map("shipping_profiles")
+}
+
+model ShippingZone {
+    id        String           @id @default(uuid()) @db.Uuid
+    profileId String           @db.Uuid
+    name      String
+    type      ShippingZoneType
+    code      String
+    createdAt DateTime         @default(now())
+    updatedAt DateTime         @updatedAt
+
+    // Relations
+    profile ShippingProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+    rules   ShippingRule[]
+
+    @@index([profileId])
+    @@map("shipping_zones")
+}
+
+model ShippingRule {
+    id        String           @id @default(uuid()) @db.Uuid
+    profileId String?          @db.Uuid
+    zoneId    String?          @db.Uuid
+    name      String
+    type      ShippingRuleType @default(FLAT)
+    rate      Float            @default(0)
+    minValue  Float?
+    maxValue  Float?
+    createdAt DateTime         @default(now())
+    updatedAt DateTime         @updatedAt
+
+    // Relations
+    profile ShippingProfile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
+    zone    ShippingZone?    @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+    @@index([profileId])
+    @@index([zoneId])
+    @@map("shipping_rules")
+}

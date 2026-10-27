@@ -1,0 +1,73 @@
+# Shipping & Delivery Rates
+
+Configure multi-zone delivery rates, condition brackets, and automated order shipping calculations for your store.
+
+---
+
+## Overview
+
+The Shipping module allows you to define flexible rate profiles that automatically evaluate the correct shipping fee based on customer destination address, order subtotal, and product weight.
+
+Key features include:
+* **Multiple Shipping Profiles**: Group delivery configurations with instant Active/Inactive status toggles.
+* **Granular Delivery Zones**: Match orders by specific Postal PIN codes, States, or Countries.
+* **Condition-Based Rate Rules**: Set pricing brackets for Order Subtotals (e.g., Free shipping over ₹1000) or Package Weight.
+* **General Shipping Rates**: Configure fallback rules when customer destinations fall outside specific delivery zones.
+* **Automatic Calculation Engine**: Dynamic rate evaluation on order placement based on configured zones and conditions.
+
+---
+
+## Delivery Zones
+
+Delivery zones determine which rate rules apply based on the customer's shipping address.
+
+| Zone Type | Matching Scope | Code Format | Description |
+|---|---|---|---|
+| **`PINCODE`** | Specific Postal Code(s) | `94103` or `94103, 94105, 94107` | Matches exact postal code or comma-separated list of PIN codes. |
+| **`STATE`** | Regional / State-level | `California` or `MH` | Matches customer state name or standard state abbreviation. |
+| **`COUNTRY`** | National / Country-wide | `United States` or `IN` | Matches customer destination country name or ISO code. |
+
+> [!TIP]
+> **Priority Matching**: When calculating shipping, the system evaluates zones in order of specificity: **PINCODE** first, followed by **STATE**, and then **COUNTRY**.
+
+---
+
+## Rate Rules & Brackets
+
+Rate rules define the delivery fee applied when a shipment matches a zone (or the general profile).
+
+### Condition Types
+
+1. **Order Subtotal (`PRICE`)**
+   * Computes shipping fees based on the total monetary value of items in the cart before discounts and taxes.
+   * *Example*: ₹0–₹499: ₹50 fee; ₹500–₹999: ₹30 fee; ₹1000 and above: **FREE**.
+
+2. **Weight Based (`WEIGHT`)**
+   * Computes shipping fees based on total combined package weight (in grams or kilograms).
+   * *Example*: 0–1 kg: ₹40; 1–5 kg: ₹80; 5 kg and above: ₹150.
+
+---
+
+## General Shipping Rates
+
+Every shipping profile includes a **General Shipping Rates** section (standard fallback rules).
+
+* **When they apply**: When an order destination does not match any configured delivery zone, or when a matched zone does not have a specific rule for the order's value bracket.
+* **Fallback Behavior**: Ensures orders can always be fulfilled with a predictable default delivery rate. If no general rules match, the shipping amount defaults to `₹0.00`.
+
+---
+
+## Managing Shipping in the Dashboard
+
+### 1. Shipping Profiles List
+Navigate to **Store Settings → Shipping** (`/settings/shipping`):
+* View total delivery zones and rate rules count per profile.
+* Search profiles by name and filter by status (`Active` / `Inactive`).
+* Click **Create Profile** to add a new profile.
+
+### 2. Profile Details & Zone Management
+Click any profile name to access the detailed management workspace:
+* **Add Delivery Zone**: Click *Add Delivery Zone* to define PIN codes, states, or countries.
+* **Add Rate Rule**: Add bracketed price or weight conditions to specific zones or general profile rates.
+* **Quick Actions**: Edit, toggle, or delete rules and zones with instant table feedback.
+* **Status Toggles**: Enable or disable profiles at any time without deleting configured rates.

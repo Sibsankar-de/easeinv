@@ -1,7 +1,7 @@
 import React from "react";
-import { TopNav } from "@/components/modules/landing-page/TopNav";
+import { TopNav } from "@/components/modules/onboarding/landing-page/TopNav";
 import { Footer } from "@/components/layout/Footer";
-import TermsContent from "@/components/modules/terms-of-service/TermsContent";
+import TermsContent from "@/components/modules/onboarding/terms-of-service/TermsContent";
 import PageHeader from "@/components/ui/PageHeader";
 import { Scale } from "lucide-react";
 import type { Metadata } from "next";

@@ -9,11 +9,17 @@ enum InvoicePaymentStatus {
   OVERDUE
 }
 
+enum InvoicePurpose {
+  BILLING
+  ORDER
+}
+
 model Invoice {
   id              String               @id @default(uuid()) @db.Uuid
   userId          String               @db.Uuid
   storeId         String               @db.Uuid
   customerId      String?              @db.Uuid
+  purpose         InvoicePurpose       @default(BILLING)
   invoiceNumber   String
   issueDate       DateTime             @default(now())
   subTotal        Float
@@ -38,12 +44,14 @@ model Invoice {
   store     Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
   customer  Customer?     @relation(fields: [customerId], references: [id])
   billItems InvoiceItem[]
+  orders    Order[]
 
   @@index([storeId])
   @@index([invoiceNumber])
   @@index([storeId, status])
   @@index([storeId, paymentStatus])
   @@index([storeId, customerId])
+  @@index([storeId, purpose])
   @@map("invoices")
 }
 
@@ -57,7 +65,9 @@ model InvoiceItem {
   netQuantity Float
   totalPrice  Float
   stockUnit   String
-  totalProfit Float   @default(0)
+  totalProfit    Float   @default(0)
+  couponCode     String?
+  couponDiscount Float?
 
   // Relations
   invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)

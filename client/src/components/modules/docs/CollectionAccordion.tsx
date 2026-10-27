@@ -7,6 +7,7 @@ import {
   Users,
   Receipt,
   Tag,
+  ShoppingBag,
   LucideIcon,
 } from "lucide-react";
 import { cn } from "../../utils";
@@ -22,6 +23,7 @@ const collectionIcons: Record<ApiCollection, LucideIcon> = {
   categories: Tag,
   customers: Users,
   invoices: Receipt,
+  orders: ShoppingBag,
 };
 
 const methodColors: Record<string, string> = {
