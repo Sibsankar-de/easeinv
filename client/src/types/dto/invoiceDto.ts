@@ -1,10 +1,8 @@
+import { ProductDto } from "./productDto";
+
 export type BillItemType = {
   id: string; // local row key
-  product: {
-    id: string;
-    name: string;
-    sku: string;
-  };
+  product?: ProductDto;
   productName?: string;
   pricePerQuantity?: {
     id: number;
@@ -18,24 +16,15 @@ export type BillItemType = {
   totalProfit: number;
 };
 
-export type BillItemDto = {
-  id: string;
-  product: {
-    id: string;
-    name: string;
-    sku: string;
-  };
-  pricePerQuantity?: {
-    id: number;
-    price: number;
-    quantity: number;
-    profitMargin?: number;
-  };
-  netQuantity: number;
-  totalPrice: number;
-  stockUnit: string;
-  totalProfit: number;
-};
+export enum InvoiceStatus {
+  ISSUED = "ISSUED",
+  DRAFTED = "DRAFTED",
+}
+
+export enum InvoicePurpose {
+  BILLING = "BILLING",
+  ORDER = "ORDER",
+}
 
 export interface CreateInvoiceDto {
   invoiceNumber: string;
@@ -67,11 +56,6 @@ export interface CreateInvoiceDto {
   };
 }
 
-export enum InvoiceStatus {
-  ISSUED = "ISSUED",
-  DRAFTED = "DRAFTED",
-}
-
 export interface InvoiceDto {
   id: string;
   storeId: string;
@@ -83,9 +67,10 @@ export interface InvoiceDto {
     address?: string;
     email?: string;
   };
+  purpose?: InvoicePurpose | string;
   invoiceNumber: string;
   issueDate: Date;
-  billItems: BillItemDto[];
+  billItems: BillItemType[];
   subTotal: number;
   total: number;
   totalProfit: number;
@@ -109,6 +94,7 @@ export interface InvoiceSummaryDto {
     id: string;
     name: string;
   };
+  purpose?: InvoicePurpose | string;
   issueDate: Date;
   subTotal: number;
   total: number;

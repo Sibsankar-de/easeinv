@@ -1,7 +1,7 @@
 import React from "react";
-import { TopNav } from "@/components/modules/landing-page/TopNav";
+import { TopNav } from "@/components/modules/onboarding/landing-page/TopNav";
 import { Footer } from "@/components/layout/Footer";
-import PrivacyContent from "@/components/modules/privacy-policy/PrivacyContent";
+import PrivacyContent from "@/components/modules/onboarding/privacy-policy/PrivacyContent";
 import PageHeader from "@/components/ui/PageHeader";
 import { ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";

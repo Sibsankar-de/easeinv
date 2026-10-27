@@ -1,6 +1,13 @@
 "use client";
 
-import * as React from "react";
+import {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+  type ReactNode,
+} from "react";
 import {
   ColumnDef,
   flexRender,
@@ -8,12 +15,15 @@ import {
   useReactTable,
   SortingState,
   PaginationState,
+  RowSelectionState,
   OnChangeFn,
   RowData,
+  Row,
 } from "@tanstack/react-table";
 import { TableBodySkeleton } from "./Skeleton";
 import { Pagination } from "./Pagination";
 import { Select } from "./Select";
+import { Checkbox } from "./Checkbox";
 import { cn } from "../utils";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
@@ -32,7 +42,7 @@ const PAGE_SIZE_OPTIONS = [
   { key: "100", value: "100" },
 ];
 
-interface DataTableProps<TData> {
+export interface DataTableProps<TData> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   columns: ColumnDef<TData, any>[];
   data: TData[];
@@ -42,7 +52,12 @@ interface DataTableProps<TData> {
   onPaginationChange?: OnChangeFn<PaginationState>;
   sorting?: SortingState;
   onSortingChange?: OnChangeFn<SortingState>;
-  emptyState?: React.ReactNode;
+  enableRowSelection?: boolean | ((row: Row<TData>) => boolean);
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
+  onSelectedRowsChange?: (selectedRows: TData[]) => void;
+  getRowId?: (originalRow: TData, index: number) => string;
+  emptyState?: ReactNode;
 }
 
 export function DataTable<TData>({
@@ -54,22 +69,128 @@ export function DataTable<TData>({
   onPaginationChange,
   sorting,
   onSortingChange,
+  enableRowSelection = true,
+  rowSelection: controlledRowSelection,
+  onRowSelectionChange: controlledOnRowSelectionChange,
+  onSelectedRowsChange,
+  getRowId,
   emptyState,
 }: DataTableProps<TData>) {
+  const [internalRowSelection, setInternalRowSelection] =
+    useState<RowSelectionState>({});
+
+  const isControlled = controlledRowSelection !== undefined;
+  const currentRowSelection = isControlled
+    ? controlledRowSelection
+    : internalRowSelection;
+
+  const handleRowSelectionChange: OnChangeFn<RowSelectionState> =
+    useCallback(
+      (updaterOrValue) => {
+        const nextSelection =
+          typeof updaterOrValue === "function"
+            ? updaterOrValue(currentRowSelection)
+            : updaterOrValue;
+
+        if (!isControlled) {
+          setInternalRowSelection(nextSelection);
+        }
+        controlledOnRowSelectionChange?.(nextSelection);
+      },
+      [currentRowSelection, isControlled, controlledOnRowSelectionChange],
+    );
+
+  const tableColumns = useMemo(() => {
+    if (!enableRowSelection) {
+      return columns;
+    }
+
+    const hasSelectColumn = columns.some(
+      (col) => col.id === "select" || col.id === "selection",
+    );
+
+    if (hasSelectColumn) {
+      return columns;
+    }
+
+    const selectColumn: ColumnDef<TData, unknown> = {
+      id: "select",
+      header: ({ table }) => (
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={table.getIsAllPageRowsSelected()}
+            indeterminate={table.getIsSomePageRowsSelected()}
+            onChange={(checked) => table.toggleAllPageRowsSelected(!!checked)}
+            aria-label="Select all rows"
+          />
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center">
+          <Checkbox
+            checked={row.getIsSelected()}
+            disabled={!row.getCanSelect()}
+            indeterminate={row.getIsSomeSelected()}
+            onChange={(checked) => row.toggleSelected(!!checked)}
+            aria-label={`Select row ${row.index + 1}`}
+          />
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+      meta: {
+        className: "w-12 px-3 text-center",
+      },
+    };
+
+    return [selectColumn, ...columns];
+  }, [columns, enableRowSelection]);
+
+  const defaultGetRowId = useCallback(
+    (originalRow: TData, index: number) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const row = originalRow as any;
+      return row?.id !== undefined
+        ? String(row.id)
+        : row?._id !== undefined
+          ? String(row._id)
+          : String(index);
+    },
+    [],
+  );
+
   const table = useReactTable({
     data,
-    columns,
+    columns: tableColumns,
     state: {
       pagination,
       sorting,
+      rowSelection: currentRowSelection,
     },
+    enableRowSelection,
     onPaginationChange,
     onSortingChange,
+    onRowSelectionChange: handleRowSelectionChange,
+    getRowId: getRowId ?? defaultGetRowId,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     manualSorting: true,
     pageCount: pageCount ?? -1,
   });
+
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (onSelectedRowsChange) {
+      const selectedData = table
+        .getSelectedRowModel()
+        .flatRows.map((row) => row.original);
+      onSelectedRowsChange(selectedData);
+    }
+  }, [currentRowSelection, table, onSelectedRowsChange]);
 
   const hasData = Boolean(!isLoading && data && data.length > 0);
   const showPagination = Boolean(
@@ -130,12 +251,17 @@ export function DataTable<TData>({
             </thead>
             <tbody className="divide-y divide-gray-100">
               {isLoading ? (
-                <TableBodySkeleton columns={columns.length} rows={5} />
+                <TableBodySkeleton columns={tableColumns.length} rows={5} />
               ) : table.getRowModel().rows.length > 0 ? (
                 table.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="hover:bg-gray-50 transition-colors"
+                    className={cn(
+                      "transition-colors",
+                      row.getIsSelected()
+                        ? "bg-primary/5 hover:bg-primary/10"
+                        : "hover:bg-gray-50",
+                    )}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td
@@ -155,7 +281,7 @@ export function DataTable<TData>({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={columns.length} className="p-0">
+                  <td colSpan={tableColumns.length} className="p-0">
                     {emptyState}
                   </td>
                 </tr>

@@ -43,7 +43,7 @@ export const transformInvoicePayload = (
     payload;
 
   const transformedItems = (billItems || []).map((item) => ({
-    productId: item.product?.id,
+    productId: item.product?.id || "",
     netQuantity: item.netQuantity,
     totalPrice: item.totalPrice,
     stockUnit: item.stockUnit,

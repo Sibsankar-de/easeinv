@@ -1,7 +1,7 @@
 import React from "react";
-import { TopNav } from "@/components/modules/landing-page/TopNav";
+import { TopNav } from "@/components/modules/onboarding/landing-page/TopNav";
 import { Footer } from "@/components/layout/Footer";
-import ContactForm from "@/components/modules/contact/ContactForm";
+import ContactForm from "@/components/modules/onboarding/contact/ContactForm";
 import PageHeader from "@/components/ui/PageHeader";
 import { MessageSquare } from "lucide-react";
 import type { Metadata } from "next";

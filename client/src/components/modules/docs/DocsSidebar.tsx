@@ -15,6 +15,9 @@ import {
   Package,
   Receipt,
   Users,
+  ShoppingBag,
+  Truck,
+  ShieldCheck,
   HelpCircle,
   PanelLeft,
 } from "lucide-react";
@@ -58,6 +61,21 @@ const navigationGroups: SidebarGroup[] = [
         title: "Customer Management",
         href: "/docs/customers",
         icon: Users,
+      },
+      {
+        title: "Order Management",
+        href: "/docs/orders",
+        icon: ShoppingBag,
+      },
+      {
+        title: "Shipping & Delivery",
+        href: "/docs/shipping",
+        icon: Truck,
+      },
+      {
+        title: "Access Control",
+        href: "/docs/access-control",
+        icon: ShieldCheck,
       },
     ],
   },

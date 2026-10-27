@@ -35,11 +35,8 @@ export function BillingSectionRow({
   } = useSelector(selectCurrentStoreState);
 
   const selectedItem =
-    item.product && item.product.id
-      ? (item.product as unknown as ProductDto)
-      : null;
-  const selectedUnit =
-    item.stockUnit || (item.product as unknown as ProductDto)?.stockUnit || "";
+    item.product && item.product.id ? (item.product as ProductDto) : null;
+  const selectedUnit = item.stockUnit || selectedItem?.stockUnit || "";
 
   // Maintain local state for input strings during active typing
   const [localInputs, setLocalInputs] = useState<{
@@ -95,11 +92,7 @@ export function BillingSectionRow({
     const newItem: BillItemType = {
       ...item,
       id,
-      product: {
-        id: p.id,
-        name: p.name,
-        sku: p.sku,
-      },
+      product: p,
       pricePerQuantity: calc.chosenTier,
       netQuantity: quantity,
       totalPrice: calc.price,
@@ -150,6 +143,7 @@ export function BillingSectionRow({
           selectedUnit,
           unitGroups: selectedItem.unitGroups ?? [],
         });
+
         const withTotal = {
           ...item,
           netQuantity: quantity,
@@ -181,7 +175,7 @@ export function BillingSectionRow({
       <td className="px-2 py-3">
         <ProductSearchInput
           onSelect={handleSelectProduct}
-          value={item.product.name}
+          value={item.product?.name || ""}
           index={index}
         />
       </td>

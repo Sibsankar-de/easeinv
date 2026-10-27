@@ -3,8 +3,9 @@ import { pricePerQuantityItemSchema } from "./product.schema";
 import {
   invoiceStatusList,
   invoicePaymentStatusList,
+  invoicePurposeList,
 } from "../enums/invoice.enum";
-import { InvoiceStatus } from "@prisma/client";
+import { InvoiceStatus, InvoicePurpose } from "@prisma/client";
 
 const billItemSchema = z.object({
   productId: z.uuid("Product id is required."),
@@ -12,6 +13,8 @@ const billItemSchema = z.object({
   totalPrice: z.number().min(0, "Total price must be non-negative"),
   stockUnit: z.string(),
   pricePerQuantity: pricePerQuantityItemSchema.optional(),
+  couponCode: z.string().optional(),
+  couponDiscount: z.number().optional(),
 });
 
 const customerDetailsSchema = z.object({

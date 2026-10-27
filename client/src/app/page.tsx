@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LandingPage } from "@/components/modules/landing-page/LandingPage";
+import { LandingPage } from "@/components/modules/onboarding/landing-page/LandingPage";
 
 export const metadata: Metadata = {
   title: "Billing and Inventory Management Software",

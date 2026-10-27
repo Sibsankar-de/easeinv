@@ -86,3 +86,14 @@ Each key can be restricted to specific access levels to limit exposure.
 | `invoice:read` | Retrieve billing invoices. |
 | `invoice:write` | Create new invoices. |
 | `invoice:delete` | Delete invoices. |
+
+### Order Scopes
+
+| Scope | Description |
+|---|---|
+| `order:all` | Full access to orders and fulfillment operations. |
+| `order:read` | Retrieve orders and inspect order details. |
+| `order:create` | Create new orders from store checkouts (Client-side allowed). |
+| `order:write` | Update order lifecycle status and delivery tracking. |
+| `order:delete` | Delete orders. |
+

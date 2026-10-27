@@ -1,0 +1,166 @@
+<mjml>
+  <mj-head>
+    <mj-title>Order Update: {{ orderNumber }}</mj-title>
+    <mj-font
+      name="Inter"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <mj-attributes>
+      <mj-all
+        font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      />
+      <mj-text color="#374151" font-size="15px" line-height="1.6" padding="0" />
+      <mj-section padding="0" />
+      <mj-column padding="0" />
+    </mj-attributes>
+    <mj-style>
+      .email-card {
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.05),
+          0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .details-table {
+        background-color: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+      }
+      .rejected-badge {
+        display: inline-block;
+        background-color: #fee2e2;
+        color: #dc2626;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 13px;
+      }
+      .footer-link {
+        color: #9ca3af;
+        text-decoration: none;
+        font-weight: 500;
+      }
+      .footer-link:hover {
+        color: #4f39f6;
+        text-decoration: underline;
+      }
+    </mj-style>
+  </mj-head>
+
+  <mj-body background-color="#F3F4F6">
+    <!-- LOGO HEADER -->
+    <mj-section padding="32px 24px 24px">
+      <mj-column>
+        <mj-image
+          src="https://easeinv.app/easeinv-logo-full.png"
+          alt="EaseInv Logo"
+          width="120px"
+          align="center"
+        />
+      </mj-column>
+    </mj-section>
+
+    <!-- MAIN CARD -->
+    <mj-section
+      css-class="email-card"
+      background-color="#ffffff"
+      padding="36px 32px"
+    >
+      <mj-column>
+        <mj-text
+          font-size="20px"
+          font-weight="700"
+          color="#dc2626"
+          padding-bottom="16px"
+        >
+          ❌ Order Status Update
+        </mj-text>
+
+        <mj-text padding-bottom="12px">
+          Hi <strong>{{ customerName }}</strong>,
+        </mj-text>
+
+        <mj-text padding-bottom="20px">
+          We regret to inform you that your order <strong>#{{ orderNumber }}</strong> from
+          <strong>{{ storeName }}</strong> could not be processed and has been cancelled.
+        </mj-text>
+
+        <!-- Summary Box -->
+        <mj-table
+          css-class="details-table"
+          padding="16px 20px"
+          line-height="1.5"
+        >
+          <tr>
+            <td style="padding: 6px 0; font-size: 13px; color: #991b1b; width: 40%">
+              Order Number
+            </td>
+            <td style="padding: 6px 0; font-size: 14px; font-weight: 600; color: #0f172a">
+              {{ orderNumber }}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; font-size: 13px; color: #991b1b">
+              Status
+            </td>
+            <td style="padding: 6px 0; font-size: 14px">
+              <span class="rejected-badge">REJECTED / CANCELLED</span>
+            </td>
+          </tr>
+          {{#if reason}}
+          <tr>
+            <td style="padding: 6px 0; font-size: 13px; color: #991b1b">
+              Reason
+            </td>
+            <td style="padding: 6px 0; font-size: 14px; color: #7f1d1d">
+              {{ reason }}
+            </td>
+          </tr>
+          {{/if}}
+        </mj-table>
+
+        <mj-spacer height="20px" />
+
+        <mj-text font-size="14px" color="#475569" padding-bottom="16px">
+          If any payments were made or if you have questions, please contact our support team or store representative.
+        </mj-text>
+
+        <mj-divider
+          border-color="#F3F4F6"
+          border-width="1px"
+          padding="12px 0 20px"
+        />
+
+        <mj-text font-size="13px" color="#94a3b8">
+          Contact <strong>{{ storeName }}</strong>{{#if storeContact}} at {{ storeContact }}{{/if}} for further details.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- FOOTER -->
+    <mj-section padding="24px 24px 32px">
+      <mj-column>
+        <mj-text
+          align="center"
+          font-size="12px"
+          color="#9CA3AF"
+          padding-bottom="12px"
+        >
+          <a href="https://easeinv.app/about" class="footer-link">About</a>
+          &nbsp;&bull;&nbsp;
+          <a href="https://easeinv.app/contact" class="footer-link"
+            >Contact Support</a
+          >
+          &nbsp;&bull;&nbsp;
+          <a href="https://easeinv.app/privacy-policy" class="footer-link"
+            >Privacy Policy</a
+          >
+        </mj-text>
+        <mj-text align="center" font-size="11px" color="#BDBDBD">
+          © {{ currentYear }} EaseInv. All rights reserved.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

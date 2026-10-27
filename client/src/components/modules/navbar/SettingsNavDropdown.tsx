@@ -7,6 +7,7 @@ import {
   CreditCard,
   Lock,
   Cable,
+  Truck,
 } from "lucide-react";
 import { NavMenuItem } from "./SideNavMenu";
 import { cn } from "../../utils";
@@ -29,6 +30,12 @@ const menuItems: NavMenuType[] = [
     basePath: "/settings/inventory",
     label: "Inventory",
     icon: Archive,
+  },
+  {
+    id: "shipping",
+    basePath: "/settings/shipping",
+    label: "Shipping",
+    icon: Truck,
   },
   {
     id: "billing",

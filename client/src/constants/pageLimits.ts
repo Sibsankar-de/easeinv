@@ -7,4 +7,6 @@ export const pageLimits = {
   CATEGORY_LIST: 10,
   GALLERY_IMAGE: 10,
   COUPON_LIST: 10,
+  ORDER_LIST: 10,
+  SHIPPING_PROFILE_LIST: 10,
 };

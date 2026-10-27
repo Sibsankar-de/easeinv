@@ -9,6 +9,8 @@ export interface CalculatedInvoiceItem {
   totalPrice: number;
   totalProfit: number;
   stockUnit: string;
+  couponCode?: string;
+  couponDiscount?: number;
 }
 
 export interface CalculatedInvoice {
@@ -52,6 +54,8 @@ export function calculateInvoiceDetails(
       totalPrice,
       totalProfit,
       stockUnit: item.stockUnit,
+      couponCode: (item as any).couponCode,
+      couponDiscount: (item as any).couponDiscount,
     });
   }
 

@@ -1,8 +1,8 @@
 import React from "react";
 import Link from "next/link";
-import { TopNav } from "@/components/modules/landing-page/TopNav";
+import { TopNav } from "@/components/modules/onboarding/landing-page/TopNav";
 import { Footer } from "@/components/layout/Footer";
-import InteractiveFeaturesTabs from "@/components/modules/features/InteractiveFeaturesTabs";
+import InteractiveFeaturesTabs from "@/components/modules/onboarding/features/InteractiveFeaturesTabs";
 import PageHeader from "@/components/ui/PageHeader";
 import {
   Sliders,
