@@ -1,0 +1,15 @@
+services:
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    container_name: easeinv_seaweedfs
+    ports:
+      - "8333:8333"
+      - "8888:8888"
+      - "9333:9333"
+    command: "server -s3 -dir=/data -s3.port=8333 -ip.bind=0.0.0.0"
+    volumes:
+      - seaweedfs_data:/data
+    restart: unless-stopped
+
+volumes:
+  seaweedfs_data:
