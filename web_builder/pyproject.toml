@@ -1,0 +1,9 @@
+[project]
+name = "web_builder"
+version = "0.1.0"
+description = "Web builder service for easeinv."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.161.0",
+]
