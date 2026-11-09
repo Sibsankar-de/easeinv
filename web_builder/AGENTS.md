@@ -95,10 +95,15 @@ web_builder/
 ├── pyproject.toml                 # uv package configuration and dependencies
 ├── uv.lock                        # Locked dependency graph
 ├── .python-version                # Pinned Python version (3.12+)
+├── .env.example                   # Environment variable template
+├── docker-compose.yml             # Docker services (SeaweedFS S3 object storage)
 ├── main.py                        # Service entrypoint
 └── src/
     ├── app.py                     # FastAPI application instance and lifecycle
     ├── settings.py                # Configuration and environment settings
+    ├── config/                    # Infrastructure and client connection configurations
+    │   ├── __init__.py            # Config module exports
+    │   └── s3.py                  # S3/SeaweedFS connection configuration and client provider
     ├── services/                  # Business logic domain services (OOP classes)
     └── utils/                     # Shared utilities and logging
 ```
@@ -130,3 +135,13 @@ web_builder/
 - Whenever an architectural update, design decision, or structural modification is agreed upon, this file **MUST** be updated immediately to reflect the change.
 - New patterns, interfaces, services, or workflow changes must be documented here before or alongside their implementation.
 - All future contributors and AI agents must review and uphold the latest decisions recorded in this document.
+
+---
+
+## 9. Architectural Decisions & Changelog
+
+### 2026-11-10: S3 Object Storage Integration (SeaweedFS)
+- **Storage Backend:** SeaweedFS running via Docker Compose (`docker-compose.yml`) in all-in-one mode (`weed server -s3`) with persistent volume `seaweedfs_data`.
+- **SDK:** `boto3` managed via `uv`.
+- **Configuration Layer:** `src/config/s3.py` provides `S3Config` (implements `S3ClientProvider` protocol) and client factory functions (`get_s3_config`, `get_s3_client`).
+- **Environment Settings:** `src/settings.py` manages S3 parameters (`S3_ENDPOINT_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION_NAME`, `S3_BUCKET_NAME`) loaded from `.env` with a corresponding `.env.example`.
