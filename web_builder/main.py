@@ -4,7 +4,7 @@ from pathlib import Path
 from src.settings import settings
 from src.utils.logger import configure_logging
 
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
 
 def start_server() -> None:

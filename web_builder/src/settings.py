@@ -17,5 +17,9 @@ class Settings(BaseSettings):
     S3_REGION_NAME: str = "us-east-1"
     S3_BUCKET_NAME: str = "web-builder"
 
+    MCP_SERVER_NAME: str = "web-builder-mcp"
+
+    EXA_API_KEY: str = ""
+
 
 settings = Settings()
