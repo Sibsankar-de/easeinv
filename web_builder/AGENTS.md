@@ -103,8 +103,20 @@ web_builder/
     ├── settings.py                # Configuration and environment settings
     ├── config/                    # Infrastructure and client connection configurations
     │   ├── __init__.py            # Config module exports
+    │   ├── exa.py                 # Exa API configuration and async client provider
     │   └── s3.py                  # S3/SeaweedFS connection configuration and client provider
+    ├── mcp/                       # FastMCP server and client infrastructure
+    │   ├── __init__.py            # MCP module exports
+    │   ├── client.py              # MCP client manager and lifecycle connection provider
+    │   ├── registry.py            # Tool mapping, registry, and FastMCP registration
+    │   └── server.py              # FastMCP server provider and instance configuration
     ├── services/                  # Business logic domain services (OOP classes)
+    ├── tools/                     # MCP tools and execution implementations
+    │   ├── __init__.py            # Tools module exports
+    │   ├── base.py                # BaseTool abstract base class
+    │   ├── enums.py               # ToolName Enum definition
+    │   ├── web_fetch.py           # Exa web content fetching tool implementation
+    │   └── web_search.py          # Exa web search tool implementation
     └── utils/                     # Shared utilities and logging
 ```
 
@@ -145,3 +157,21 @@ web_builder/
 - **SDK:** `boto3` managed via `uv`.
 - **Configuration Layer:** `src/config/s3.py` provides `S3Config` (implements `S3ClientProvider` protocol) and client factory functions (`get_s3_config`, `get_s3_client`).
 - **Environment Settings:** `src/settings.py` manages S3 parameters (`S3_ENDPOINT_URL`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION_NAME`, `S3_BUCKET_NAME`) loaded from `.env` with a corresponding `.env.example`.
+
+### 2026-11-12: FastMCP Server & Client Integration
+- **Framework:** `fastmcp` managed via `uv`.
+- **MCP Server:** `src/mcp/server.py` defines `MCPServer` (implementing `MCPServerProvider` protocol) and `get_mcp_server()`. Configured with `MCP_SERVER_NAME` from `src/settings.py`.
+- **MCP Client:** `src/mcp/client.py` provides `MCPClientManager` (implementing `MCPClientProvider` protocol) and `get_mcp_client()` for async connection management.
+- **FastAPI Lifecycle:** `src/app.py` utilizes FastAPI `lifespan` context manager to connect the MCP client to the FastMCP server on application startup and store it in `app.state.mcp_client`.
+
+### 2026-11-12: Exa Tools & Enum Map Integration
+- **SDK:** `exa-py` managed via `uv`.
+- **Configuration Layer:** `src/config/exa.py` provides `ExaConfig` (implementing `ExaClientProvider` protocol) and client factory functions (`get_exa_config`, `get_exa_client`) utilizing `EXA_API_KEY` from `src/settings.py`.
+- **Tools Architecture (`src/tools/`):**
+  - `src/tools/enums.py`: `ToolName` Enum defining tool identifiers (`web_search`, `web_fetch`).
+  - `src/tools/base.py`: `BaseTool` abstract base class defining tool protocol and execution interface.
+  - `src/tools/web_search.py`: `WebSearchTool` executing Exa search.
+  - `src/tools/web_fetch.py`: `WebFetchTool` executing Exa contents fetch.
+- **MCP Tool Registry & Registration (`src/mcp/`):**
+  - `src/mcp/registry.py`: Defines `TOOLS_MAP` (`dict[ToolName, BaseTool]`), tool lookup utilities, and `register_tools()` for FastMCP registration.
+  - `src/mcp/server.py`: Registers tools in FastMCP using the `ToolName` Enum values on server instantiation.
