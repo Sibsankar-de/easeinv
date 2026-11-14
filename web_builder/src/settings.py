@@ -21,5 +21,11 @@ class Settings(BaseSettings):
 
     EXA_API_KEY: str = ""
 
+    QDRANT_HOST: str = "localhost"
+    QDRANT_PORT: int = 6333
+    QDRANT_GRPC_PORT: int = 6334
+    QDRANT_API_KEY: str | None = None
+    QDRANT_URL: str | None = None
+
 
 settings = Settings()
