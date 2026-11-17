@@ -1,0 +1,45 @@
+import type { StoreConfigDTO } from "@/types";
+
+export const MOCK_STORE_CONFIG: StoreConfigDTO = {
+  id: "store_[STORE_SLUG]_01",
+  slug: "[STORE_SLUG]",
+  name: "[STORE_NAME]",
+  tagline: "[STORE_TAGLINE]",
+  announcementText: "[STORE_ANNOUNCEMENT_TEXT]",
+  heroTitle: "[STORE_HERO_TITLE]",
+  heroSubtitle: "[STORE_HERO_SUBTITLE]",
+  manifestoQuote: "[STORE_BRAND_MANIFESTO]",
+  manifestoAuthor: "[STORE_BRAND_MANIFESTO_AUTHOR]",
+  logoUrl: "[STORE_LOGO_URL]",
+  faviconUrl: "[STORE_FAVICON_URL]",
+  currency: "USD",
+  currencySymbol: "$",
+  locale: "en-US",
+  contact: {
+    email: "[STORE_CONTACT_EMAIL]",
+    phone: "[STORE_CONTACT_PHONE]",
+    address: "[STORE_CONTACT_ADDRESS]",
+    supportHours: "[STORE_SUPPORT_HOURS]",
+  },
+  socialLinks: {
+    twitter: "[STORE_TWITTER_URL]",
+    instagram: "[STORE_INSTAGRAM_URL]",
+    linkedin: "[STORE_LINKEDIN_URL]",
+    github: "[STORE_GITHUB_URL]",
+  },
+  seo: {
+    metaTitle: "[STORE_NAME] — [STORE_TAGLINE]",
+    metaDescription: "[STORE_META_DESCRIPTION]",
+    keywords: ["[STORE_KEYWORD_1]", "[STORE_KEYWORD_2]", "[STORE_KEYWORD_3]"],
+  },
+  theme: {
+    brandColor: "oklch(0.55 0.22 260)",
+    primaryColor: "oklch(0.205 0 0)",
+    borderRadius: "0.625rem",
+    fontFamily: "Geist Sans",
+    darkModeDefault: false,
+  },
+  isActive: true,
+  createdAt: "2026-01-01T00:00:00.000Z",
+  updatedAt: "2026-01-01T00:00:00.000Z",
+};
