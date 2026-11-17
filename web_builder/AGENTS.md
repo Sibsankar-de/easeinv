@@ -1,6 +1,6 @@
-# AGENTS.md — Development Guidelines & Architectural Standards
+# AGENTS.md — Development Guidelines & Engineering Rules
 
-Welcome to the `web_builder` codebase. This document outlines the mandatory engineering standards, architectural patterns, Low-Level Design (LLD) principles, and file conventions for all AI agents and developers working on this project.
+Welcome to the `web_builder` codebase. This document outlines the mandatory engineering standards, development guidelines, coding conventions, and rules for all AI agents and developers working on this project. All architectural designs, infrastructure decisions, and component integrations are documented in `architecture.md`.
 
 ---
 
@@ -20,9 +20,13 @@ The primary purpose of this service is building an AI agent responsible for crea
 >
 > - **Never pre-assume anything:** The agent must never make assumptions, speculate, extrapolate, or invent requirements, responsibilities, features, or details on its own.
 > - **Do NOT add any files, boilerplate, mock implementations, libraries, endpoints, or features that were not explicitly instructed.**
+> - **Never Write Unnecessary or Futuristic Code:** Never write any unnecessary extra code, hypothetical features, speculative abstractions, or futuristic code that cannot even be used or has no immediate purpose. Keep every implementation strictly lean and directly tied to current requirements.
+> - **Always Maintain High Code Quality:** Adhere to clean modular OOP, SOLID principles, robust error handling, precise naming, and strict type annotations without clutter, boilerplate, or over-engineering.
 > - **Always take permission before doing anything that is not explicitly instructed.**
 > - Keep changes strictly scoped to the exact task requested. Never anticipate or generate speculative implementations ahead of time.
-> - **Living Document:** This file must be updated whenever any architectural update, design decision, or structural change is made.
+> - **Separation of Concerns:** `AGENTS.md` is strictly for guidelines and rules. Do not document architecture here.
+> - **Architecture Maintenance:** `architecture.md` must be updated whenever any architectural change or structural update is made.
+> - **No Dates:** Do not add dates to `AGENTS.md` or `architecture.md`.
 
 ---
 
@@ -81,31 +85,13 @@ All code must follow clean modular programming using Object-Oriented Programming
   - High-level modules must not depend directly on concrete low-level SDKs.
   - Services must receive provider instances via constructor injection (`__init__`).
   - FastAPI endpoints must inject dependencies via FastAPI's `Depends`.
+- **YAGNI & Lean Design (Zero Futuristic Code):**
+  - Never add speculative methods, hypothetical feature flags, or futuristic code that is not actively used.
+  - Implement only what is directly instructed and required right now.
 
 ---
 
-## 6. Project Directory Structure
-
-Maintain a clean, semantic file structure when instructed to build components:
-
-```
-web_builder/
-├── AGENTS.md                      # Agent and developer guidelines (this file)
-├── README.md                      # Project documentation and setup guide
-├── pyproject.toml                 # uv package configuration and dependencies
-├── uv.lock                        # Locked dependency graph
-├── .python-version                # Pinned Python version (3.12+)
-├── main.py                        # Service entrypoint
-└── src/
-    ├── app.py                     # FastAPI application instance and lifecycle
-    ├── settings.py                # Configuration and environment settings
-    ├── services/                  # Business logic domain services (OOP classes)
-    └── utils/                     # Shared utilities and logging
-```
-
----
-
-## 7. Coding & Typing Standards
+## 6. Coding & Typing Standards
 
 - **Strict Type Annotations:** Every function signature, method parameter, class attribute, and return value must be explicitly typed.
 - **Python 3.12+ Modern Typing:**
@@ -121,12 +107,8 @@ web_builder/
 
 ---
 
-## 8. Living Document & Decision Tracking Policy
+## 7. Guidelines & Architecture Policy
 
-`AGENTS.md` is a living document that serves as the single source of truth for architectural standards and project conventions.
-
-### Rules:
-
-- Whenever an architectural update, design decision, or structural modification is agreed upon, this file **MUST** be updated immediately to reflect the change.
-- New patterns, interfaces, services, or workflow changes must be documented here before or alongside their implementation.
-- All future contributors and AI agents must review and uphold the latest decisions recorded in this document.
+- **`AGENTS.md` (Strict Scope):** Serves solely as the source of truth for engineering guidelines, scope constraints, code commenting policies, typing standards, and strict agent rules. Architectural details must not be added here.
+- **`architecture.md` (Living Architectural Source of Truth):** Serves as the source of truth for system architecture, infrastructure components, external integrations, design patterns, and structural designs. Whenever an architectural change, structural modification, or new integration is made, `architecture.md` **MUST** be updated immediately.
+- **No Dates Policy:** Never add dates, timestamps, or date-based changelogs to `AGENTS.md` or `architecture.md`.
