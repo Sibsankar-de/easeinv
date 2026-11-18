@@ -5,6 +5,7 @@ description = "Web builder service for easeinv."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "aio-pika>=10.2.3",
     "boto3>=1.43.126",
     "exa-py>=2.28.0",
     "fastapi[standard]>=0.161.0",

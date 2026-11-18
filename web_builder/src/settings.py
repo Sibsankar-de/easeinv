@@ -1,3 +1,5 @@
+from urllib.parse import quote
+from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,6 +28,26 @@ class Settings(BaseSettings):
     QDRANT_GRPC_PORT: int = 6334
     QDRANT_API_KEY: str | None = None
     QDRANT_URL: str | None = None
+
+    RABBITMQ_HOST: str = "localhost"
+    RABBITMQ_PORT: int = 5672
+    RABBITMQ_USER: str = "admin"
+    RABBITMQ_PASSWORD: str = "admin"
+
+    @computed_field
+    @property
+    def RABBITMQ_CONNECTION_URI(self) -> str:
+        user = quote(self.RABBITMQ_USER, safe="")
+        password = quote(self.RABBITMQ_PASSWORD, safe="")
+        return f"amqp://{user}:{password}@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}"
+
+    WEB_BUILDER_JOB_QUEUE: str = "web_builder_job_queue"
+    RABBITMQ_RETRY_DELAY_MS: int = 5000
+
+    STARTER_REPO_URL: str = "https://github.com/Sibsankar-de/easeinv.git"
+    STARTER_TEMPLATE_DIR: str = "store_web_builder_template_01"
+    WORKSPACE_DIR: str = "workspace"
+    GIT_USER: str = "webbuilder"
 
 
 settings = Settings()

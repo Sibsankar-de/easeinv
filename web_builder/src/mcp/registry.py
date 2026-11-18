@@ -2,6 +2,7 @@ from collections.abc import Mapping
 from fastmcp import FastMCP
 
 from src.tools.base import BaseTool
+from src.tools.create_zip import CreateZipTool
 from src.tools.enums import ToolName
 from src.tools.web_fetch import WebFetchTool
 from src.tools.web_search import WebSearchTool
@@ -9,6 +10,7 @@ from src.tools.web_search import WebSearchTool
 TOOLS_MAP: dict[ToolName, BaseTool] = {
     ToolName.WEB_SEARCH: WebSearchTool(),
     ToolName.WEB_FETCH: WebFetchTool(),
+    ToolName.CREATE_ZIP: CreateZipTool(),
 }
 
 
