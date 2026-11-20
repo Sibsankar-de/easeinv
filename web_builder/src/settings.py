@@ -49,5 +49,8 @@ class Settings(BaseSettings):
     WORKSPACE_DIR: str = "workspace"
     GIT_USER: str = "webbuilder"
 
+    DOCKER_CONTAINER_NAME: str = "easeinv-sandbox"
+    DOCKER_WORKSPACE_PATH: str = "/workspace"
+
 
 settings = Settings()

@@ -83,23 +83,40 @@ Each logical queue asserts a 3-queue topology with dead-letter exchange (DLX) ro
 
 ## 5. Command Execution & Worker Architecture
 
+### Command Execution Container Architecture
+Command execution is sandboxed within a dedicated Docker container defined in `docker/Dockerfile` and managed via `docker-compose.yml`:
+- **Service Name:** `command_executor` (`easeinv-sandbox`).
+- **Base Environment:** Debian-based Node.js runtime (`node:20-bookworm-slim`) containing system-wide tools available under root: `git`, `npm`, `node`, `curl`, and `bash`.
+- **Security & Privileges:** Runs strictly unprivileged (`privileged: false`) to safeguard the host kernel.
+- **Network Isolation:** Bound to a dedicated custom Docker network (`sandbox-network`).
+- **Resource Constraints:** Hard limits enforced on CPU and memory (e.g. 2.0 CPUs, 2048MB memory limit with 512MB reservation).
+- **Volume Binding:** Host `./workspace` is bind-mounted directly to `/workspace` inside the container, ensuring bidirectional reflection of filesystem updates between the host and container volume.
+- **Per-Store User Isolation:** On store initialization, a dedicated Linux user (`store-<store_id>`) is created inside the container with home directory `/workspace/store-<store_id>`.
+  - Workspace directory permissions are enforced as `2770` with setgid.
+  - Store users belong to their private primary groups and cannot read, traverse, or modify other store directories (other permissions: `---`).
+  - Setgid ensures new artifacts inherit group ownership matching the host user (`node` / GID 1000) for cross-boundary archiving and management.
+- **Strict Bounding:** Command executions specify `store_id`, causing commands to run under the store user's credentials (`docker exec -i -u <username> -e HOME=<store_home> -w <cwd>`). Any requested working directory is strictly verified against the store's workspace boundary (`/workspace/store-<store_id>`), rejecting traversal attempts.
+
 ### Command Execution Abstraction (`src/services/command_execution.py`)
-- `CommandExecutionManager`: Abstract Base Class defining sandboxed command execution over the workspace directory.
+- `CommandExecutionManager`: Abstract Base Class defining `create_store_user(store_id: str)` and `execute(command, cwd=None, store_id=None)`.
+- `DockerCommandExecutionManager`: Concrete implementation executing commands inside the dedicated Docker container via asynchronous subprocesses.
 - `CommandExecutionResult`: DTO carrying `exit_code`, `stdout`, and `stderr`.
-- Keeps workers decoupled from concrete local subprocess or containerized sandbox implementations.
+- `CommandExecutionError`: Exception indicating container command failures or path boundary violations.
+- Factory function: `get_command_execution_manager()` provides configured manager instances.
 
 ### Workers (`src/workers/`)
 - `BaseJobWorker`: Abstract interface requiring async `execute(job: Job) -> None`.
 - `StoreInitWorker`: Worker orchestrating store initialization:
   1. Validates `STARTER_REPO_URL` from configuration.
   2. Ensures store workspace directory exists (`workspace/store-<store_id>`).
-  3. Clones the repository using sparse clone (`git clone --depth 1 --filter=blob:none --sparse <STARTER_REPO_URL> easeinv`).
-  4. Sparse checkouts the template directory (`git sparse-checkout set <STARTER_TEMPLATE_DIR>`).
-  5. Moves the template directory outside `easeinv/` to `workspace/store-<store_id>/repository` and removes `easeinv/`.
-  6. Checks for and removes any existing `.git` directory inside `repository/`, then initializes a clean git repository (`git init`, `git add -A`, and `git commit -m "Project initialized"` configured with `GIT_USER` from settings for both name and email).
-  7. Cleans and purges all gitignored files and directories (`git clean -fdX`) prior to archiving.
-  8. Packages the project directory into `repository.zip` via `CreateZipTool`.
-  9. Uploads the zip archive to S3 object storage at `web_stores/store-<store_id>/draft/repository.zip`.
+  3. Provisions the dedicated isolated store user inside the container (`create_store_user`).
+  4. Clones the repository using sparse clone (`git clone --depth 1 --filter=blob:none --sparse <STARTER_REPO_URL> easeinv`) inside the store user boundary.
+  5. Sparse checkouts the template directory (`git sparse-checkout set <STARTER_TEMPLATE_DIR>`).
+  6. Moves the template directory outside `easeinv/` to `workspace/store-<store_id>/repository` and removes `easeinv/`.
+  7. Checks for and removes any existing `.git` directory inside `repository/`, then initializes a clean git repository (`git init`, `git add -A`, and `git commit -m "Project initialized"` configured with `GIT_USER` from settings for both name and email).
+  8. Cleans and purges all gitignored files and directories (`git clean -fdX`) prior to archiving.
+  9. Packages the project directory into `repository.zip` via `CreateZipTool`.
+  10. Uploads the zip archive to S3 object storage at `web_stores/store-<store_id>/draft/repository.zip`.
 
 ---
 
@@ -151,8 +168,13 @@ web_builder/
 ├── uv.lock                        # Locked dependency graph
 ├── .python-version                # Pinned Python version (3.12+)
 ├── .env.example                   # Environment variable template
-├── docker-compose.yml             # Docker services (SeaweedFS, Qdrant)
+├── Makefile                       # Development, testing, linting, and container build automation
+├── docker/
+│   └── Dockerfile                 # Command executor container definition (Node, npm, git)
+├── docker-compose.yml             # Docker services (SeaweedFS, Qdrant, Command Executor)
 ├── main.py                        # Service entrypoint
+├── scripts/                       # Container lifecycle scripts
+│   └── create_store_user.sh       # Isolated store user provisioning script
 ├── src/
 │   ├── app.py                     # FastAPI application instance and lifecycle
 │   ├── settings.py                # Configuration and environment settings
@@ -172,7 +194,7 @@ web_builder/
 │   │   └── job.py                 # Job, JobType, and JobPayload DTOs
 │   ├── services/                  # Business logic domain services (OOP classes)
 │   │   ├── __init__.py            # Services module exports
-│   │   ├── command_execution.py   # CommandExecutionManager ABC and execution results
+│   │   ├── command_execution.py   # CommandExecutionManager ABC, DockerCommandExecutionManager, and execution results
 │   │   └── job_manager.py         # JobManager RabbitMQ listener and worker dispatcher
 │   ├── tools/                     # MCP tools and execution implementations
 │   │   ├── __init__.py            # Tools module exports
@@ -189,6 +211,7 @@ web_builder/
 │       ├── base.py                # BaseJobWorker abstract base class
 │       └── init_worker.py         # StoreInitWorker implementation
 └── tests/                         # Unit and integration test suite
+    ├── test_command_execution.py  # Command execution manager unit and integration tests
     ├── test_init_worker.py        # StoreInitWorker unit tests
     ├── test_job_manager.py        # JobManager unit tests
     ├── test_rabbitmq_config.py    # RabbitMQConfig unit tests

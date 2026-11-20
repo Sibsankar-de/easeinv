@@ -1,14 +1,20 @@
 from typing import Any
 
 from src.services.command_execution import (
+    CommandExecutionError,
     CommandExecutionManager,
     CommandExecutionResult,
+    DockerCommandExecutionManager,
+    get_command_execution_manager,
 )
 
 __all__ = [
+    "CommandExecutionError",
     "CommandExecutionManager",
     "CommandExecutionResult",
+    "DockerCommandExecutionManager",
     "JobManager",
+    "get_command_execution_manager",
 ]
 
 

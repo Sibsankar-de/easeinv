@@ -43,6 +43,8 @@ class StoreInitWorker(BaseJobWorker):
         store_workspace = workspace_root / store_folder_name
         store_workspace.mkdir(parents=True, exist_ok=True)
 
+        await self.command_executor.create_store_user(job.store_id)
+
         clone_dir = store_workspace / "easeinv"
         if clone_dir.exists():
             shutil.rmtree(clone_dir)
@@ -63,6 +65,7 @@ class StoreInitWorker(BaseJobWorker):
                 "easeinv",
             ],
             cwd=store_workspace,
+            store_id=job.store_id,
         )
         if clone_res.exit_code != 0:
             raise StoreInitError(f"git clone failed: {clone_res.stderr}")
@@ -71,6 +74,7 @@ class StoreInitWorker(BaseJobWorker):
         sparse_res = await self.command_executor.execute(
             ["git", "sparse-checkout", "set", template_dir_name],
             cwd=clone_dir,
+            store_id=job.store_id,
         )
         if sparse_res.exit_code != 0:
             raise StoreInitError(f"git sparse-checkout failed: {sparse_res.stderr}")
@@ -96,6 +100,7 @@ class StoreInitWorker(BaseJobWorker):
         git_init_res = await self.command_executor.execute(
             ["git", "init"],
             cwd=repo_dir,
+            store_id=job.store_id,
         )
         if git_init_res.exit_code != 0:
             raise StoreInitError(f"git init failed: {git_init_res.stderr}")
@@ -103,6 +108,7 @@ class StoreInitWorker(BaseJobWorker):
         git_add_res = await self.command_executor.execute(
             ["git", "add", "-A"],
             cwd=repo_dir,
+            store_id=job.store_id,
         )
         if git_add_res.exit_code != 0:
             raise StoreInitError(f"git add failed: {git_add_res.stderr}")
@@ -120,6 +126,7 @@ class StoreInitWorker(BaseJobWorker):
                 "Project initialized",
             ],
             cwd=repo_dir,
+            store_id=job.store_id,
         )
         if git_commit_res.exit_code != 0:
             raise StoreInitError(f"git commit failed: {git_commit_res.stderr}")
@@ -127,6 +134,7 @@ class StoreInitWorker(BaseJobWorker):
         git_clean_res = await self.command_executor.execute(
             ["git", "clean", "-fdX"],
             cwd=repo_dir,
+            store_id=job.store_id,
         )
         if git_clean_res.exit_code != 0:
             raise StoreInitError(f"git clean failed: {git_clean_res.stderr}")

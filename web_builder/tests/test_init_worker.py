@@ -16,14 +16,19 @@ class MockCommandExecutionManager(CommandExecutionManager):
     def __init__(self, exit_code: int = 0, stderr: str = "") -> None:
         self.exit_code: int = exit_code
         self.stderr: str = stderr
-        self.executed_commands: list[tuple[str | list[str], Path | str | None]] = []
+        self.executed_commands: list[tuple[str | list[str], Path | str | None, str | None]] = []
+        self.created_users: list[str] = []
+
+    async def create_store_user(self, store_id: str) -> None:
+        self.created_users.append(store_id)
 
     async def execute(
         self,
         command: str | list[str],
         cwd: Path | str | None = None,
+        store_id: str | None = None,
     ) -> CommandExecutionResult:
-        self.executed_commands.append((command, cwd))
+        self.executed_commands.append((command, cwd, store_id))
 
         if isinstance(command, list):
             if len(command) >= 3 and command[0] == "git" and command[1] == "clone":
@@ -105,7 +110,10 @@ class TestStoreInitWorker(unittest.IsolatedAsyncioTestCase):
 
         await self.worker.execute(job)
 
+        self.assertIn("store-200", self.command_executor.created_users)
         self.assertEqual(len(self.command_executor.executed_commands), 6)
+        for _, _, store_id in self.command_executor.executed_commands:
+            self.assertEqual(store_id, "store-200")
 
         clone_cmd = self.command_executor.executed_commands[0][0]
         self.assertEqual(clone_cmd[0], "git")
@@ -200,11 +208,12 @@ class TestStoreInitWorker(unittest.IsolatedAsyncioTestCase):
                 self,
                 command: str | list[str],
                 cwd: Path | str | None = None,
+                store_id: str | None = None,
             ) -> CommandExecutionResult:
-                self.executed_commands.append((command, cwd))
+                self.executed_commands.append((command, cwd, store_id))
                 if isinstance(command, list) and "sparse-checkout" in command:
                     return CommandExecutionResult(exit_code=1, stdout="", stderr="sparse checkout failed")
-                return await super().execute(command, cwd)
+                return await super().execute(command, cwd, store_id)
 
         worker = StoreInitWorker(
             command_executor=SparseFailingExecutor(),
@@ -228,11 +237,12 @@ class TestStoreInitWorker(unittest.IsolatedAsyncioTestCase):
                 self,
                 command: str | list[str],
                 cwd: Path | str | None = None,
+                store_id: str | None = None,
             ) -> CommandExecutionResult:
-                self.executed_commands.append((command, cwd))
+                self.executed_commands.append((command, cwd, store_id))
                 if isinstance(command, list) and command == ["git", "clean", "-fdX"]:
                     return CommandExecutionResult(exit_code=1, stdout="", stderr="git clean failed")
-                return await super().execute(command, cwd)
+                return await super().execute(command, cwd, store_id)
 
         worker = StoreInitWorker(
             command_executor=CleanFailingExecutor(),

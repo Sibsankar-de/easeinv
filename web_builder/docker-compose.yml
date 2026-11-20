@@ -21,6 +21,38 @@ services:
       - qdrant_data:/qdrant/storage
     restart: unless-stopped
 
+  command_executor:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: easeinv-sandbox
+    privileged: false
+    volumes:
+      - type: bind
+        source: ./workspace
+        target: /workspace
+      - type: bind
+        source: ./scripts
+        target: /scripts
+        read_only: true
+    networks:
+      - sandbox-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2048M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    mem_limit: 2g
+    cpus: 2.0
+    restart: unless-stopped
+
+networks:
+  sandbox-network:
+    name: sandbox-network
+
 volumes:
   seaweedfs_data:
   qdrant_data:

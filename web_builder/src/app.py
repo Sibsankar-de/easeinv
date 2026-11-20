@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from src.mcp.client import mcp_client_manager
+from src.services.command_execution import get_command_execution_manager
 from src.services.job_manager import JobManager
 from src.utils.logger import get_logger
 
@@ -11,7 +12,8 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    job_manager = JobManager()
+    command_executor = get_command_execution_manager()
+    job_manager = JobManager(command_executor=command_executor)
     app.state.job_manager = job_manager
     try:
         await job_manager.start()
